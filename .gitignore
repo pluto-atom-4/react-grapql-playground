@@ -1,0 +1,116 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.vercel
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+.vim/
+
+# IDE-specific folders
+.vscode-test/
+.history/
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+.test-cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log
+
+# OS-specific files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+.turbo/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+prisma/dev.db
+prisma/dev.db-journal
+
+# Upload storage (local development)
+uploads/
+storage/
+temp/
+
+# GraphQL
+schema.graphql
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Next.js specific
+.next/
+out/
+.env*.local
+.turbo
+
+# Express specific (if any)
+dist/
+
+# Misc
+*.pem
+.cache
+.eslintcache
+
+# Session/Copilot specific
+.copilot/session-state/
+*.session
+
+# IDE workspace settings (project-specific)
+.vscode/settings.json
+.vscode/extensions.json
+.idea/inspectionProfiles/
+.idea/runConfigurations/
