@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: boltline_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-boltline}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-root}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boltline_network
+    restart: unless-stopped
+
+  # Optional: Redis for future caching layer
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: boltline_redis
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ['CMD', 'redis-cli', 'ping']
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - boltline_network
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+  # redis_data:
+
+networks:
+  boltline_network:
+    driver: bridge
