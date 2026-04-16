@@ -1,0 +1,36 @@
+import { BuildContext } from '../dataloaders'
+
+/**
+ * Build type resolver.
+ *
+ * Uses DataLoader for nested resolvers to prevent N+1 queries.
+ */
+export const buildResolver = {
+  Build: {
+    /**
+     * Resolve parts for a build using DataLoader.
+     *
+     * Without DataLoader:
+     *   query { builds(limit: 100) { parts { id } } }
+     *   → 1 query for builds + 100 queries for parts = 101 total
+     *
+     * With DataLoader:
+     *   → 1 query for builds + 1 batched query for all parts = 2 total
+     *
+     * Interview talking point: "DataLoader prevents N+1 queries by batching
+     * multiple build IDs into a single database query."
+     */
+    async parts(parent: any, _args: any, context: BuildContext) {
+      return context.buildPartLoader.load(parent.id)
+    },
+
+    /**
+     * Resolve test runs for a build using DataLoader.
+     *
+     * Same batching as parts: single query for all test runs.
+     */
+    async testRuns(parent: any, _args: any, context: BuildContext) {
+      return context.buildTestRunLoader.load(parent.id)
+    },
+  },
+}
