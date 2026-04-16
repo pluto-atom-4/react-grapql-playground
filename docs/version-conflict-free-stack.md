@@ -20,7 +20,7 @@ To avoid the dependency issues you mentioned, follow these architectural rules:
   Avoid the `client preset` with Apollo Client. Current guidance favors using `typescript` and `typescript-operations` plugins directly to reduce runtime code, bundle growth, and React 19 version friction.
 
 - **Next.js App Router integration:**  
-  In Server Components, standard Apollo hooks such as `useQuery` do not work as in client-only flows. Use the Next.js Apollo integration package (`@apollo/client-nextjs`) instead of older experimental packages.
+  In Server Components, standard Apollo hooks such as `useQuery` do not work as in client-only flows. Use the Next.js Apollo integration package (`@apollo/client-integration-nextjs`) instead of older experimental packages.
 
 - **Vitest + `tsconfig.json`:**  
   Set `moduleResolution: "bundler"` in `tsconfig.json` to align with Next.js 16 expectations. For Vitest, use `@vitejs/plugin-react` so React 19 JSX is parsed correctly.
