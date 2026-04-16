@@ -13,4 +13,5 @@ const resolvers = {
 }
 
 void new ApolloServer({ typeDefs, resolvers })
-console.log('GraphQL server defined')
+const PORT = process.env.GRAPHQL_PORT || 4000
+console.log(`GraphQL server configured for port ${PORT}`)
