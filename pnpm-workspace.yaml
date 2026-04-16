@@ -1,0 +1,16 @@
+packages:
+  - 'frontend'
+  - 'backend-graphql'
+  - 'backend-express'
+
+catalog:
+  # Core dependencies with versions from version-conflict-free-stack.md
+  react: '19.x'
+  react-dom: '19.x'
+  next: '16.x'
+  typescript: '5.x'
+  apollo-server: '4.x'
+  '@apollo/client': '4.x'
+  '@apollo/client-nextjs': '^0.10.0'
+  express: '4.21.1'
+  vitest: '^2.x'

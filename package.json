@@ -1,0 +1,48 @@
+{
+  "name": "react-grapql-playground",
+  "version": "0.1.0",
+  "description": "Dual-backend monorepo for Stoke Space interview prep: Next.js frontend, Apollo GraphQL backend, Express backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "dev:frontend": "pnpm -F frontend dev",
+    "dev:graphql": "pnpm -F backend-graphql dev",
+    "dev:express": "pnpm -F backend-express dev",
+    "build": "pnpm -r run build",
+    "build:frontend": "pnpm -F frontend build",
+    "build:graphql": "pnpm -F backend-graphql build",
+    "build:express": "pnpm -F backend-express build",
+    "test": "pnpm -r run test",
+    "test:frontend": "pnpm -F frontend test",
+    "test:graphql": "pnpm -F backend-graphql test",
+    "test:express": "pnpm -F backend-express test",
+    "test:integration": "pnpm -F frontend test:integration",
+    "test:e2e": "pnpm -F frontend test:e2e",
+    "test:watch": "pnpm -r run test --watch",
+    "lint": "pnpm -r run lint",
+    "format": "pnpm -r run format",
+    "format:check": "pnpm -r run format:check",
+    "type-check": "pnpm -r run type-check",
+    "clean": "pnpm -r run clean && pnpm install --frozen-lockfile"
+  },
+  "keywords": [
+    "fullstack",
+    "graphql",
+    "apollo",
+    "next.js",
+    "react",
+    "typescript",
+    "stoke-space",
+    "interview-prep"
+  ],
+  "author": "Stoke Space Interview Candidate",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
