@@ -6,8 +6,8 @@
  *
  * Events:
  * - fileUploaded: { fileId, buildId, fileName, timestamp }
- * - ciResultsReceived: { buildId, status, testsPassed, testsFailed, timestamp }
- * - sensorDataReceived: { buildId, sensorType, value, timestamp }
+ * - ciResults: { buildId, status, testsPassed, testsFailed, timestamp }
+ * - sensorData: { buildId, sensorType, value, timestamp }
  */
 
 import { EventEmitter } from 'events'
@@ -37,7 +37,7 @@ class EventBus extends EventEmitter {
     testsPassed?: number
     testsFailed?: number
   }) {
-    this.emit('ciResultsReceived', {
+    this.emit('ciResults', {
       ...data,
       timestamp: new Date().toISOString(),
     })
@@ -48,7 +48,7 @@ class EventBus extends EventEmitter {
     sensorType: string
     value: unknown
   }) {
-    this.emit('sensorDataReceived', {
+    this.emit('sensorData', {
       ...data,
       timestamp: new Date().toISOString(),
     })

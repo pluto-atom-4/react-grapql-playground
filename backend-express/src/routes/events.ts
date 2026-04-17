@@ -11,11 +11,11 @@
  * Keeps connection open and broadcasts events to all connected clients.
  */
 
-import { Router, Request, Response } from 'express'
+import { Router, type Router as ExpressRouter, Request, Response } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { eventBus } from '../services/event-bus'
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Track connected clients for cleanup
 const connectedClients: Set<Response> = new Set()
@@ -24,7 +24,7 @@ const connectedClients: Set<Response> = new Set()
  * GET /events - SSE endpoint
  * Establishes Server-Sent Events connection
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
@@ -44,15 +44,6 @@ router.get('/', (req: Request, res: Response) => {
   // Track this client
   connectedClients.add(res)
 
-  // Handle disconnect
-  res.on('close', () => {
-    connectedClients.delete(res)
-  })
-
-  res.on('error', () => {
-    connectedClients.delete(res)
-  })
-
   // Send keep-alive heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
     if (res.writable) {
@@ -62,6 +53,17 @@ router.get('/', (req: Request, res: Response) => {
       connectedClients.delete(res)
     }
   }, 30000)
+
+  // Handle disconnect
+  res.on('close', () => {
+    clearInterval(heartbeat)
+    connectedClients.delete(res)
+  })
+
+  res.on('error', () => {
+    clearInterval(heartbeat)
+    connectedClients.delete(res)
+  })
 })
 
 /**

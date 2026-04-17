@@ -4,7 +4,6 @@ import path from 'path'
 import uploadRoutes from './routes/upload'
 import webhookRoutes from './routes/webhooks'
 import eventsRoutes from './routes/events'
-import { authMiddleware } from './middleware/auth'
 import { errorHandler } from './middleware/error'
 
 const app = express()

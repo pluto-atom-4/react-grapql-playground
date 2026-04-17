@@ -11,14 +11,14 @@
  * { fileId: string, url: string }
  */
 
-import { Router } from 'express'
+import { Router, type Router as ExpressRouter } from 'express'
 import multer, { Multer } from 'multer'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { eventBus } from '../services/event-bus'
 import { asyncHandler, AppError } from '../middleware/error'
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 // Configure Multer
 const uploadDir = path.join(process.cwd(), 'uploads')

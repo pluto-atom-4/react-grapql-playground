@@ -7,11 +7,11 @@
  * Both endpoints emit events for real-time subscribers and GraphQL mutations.
  */
 
-import { Router } from 'express'
+import { Router, type Router as ExpressRouter } from 'express'
 import { eventBus } from '../services/event-bus'
 import { asyncHandler, AppError } from '../middleware/error'
 
-const router = Router()
+const router: ExpressRouter = Router()
 
 /**
  * POST /webhooks/ci-results
