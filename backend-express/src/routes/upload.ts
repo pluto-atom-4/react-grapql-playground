@@ -111,6 +111,27 @@ const upload: Multer = multer({
 router.post(
   '/',
   upload.single('file'),
+  (err: any, _req: any, res: any, next: any) => {
+    // Handle Multer-specific errors
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          error: 'File too large',
+          message: `File exceeds the maximum size limit of 50MB`,
+        })
+      }
+      if (err.code === 'LIMIT_PART_COUNT') {
+        return res.status(400).json({
+          error: 'Too many parts',
+          message: 'Request contains too many form fields',
+        })
+      }
+      // Pass other errors to next middleware
+      next(err)
+      return
+    }
+    next()
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError(400, 'File is required')

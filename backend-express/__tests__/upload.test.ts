@@ -2,13 +2,18 @@
  * Upload Route Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 import express from 'express'
 import request from 'supertest'
 import path from 'path'
 import fs from 'fs'
+import { fileURLToPath } from 'url'
 import uploadRouter from '../src/routes/upload'
 import { errorHandler } from '../src/middleware/error'
+import { generateBinaryFile, cleanupFixtures, getFixturePath } from './fixtures/generate-fixtures'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 app.use(express.json())
@@ -20,6 +25,20 @@ app.use(errorHandler)
 const testUploadDir = path.join(process.cwd(), 'uploads')
 
 describe('Upload Routes', () => {
+  // Generate large file fixture for testing size limits
+  beforeAll(async () => {
+    console.log('📦 Generating large file fixture (55MB)...')
+    await generateBinaryFile('large-file.zip', 55)
+    console.log('✓ Large file fixture generated')
+  })
+
+  // Clean up fixture after all tests
+  afterAll(async () => {
+    console.log('🧹 Cleaning up fixtures...')
+    await cleanupFixtures(['large-file.zip'])
+    console.log('✓ Fixtures cleaned up')
+  })
+
   beforeEach(() => {
     // Ensure upload directory exists
     if (!fs.existsSync(testUploadDir)) {
@@ -170,6 +189,28 @@ describe('Upload Routes', () => {
       .get('/files/non-existent-file-xyz-12345.txt')
 
     expect(res.status).toBe(404)
+  })
+
+  it('POST /upload - should reject files exceeding 50MB size limit', async () => {
+    // Generate fixture inline for this specific test
+    const result = await generateBinaryFile('large-file.zip', 55)
+
+    try {
+      const stats = fs.statSync(result)
+      const sizeInMB = stats.size / (1024 * 1024)
+      console.log(`  Testing with ${sizeInMB.toFixed(1)}MB file (limit: 50MB)`)
+
+      const res = await request(app)
+        .post('/upload')
+        .attach('file', result)
+
+      // Should reject with 413 Payload Too Large
+      expect(res.status).toBe(413)
+      expect(res.body.error).toBeDefined()
+    } finally {
+      // Clean up after test
+      await cleanupFixtures(['large-file.zip'])
+    }
   })
 })
 

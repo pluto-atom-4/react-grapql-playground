@@ -116,6 +116,11 @@ dist/
 .copilot/session-state/
 *.session
 
+# Generated test fixtures (binary files created dynamically)
+backend-express/__tests__/fixtures/large-file.zip
+backend-express/__tests__/fixtures/*.bin
+backend-express/__tests__/fixtures/*.zip
+
 # IDE workspace settings (project-specific)
 .vscode/settings.json
 .vscode/extensions.json
