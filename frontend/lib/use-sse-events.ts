@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useApolloClient } from '@apollo/client'
+import { useApolloClient } from '@apollo/client/react'
 import { useEffect, useRef } from 'react'
 
 export function useSSEEvents() {

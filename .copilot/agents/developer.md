@@ -29,10 +29,34 @@ The Developer Agent is responsible for implementing code changes, writing featur
 
 ### Technology Stack
 
-- **Frontend**: Next.js 16+, React 19, Apollo Client 4, Tailwind CSS, Vitest + React Testing Library
+- **Frontend**: Next.js 16+, React 19, Apollo Client 4.1.7, Tailwind CSS, Vitest + React Testing Library
 - **GraphQL Backend**: Apollo Server 4, PostgreSQL, Prisma/Drizzle, DataLoader, TypeScript 5
 - **Express Backend**: Express 4.21.1+, Multer (file uploads), TypeScript 5, Vitest
 - **Dev Infrastructure**: Docker Compose (PostgreSQL), pnpm workspaces, ESLint, Prettier
+
+### Apollo Client 4.1.7 Setup
+
+Apollo Client v4 reorganized exports into subpaths. When importing in frontend code, use these paths:
+
+```typescript
+// Hooks (React integration)
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
+import { ApolloProvider } from '@apollo/client/react'
+
+// Core client and cache
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
+
+// GraphQL utilities
+import { gql } from '@apollo/client/core'
+```
+
+**Key Features**:
+- ✅ **useQuery/useMutation**: Same API as v3—no breaking changes for hooks
+- ✅ **useApolloClient**: Unchanged
+- ✅ **Optimistic updates**: Fully supported with `optimisticResponse` and `update` functions
+- ✅ **Normalized cache**: Auto-caching and eviction work as before
+- ✅ **No useSuspenseQuery**: We use `useQuery` with loading states, not Suspense
 
 ### Key Patterns
 
@@ -41,7 +65,7 @@ The Developer Agent is responsible for implementing code changes, writing featur
 - **DataLoader**: Batch loading prevents N+1 queries in nested GraphQL resolvers
 - **Server Components**: Next.js App Router Server Components fetch initial Apollo data
 - **Client Components**: React Client Components handle mutations with optimistic updates
-- **Apollo Cache**: Normalized cache with `update` or `refetchQueries` for mutations
+- **Apollo Client**: Apollo Client 4.1.7 uses `useQuery()` hooks (not `useSuspenseQuery()`); normalized cache with `update` or `refetchQueries` for mutations
 - **Real-time**: SSE stream from Express; frontend listens via EventSource
 - **File Uploads**: Express POST /upload handles validation, storage, event emission
 - **Webhooks**: Express receives CI/CD results or sensor data, optionally triggers Apollo mutations

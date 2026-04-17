@@ -86,6 +86,45 @@ open coverage/index.html
 cat coverage/coverage-final.json | grep '"statements"'
 ```
 
+## Apollo Client 4.1.7 Testing Setup (Issue #3)
+
+### Import Paths for Testing
+
+Apollo Client v4.1.7 reorganized exports. Use these paths for tests:
+
+```typescript
+// ✅ Testing utilities (unchanged from v3)
+import { MockedProvider, MockedResponse } from '@apollo/client/testing';
+
+// ✅ React hooks (NEW PATH in v4.1.7 - use in component tests)
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
+
+// ✅ Core client setup
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { HttpLink } from '@apollo/client/link/http';
+
+// ✅ GraphQL utilities
+import { gql } from '@apollo/client/core';
+```
+
+### Testing Notes
+
+- ✅ **MockedProvider**: Works identically to v3—no changes to test patterns
+- ✅ **useQuery/useMutation**: Same API as v3—all existing tests remain valid
+- ✅ **Optimistic updates**: Fully supported with `optimisticResponse` and `update` functions
+- ✅ **Cache eviction**: Works as before with `client.cache.evict()` and `client.cache.gc()`
+- ✅ **useApolloClient**: Unchanged—can still access Apollo client in tests
+- ❌ **useSuspenseQuery**: NOT used (we use `useQuery` with loading states for Next.js compatibility)
+
+### Breaking Changes: None
+
+All existing test patterns for Issue #3 acceptance criteria remain valid:
+- Component tests with `useQuery` and `useMutation`
+- Optimistic update tests
+- Real-time SSE event tests
+- Cache update tests
+- Error handling tests
+
 ## Test Organization
 
 ### Directory Structure

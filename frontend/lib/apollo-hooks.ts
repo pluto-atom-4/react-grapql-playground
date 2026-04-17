@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client/react'
 import {
   BUILDS_QUERY,
   BUILD_DETAIL_QUERY,

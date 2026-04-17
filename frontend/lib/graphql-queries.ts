@@ -5,7 +5,7 @@
  * and execute mutations to update the GraphQL backend.
  */
 
-import { gql } from '@apollo/client'
+import { gql } from '@apollo/client/core'
 
 // Build type fragment (used in multiple queries)
 export const BUILD_FRAGMENT = gql`

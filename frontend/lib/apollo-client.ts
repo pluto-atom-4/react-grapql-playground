@@ -4,7 +4,8 @@
  * Simple shared client instance for client components
  */
 
-import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client'
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
 
 export function makeClient() {
   const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'

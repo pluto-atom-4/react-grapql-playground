@@ -19,7 +19,7 @@
     "clean": "rm -rf .next dist"
   },
   "dependencies": {
-    "@apollo/client": "^3.14.1",
+    "@apollo/client": "4.1.7",
     "@hookform/resolvers": "^3.4.0",
     "graphql": "^16.13.2",
     "next": "^16.0.0",
