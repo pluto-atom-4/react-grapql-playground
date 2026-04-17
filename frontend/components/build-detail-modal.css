@@ -1,0 +1,136 @@
+/* Build Detail Modal Styles */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-body section {
+  margin-bottom: 2rem;
+}
+
+.modal-body section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  color: #333;
+}
+
+.build-info {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.build-info p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.status-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.status-controls .btn-secondary {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.parts-table,
+.test-runs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  background: #fafafa;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.parts-table thead,
+.test-runs-table thead {
+  background: #f0f0f0;
+}
+
+.parts-table th,
+.test-runs-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #666;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.parts-table td,
+.test-runs-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.parts-table tr:hover,
+.test-runs-table tr:hover {
+  background: #f5f5f5;
+}
+
+.parts-section .btn-secondary,
+.test-runs-section .btn-secondary {
+  width: 100%;
+  text-align: center;
+}

@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Build {
+  id        String     @id @default(cuid())
+  name      String     @db.VarChar(255)
+  description String?
+  status    BuildStatus @default(PENDING)
+  parts     Part[]
+  testRuns  TestRun[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Part {
+  id        String   @id @default(cuid())
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(255)
+  sku       String   @db.VarChar(100)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([buildId])
+  @@index([sku])
+}
+
+model TestRun {
+  id          String     @id @default(cuid())
+  buildId     String
+  build       Build      @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  status      TestStatus @default(PENDING)
+  result      String?
+  fileUrl     String?    @db.Text
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([buildId])
+  @@index([status])
+}
+
+enum BuildStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+enum TestStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+}
