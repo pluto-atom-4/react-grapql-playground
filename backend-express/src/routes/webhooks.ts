@@ -8,8 +8,8 @@
  */
 
 import { Router } from 'express'
-import { eventBus } from '../services/event-bus.ts'
-import { asyncHandler, AppError } from '../middleware/error.ts'
+import { eventBus } from '../services/event-bus'
+import { asyncHandler, AppError } from '../middleware/error'
 
 const router = Router()
 

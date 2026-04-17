@@ -1,11 +1,11 @@
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
-import uploadRoutes from './routes/upload.ts'
-import webhookRoutes from './routes/webhooks.ts'
-import eventsRoutes from './routes/events.ts'
-import { authMiddleware } from './middleware/auth.ts'
-import { errorHandler } from './middleware/error.ts'
+import uploadRoutes from './routes/upload'
+import webhookRoutes from './routes/webhooks'
+import eventsRoutes from './routes/events'
+import { authMiddleware } from './middleware/auth'
+import { errorHandler } from './middleware/error'
 
 const app = express()
 const PORT = process.env.EXPRESS_PORT || 5000

@@ -15,8 +15,8 @@ import { Router } from 'express'
 import multer, { Multer } from 'multer'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { eventBus } from '../services/event-bus.ts'
-import { asyncHandler, AppError } from '../middleware/error.ts'
+import { eventBus } from '../services/event-bus'
+import { asyncHandler, AppError } from '../middleware/error'
 
 const router = Router()
 
