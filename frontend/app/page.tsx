@@ -1,3 +1,5 @@
+import BuildDashboard from '@/components/build-dashboard'
+
 export default function Page() {
-  return <h1>Dashboard</h1>
+  return <BuildDashboard />
 }
