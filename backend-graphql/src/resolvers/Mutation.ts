@@ -1,5 +1,6 @@
-import { BuildContext } from '../dataloaders'
-import { BuildStatus, TestStatus } from '@prisma/client'
+import { BuildContext } from '../dataloaders';
+import { BuildStatus, TestStatus } from '@prisma/client';
+import { emitEvent } from '../services/event-bus';
 
 /**
  * Mutation resolvers with event emission to Express event bus.
@@ -21,7 +22,7 @@ export const mutationResolver = {
       context: BuildContext
     ) {
       if (!args.name || args.name.trim().length === 0) {
-        throw new Error('name is required')
+        throw new Error('name is required');
       }
 
       const build = await context.prisma.build.create({
@@ -29,12 +30,12 @@ export const mutationResolver = {
           name: args.name.trim(),
           description: args.description?.trim(),
         },
-      })
+      });
 
       // Emit event for real-time SSE (Express event bus)
-      emitEvent('buildCreated', { buildId: build.id, build })
+      emitEvent('buildCreated', { buildId: build.id, build });
 
-      return build
+      return build;
     },
 
     /**
@@ -49,29 +50,27 @@ export const mutationResolver = {
       args: { id: string; status: string },
       context: BuildContext
     ) {
-      const validStatuses = ['PENDING', 'RUNNING', 'COMPLETE', 'FAILED']
+      const validStatuses = ['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'];
       if (!validStatuses.includes(args.status)) {
-        throw new Error(
-          `status must be one of: ${validStatuses.join(', ')}`
-        )
+        throw new Error(`status must be one of: ${validStatuses.join(', ')}`);
       }
 
       const build = await context.prisma.build.findUnique({
         where: { id: args.id },
-      })
+      });
       if (!build) {
-        throw new Error(`Build with id ${args.id} not found`)
+        throw new Error(`Build with id ${args.id} not found`);
       }
 
       const updated = await context.prisma.build.update({
         where: { id: args.id },
         data: { status: args.status as BuildStatus },
-      })
+      });
 
       // Emit event for real-time SSE
-      emitEvent('buildStatusChanged', { buildId: updated.id, build: updated })
+      emitEvent('buildStatusChanged', { buildId: updated.id, build: updated });
 
-      return updated
+      return updated;
     },
 
     /**
@@ -83,21 +82,21 @@ export const mutationResolver = {
       context: BuildContext
     ) {
       if (!args.name || args.name.trim().length === 0) {
-        throw new Error('name is required')
+        throw new Error('name is required');
       }
       if (!args.sku || args.sku.trim().length === 0) {
-        throw new Error('sku is required')
+        throw new Error('sku is required');
       }
       if (args.quantity < 1) {
-        throw new Error('quantity must be >= 1')
+        throw new Error('quantity must be >= 1');
       }
 
       // Verify build exists
       const build = await context.prisma.build.findUnique({
         where: { id: args.buildId },
-      })
+      });
       if (!build) {
-        throw new Error(`Build with id ${args.buildId} not found`)
+        throw new Error(`Build with id ${args.buildId} not found`);
       }
 
       const part = await context.prisma.part.create({
@@ -107,11 +106,11 @@ export const mutationResolver = {
           sku: args.sku.trim(),
           quantity: args.quantity,
         },
-      })
+      });
 
-      emitEvent('partAdded', { buildId: args.buildId, part })
+      emitEvent('partAdded', { buildId: args.buildId, part });
 
-      return part
+      return part;
     },
 
     /**
@@ -120,26 +119,24 @@ export const mutationResolver = {
     async submitTestRun(
       _parent: any,
       args: {
-        buildId: string
-        status: string
-        result?: string
-        fileUrl?: string
+        buildId: string;
+        status: string;
+        result?: string;
+        fileUrl?: string;
       },
       context: BuildContext
     ) {
-      const validStatuses = ['PENDING', 'RUNNING', 'PASSED', 'FAILED']
+      const validStatuses = ['PENDING', 'RUNNING', 'PASSED', 'FAILED'];
       if (!validStatuses.includes(args.status)) {
-        throw new Error(
-          `status must be one of: ${validStatuses.join(', ')}`
-        )
+        throw new Error(`status must be one of: ${validStatuses.join(', ')}`);
       }
 
       // Verify build exists
       const build = await context.prisma.build.findUnique({
         where: { id: args.buildId },
-      })
+      });
       if (!build) {
-        throw new Error(`Build with id ${args.buildId} not found`)
+        throw new Error(`Build with id ${args.buildId} not found`);
       }
 
       const testRun = await context.prisma.testRun.create({
@@ -150,26 +147,17 @@ export const mutationResolver = {
           fileUrl: args.fileUrl,
           completedAt: args.status === 'RUNNING' ? null : new Date(),
         },
-      })
+      });
 
-      emitEvent('testRunSubmitted', { buildId: args.buildId, testRun })
+      emitEvent('testRunSubmitted', { buildId: args.buildId, testRun });
 
-      return testRun
+      return testRun;
     },
   },
-}
+};
 
 /**
  * Emit event to Express event bus.
- *
- * TODO: Implement with:
- * - HTTP POST to Express /events endpoint, or
- * - Shared Redis pub/sub, or
- * - Shared EventEmitter (in-memory for local dev)
- *
- * For now, this is a stub.
+ * Implemented via HTTP POST in services/event-bus.ts.
+ * Errors are logged but don't throw—mutations complete even if events fail.
  */
-function emitEvent(eventName: string, payload: any) {
-  console.log(`[EVENT] ${eventName}:`, JSON.stringify(payload))
-  // TODO: Send to Express event bus
-}

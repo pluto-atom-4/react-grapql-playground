@@ -223,6 +223,53 @@ useEffect(() => {
   });
   return () => eventSource.close();
 }, []);
+```
+
+**Event Bus Architecture** (GraphQL → Express → Frontend):
+
+The real-time event flow connects all three layers:
+
+1. **GraphQL Mutation** (backend-graphql) → Emits event via HTTP POST
+   ```typescript
+   // backend-graphql/src/resolvers/Mutation.ts
+   const build = await context.prisma.build.create({ ... })
+   emitEvent('buildCreated', { buildId: build.id, build })  // HTTP POST to Express
+   return build
+   ```
+
+2. **Express Event Bus** (backend-express) → Receives and broadcasts
+   ```bash
+   POST http://localhost:5000/events/emit
+   {
+     "event": "buildCreated",
+     "payload": { "buildId": "123", "build": {...} },
+     "timestamp": "2026-04-17T21:40:00Z"
+   }
+   ```
+
+3. **Frontend SSE Listener** (frontend) → Receives and updates cache
+   ```typescript
+   // frontend/lib/use-sse-events.ts
+   eventSource.addEventListener('buildCreated', (e) => {
+     const data = JSON.parse(e.data)
+     // Apollo cache updates automatically
+     client.cache.evict({ fieldName: 'builds' })
+     client.cache.gc()
+   })
+   ```
+
+**Event Names** (Standardized across system):
+- `buildCreated` - Emitted by `createBuild()` mutation
+- `buildStatusChanged` - Emitted by `updateBuildStatus()` mutation
+- `partAdded` - Emitted by `addPart()` mutation
+- `testRunSubmitted` - Emitted by `submitTestRun()` mutation
+- `fileUploaded` - Emitted by file upload endpoint
+- `ciResults` - Emitted by CI/CD webhook
+- `sensorData` - Emitted by sensor data webhook
+
+**Configuration**:
+Set `EXPRESS_EVENT_URL` in `.env` to configure the event bus endpoint (default: `http://localhost:5000/events/emit`).
+For Docker environments, use: `EXPRESS_EVENT_URL=http://backend-express:5000/events/emit`
 
 ## Interview Talking Points
 
