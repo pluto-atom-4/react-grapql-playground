@@ -11,9 +11,43 @@ import {
   SUBMIT_TEST_RUN_MUTATION,
 } from './graphql-queries'
 
+// Type definitions for GraphQL responses
+interface Build {
+  id: string
+  name: string
+  description?: string
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface Part {
+  id: string
+  buildId: string
+  name: string
+  sku: string
+  quantity: number
+  createdAt: string
+}
+
+interface TestRun {
+  id: string
+  buildId: string
+  status: string
+  result?: string
+  fileUrl?: string
+  completedAt?: string
+  createdAt: string
+}
+
+interface BuildDetail extends Build {
+  parts: Part[]
+  testRuns: TestRun[]
+}
+
 // Hook: Fetch builds with pagination
 export function useBuilds(limit: number = 10, offset: number = 0) {
-  const { data, loading, error, refetch } = useQuery(BUILDS_QUERY, {
+  const { data, loading, error, refetch } = useQuery<{ builds: Build[] }>(BUILDS_QUERY, {
     variables: { limit, offset },
   })
 
@@ -27,7 +61,7 @@ export function useBuilds(limit: number = 10, offset: number = 0) {
 
 // Hook: Fetch single build with details
 export function useBuildDetail(buildId: string) {
-  const { data, loading, error, refetch } = useQuery(BUILD_DETAIL_QUERY, {
+  const { data, loading, error, refetch } = useQuery<{ build: BuildDetail }>(BUILD_DETAIL_QUERY, {
     variables: { id: buildId },
     skip: !buildId,
   })
@@ -42,7 +76,7 @@ export function useBuildDetail(buildId: string) {
 
 // Hook: Fetch test runs for a build
 export function useTestRuns(buildId: string) {
-  const { data, loading, error, refetch } = useQuery(TEST_RUNS_QUERY, {
+  const { data, loading, error, refetch } = useQuery<{ testRuns: TestRun[] }>(TEST_RUNS_QUERY, {
     variables: { buildId },
     skip: !buildId,
   })
@@ -57,9 +91,12 @@ export function useTestRuns(buildId: string) {
 
 // Hook: Create new build mutation
 export function useCreateBuild() {
-  const [createBuild, { loading, error }] = useMutation(CREATE_BUILD_MUTATION, {
-    refetchQueries: [{ query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } }],
-  })
+  const [createBuild, { loading, error }] = useMutation<{ createBuild: Build }>(
+    CREATE_BUILD_MUTATION,
+    {
+      refetchQueries: [{ query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } }],
+    }
+  )
 
   return {
     createBuild: async (name: string, description?: string) => {
@@ -75,7 +112,9 @@ export function useCreateBuild() {
 
 // Hook: Update build status mutation
 export function useUpdateBuildStatus() {
-  const [updateStatus, { loading, error }] = useMutation(UPDATE_BUILD_STATUS_MUTATION)
+  const [updateStatus, { loading, error }] = useMutation<{ updateBuildStatus: Build }>(
+    UPDATE_BUILD_STATUS_MUTATION
+  )
 
   return {
     updateStatus: async (id: string, status: string) => {
@@ -91,7 +130,7 @@ export function useUpdateBuildStatus() {
 
 // Hook: Add part to build mutation
 export function useAddPart() {
-  const [addPart, { loading, error }] = useMutation(ADD_PART_MUTATION)
+  const [addPart, { loading, error }] = useMutation<{ addPart: Part }>(ADD_PART_MUTATION)
 
   return {
     addPart: async (buildId: string, name: string, sku: string, quantity: number) => {
@@ -107,7 +146,9 @@ export function useAddPart() {
 
 // Hook: Submit test run mutation
 export function useSubmitTestRun() {
-  const [submitTestRun, { loading, error }] = useMutation(SUBMIT_TEST_RUN_MUTATION)
+  const [submitTestRun, { loading, error }] = useMutation<{ submitTestRun: TestRun }>(
+    SUBMIT_TEST_RUN_MUTATION
+  )
 
   return {
     submitTestRun: async (

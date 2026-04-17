@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 /**
  * Integration test for event bus flow: GraphQL → Express → SSE
@@ -21,8 +21,6 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
 
   it('should verify Mutation resolver imports event-bus service', async () => {
     // This test ensures the Mutation resolver has the import in place
-    const content = `import { emitEvent } from '../services/event-bus'`;
-    const mutationFile = await import.meta.url;
     // If this import exists, the test passes
     expect(true).toBe(true);
   });
@@ -31,22 +29,31 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
     const { emitEvent } = await import('../../services/event-bus');
 
     // Mock fetch to capture the payload
-    let capturedPayload: any;
-    global.fetch = vi.fn(async (_url: string, options: any) => {
-      capturedPayload = JSON.parse(options.body);
-      return {
-        ok: true,
-        text: async () => 'OK',
-      };
+    interface EventPayload {
+      event: string;
+      payload: Record<string, unknown>;
+      timestamp?: string;
+    }
+    let capturedPayload: EventPayload | null = null;
+    global.fetch = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
+      if (options && 'body' in options) {
+        capturedPayload = JSON.parse(options.body as string) as EventPayload;
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     });
 
     await emitEvent('buildCreated', { buildId: '123', name: 'Test Build' });
 
-    expect(capturedPayload).toHaveProperty('event');
-    expect(capturedPayload).toHaveProperty('payload');
-    expect(capturedPayload).toHaveProperty('timestamp');
-    expect(capturedPayload.event).toBe('buildCreated');
-    expect(capturedPayload.payload.buildId).toBe('123');
+    expect(capturedPayload).not.toBeNull();
+    const payload = capturedPayload as unknown as EventPayload;
+    expect(payload).toHaveProperty('event');
+    expect(payload).toHaveProperty('payload');
+    expect(payload).toHaveProperty('timestamp');
+    expect(payload.event).toBe('buildCreated');
+    expect(payload.payload.buildId).toBe('123');
   });
 
   it('should verify Express event listeners are registered', async () => {
