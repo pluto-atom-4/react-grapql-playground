@@ -20,6 +20,37 @@ import { asyncHandler, AppError } from '../middleware/error'
 
 const router: ExpressRouter = Router()
 
+// MIME type and extension whitelist for manufacturing domain
+// Supports logs, test reports, documents, spreadsheets, images, and archives
+const ALLOWED_MIME_TYPES = [
+  'text/plain',
+  'text/csv',
+  'application/json',
+  'application/xml',
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'application/zip',
+  'application/gzip',
+  'application/x-gzip',
+]
+
+const ALLOWED_EXTENSIONS = [
+  '.txt',
+  '.log',
+  '.csv',
+  '.json',
+  '.xml',
+  '.pdf',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.zip',
+  '.gz',
+  '.tar',
+  '.tar.gz',
+]
+
 // Configure Multer
 const uploadDir = path.join(process.cwd(), 'uploads')
 const storage = multer.diskStorage({
@@ -37,12 +68,40 @@ const upload: Multer = multer({
     fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (_req, file, cb) => {
-    // Accept any file type for flexibility
-    if (file) {
-      cb(null, true)
-    } else {
-      cb(new AppError(400, 'No file provided'))
+    if (!file) {
+      return cb(new AppError(400, 'No file provided'))
     }
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      return cb(
+        new AppError(
+          400,
+          `Invalid file type: '${file.mimetype}' is not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+        )
+      )
+    }
+
+    // Validate file extension
+    const ext = path.extname(file.originalname).toLowerCase()
+    const isValidExt = ALLOWED_EXTENSIONS.some((allowedExt) => {
+      // Handle .tar.gz as a special case
+      if (allowedExt === '.tar.gz') {
+        return file.originalname.toLowerCase().endsWith('.tar.gz')
+      }
+      return ext === allowedExt
+    })
+
+    if (!isValidExt) {
+      return cb(
+        new AppError(
+          400,
+          `Invalid file extension: '${ext}' is not allowed. Allowed extensions: ${ALLOWED_EXTENSIONS.join(', ')}`
+        )
+      )
+    }
+
+    cb(null, true)
   },
 })
 
