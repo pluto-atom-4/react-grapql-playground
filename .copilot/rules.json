@@ -1,0 +1,112 @@
+{
+  "enforcement": {
+    "mode": "agent-exclusive",
+    "description": "All Copilot interactions must route through project-specific agents",
+    "enabled": true
+  },
+  "approved_agents": [
+    {
+      "id": "developer",
+      "name": "Developer",
+      "file": "agents/developer.md",
+      "purpose": "Implementation guidance for coding tasks across all layers",
+      "scope": ["frontend", "backend-graphql", "backend-express"],
+      "when_to_use": "Writing code, building features, implementing patterns"
+    },
+    {
+      "id": "orchestrator",
+      "name": "Orchestrator",
+      "file": "agents/orchestrator.md",
+      "purpose": "Coordinate work across frontend, GraphQL, and Express layers",
+      "scope": ["frontend", "backend-graphql", "backend-express"],
+      "when_to_use": "Work spans multiple layers, features blocked, coordination needed"
+    },
+    {
+      "id": "product-manager",
+      "name": "Product Manager",
+      "file": "agents/product-manager.md",
+      "purpose": "Define features aligned with manufacturing domain",
+      "scope": ["requirements", "acceptance-criteria", "interview-prep"],
+      "when_to_use": "Defining features, writing requirements, domain validation"
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "file": "agents/reviewer.md",
+      "purpose": "Thorough code review across all layers",
+      "scope": ["frontend", "backend-graphql", "backend-express"],
+      "when_to_use": "PR review, code quality gates, architectural validation"
+    },
+    {
+      "id": "quality-assurance",
+      "name": "Quality Assurance",
+      "file": "agents/quality-assurance.md",
+      "purpose": "Define and enforce code quality standards",
+      "scope": ["linting", "formatting", "testing", "security"],
+      "when_to_use": "Running QA checks, enforcing standards, pre-commit validation"
+    },
+    {
+      "id": "tester",
+      "name": "Tester",
+      "file": "agents/tester.md",
+      "purpose": "Test strategy and test writing guidance",
+      "scope": ["frontend", "backend-graphql", "backend-express"],
+      "when_to_use": "Writing tests, improving coverage, debugging test failures"
+    }
+  ],
+  "interaction_routing": {
+    "code_implementation": "@developer",
+    "cross_layer_coordination": "@orchestrator",
+    "requirements_definition": "@product-manager",
+    "code_review": "@reviewer",
+    "quality_checks": "@quality-assurance",
+    "test_strategy": "@tester",
+    "architecture_decisions": "@orchestrator",
+    "performance_optimization": "@reviewer + @orchestrator",
+    "debugging": "@developer + @tester"
+  },
+  "usage_policy": {
+    "required": true,
+    "enforcement_level": "strict",
+    "description": "All Copilot CLI interactions must explicitly mention a project agent using @agent-name syntax",
+    "examples": [
+      "@developer How do I implement DataLoader?",
+      "@orchestrator Help coordinate this feature across layers",
+      "@reviewer Review this resolver for N+1 issues",
+      "@tester What's the coverage requirement?",
+      "@quality-assurance Run full QA checks",
+      "@product-manager Define acceptance criteria"
+    ]
+  },
+  "shared_context": {
+    "monorepo_structure": ["frontend", "backend-graphql", "backend-express"],
+    "key_patterns": [
+      "Dual-backend architecture (GraphQL + Express)",
+      "DataLoader for N+1 prevention",
+      "Optimistic updates with Apollo Client",
+      "Real-time SSE (Server-Sent Events)",
+      "Event bus coordination",
+      "Manufacturing domain model (Build, Part, TestRun)"
+    ],
+    "testing_tools": ["Vitest", "React Testing Library", "Apollo MockedProvider", "supertest"],
+    "build_commands": {
+      "dev": "pnpm dev",
+      "test": "pnpm test",
+      "lint": "pnpm lint",
+      "build": "pnpm build"
+    }
+  },
+  "escalation_path": {
+    "blocked_by_another_layer": "@orchestrator",
+    "architectural_issue": "@orchestrator",
+    "test_failures": "@tester -> @developer",
+    "code_quality": "@quality-assurance -> @reviewer",
+    "feature_ambiguity": "@product-manager"
+  },
+  "metadata": {
+    "version": "1.0",
+    "created": "2026-04-17",
+    "project": "react-grapql-playground",
+    "total_agents": 6
+  }
+}
