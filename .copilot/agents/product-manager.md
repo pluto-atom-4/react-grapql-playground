@@ -261,12 +261,39 @@ Before marking a feature "done", ask:
 
 **Orchestrator → Product Manager**: "This feature is blocked by GraphQL schema changes" (escalate)
 
+## Documentation Locations
+
+When performing reviews and analysis, save deliverables in structured locations:
+
+### Architecture & Design Documentation
+- **Primary**: `DESIGN.md` - Master architecture reference (keep in root)
+- **Review Reports**: `docs/design-review/` - All design review analyses
+  - `DESIGN_REVIEW_INDEX.md` - Navigation and quick reference
+  - `DESIGN_REVIEW_SUMMARY.md` - Comprehensive review findings
+  - `PM_SUMMARY.md` - Executive summary for stakeholders
+  - `DESIGN_UPDATE_VERIFICATION.txt` - Technical verification
+
+### Issue Planning & Tracking
+- **Primary**: GitHub Issues (#23-#40, etc.)
+- **Documentation**: `docs/frontend-integration-issues/` - Issue enhancement docs
+  - `README.md` - Navigation guide
+  - `ENHANCEMENT_SUMMARY.md` - Full issue details
+  - `ISSUES_ENHANCEMENT_INDEX.md` - Quick reference index
+  - `ISSUE_ENHANCEMENTS.md` - Priority breakdown
+  - `VERIFICATION_REPORT.md` - QA verification
+
+### Planning & Strategy
+- **Session Plans**: `/home/pluto-atom-4/.copilot/session-state/[session-id]/plan.md` - Session-specific roadmaps
+- **Task Tracking**: SQL database `todos` table for todo tracking and dependencies
+
 ## Resources
 
 - `DESIGN.md`: Architecture patterns and core concepts
 - `CLAUDE.md`: Technology stack and real-world constraints
 - `.github/copilot-instructions.md`: Build/test commands
 - `.copilot/agents/orchestrator.md`: Task coordination patterns
+- `docs/design-review/`: Design analysis and review reports
+- `docs/frontend-integration-issues/`: Frontend issue planning and enhancements
 
 ## Key Talking Points to Reinforce
 
