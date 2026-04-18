@@ -11,14 +11,17 @@
  * Keeps connection open and broadcasts events to all connected clients.
  */
 
-import { Router, type Router as ExpressRouter, Request, Response } from 'express'
-import { v4 as uuidv4 } from 'uuid'
-import { eventBus } from '../services/event-bus'
+import { Router, type Router as ExpressRouter, Request, Response } from 'express';
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { eventBus } from '../services/event-bus';
+import { asyncHandler } from '../middleware/error';
+import { validateEventSecret } from '../middleware/validateEventSecret';
 
-const router: ExpressRouter = Router()
+const router: ExpressRouter = Router();
 
 // Track connected clients for cleanup
-const connectedClients: Set<Response> = new Set()
+const connectedClients: Set<Response> = new Set();
 
 /**
  * GET /events - SSE endpoint
@@ -26,10 +29,10 @@ const connectedClients: Set<Response> = new Set()
  */
 router.get('/', (_req: Request, res: Response) => {
   // Set SSE headers
-  res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Cache-Control', 'no-cache')
-  res.setHeader('Connection', 'keep-alive')
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
   // Send initial connection message
   res.write(
@@ -39,32 +42,32 @@ router.get('/', (_req: Request, res: Response) => {
       clientId: uuidv4(),
       timestamp: new Date().toISOString(),
     })}\n\n`
-  )
+  );
 
   // Track this client
-  connectedClients.add(res)
+  connectedClients.add(res);
 
   // Send keep-alive heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
     if (res.writable) {
-      res.write(`: heartbeat ${new Date().toISOString()}\n\n`)
+      res.write(`: heartbeat ${new Date().toISOString()}\n\n`);
     } else {
-      clearInterval(heartbeat)
-      connectedClients.delete(res)
+      clearInterval(heartbeat);
+      connectedClients.delete(res);
     }
-  }, 30000)
+  }, 30000);
 
   // Handle disconnect
   res.on('close', () => {
-    clearInterval(heartbeat)
-    connectedClients.delete(res)
-  })
+    clearInterval(heartbeat);
+    connectedClients.delete(res);
+  });
 
   res.on('error', () => {
-    clearInterval(heartbeat)
-    connectedClients.delete(res)
-  })
-})
+    clearInterval(heartbeat);
+    connectedClients.delete(res);
+  });
+});
 
 /**
  * Broadcast event to all connected SSE clients
@@ -74,34 +77,51 @@ function broadcastEvent(eventType: string, data: unknown) {
     type: eventType,
     data,
     timestamp: new Date().toISOString(),
-  }
+  };
 
   connectedClients.forEach((client) => {
     if (client.writable) {
-      client.write(
-        `event: ${eventType}\ndata: ${JSON.stringify(message)}\n\n`
-      )
+      client.write(`event: ${eventType}\ndata: ${JSON.stringify(message)}\n\n`);
     } else {
-      connectedClients.delete(client)
+      connectedClients.delete(client);
     }
-  })
+  });
 }
 
 /**
  * Register event listeners
  * These will broadcast to all connected SSE clients
  */
+
+// Events from file uploads and webhooks
 eventBus.on('fileUploaded', (data) => {
-  broadcastEvent('fileUploaded', data)
-})
+  broadcastEvent('fileUploaded', data);
+});
 
 eventBus.on('ciResults', (data) => {
-  broadcastEvent('ciResults', data)
-})
+  broadcastEvent('ciResults', data);
+});
 
 eventBus.on('sensorData', (data) => {
-  broadcastEvent('sensorData', data)
-})
+  broadcastEvent('sensorData', data);
+});
+
+// Events from GraphQL mutations
+eventBus.on('buildCreated', (data) => {
+  broadcastEvent('buildCreated', data);
+});
+
+eventBus.on('buildStatusChanged', (data) => {
+  broadcastEvent('buildStatusChanged', data);
+});
+
+eventBus.on('partAdded', (data) => {
+  broadcastEvent('partAdded', data);
+});
+
+eventBus.on('testRunSubmitted', (data) => {
+  broadcastEvent('testRunSubmitted', data);
+});
 
 /**
  * GET /health - Health check
@@ -112,7 +132,46 @@ router.get('/health', (_req, res) => {
     status: 'ok',
     connectedClients: connectedClients.size,
     timestamp: new Date().toISOString(),
-  })
-})
+  });
+});
 
-export default router
+/**
+ * POST /emit - Receive events from GraphQL backend
+ * Accepts HTTP POST from Apollo GraphQL server when mutations complete.
+ * 
+ * Authentication: Requires Authorization header with shared event secret
+ * Prevents event injection attacks from unauthorized clients
+ * 
+ * Body format: { event: string, payload: any, timestamp?: string }
+ */
+router.post(
+  '/emit',
+  express.json(),
+  validateEventSecret,  // ✅ Authenticate request before processing
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { event, payload } = req.body;
+
+    if (!event) {
+      res.status(400).json({
+        error: 'missing_event',
+        message: 'Request body must include "event" field',
+      });
+      return;
+    }
+
+    if (!payload) {
+      res.status(400).json({
+        error: 'missing_payload',
+        message: 'Request body must include "payload" field',
+      });
+      return;
+    }
+
+    // Emit to event bus, which broadcasts to all SSE clients
+    eventBus.emit(event, payload);
+
+    res.json({ ok: true, event });
+  })
+);
+
+export default router;

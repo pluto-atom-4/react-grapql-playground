@@ -38,6 +38,32 @@ services:
   #     - boltline_network
   #   restart: unless-stopped
 
+  # Optional: Backend services for containerized deployment
+  # backend-graphql:
+  #   build: ./backend-graphql
+  #   container_name: boltline_graphql
+  #   environment:
+  #     DATABASE_URL: ${DATABASE_URL}
+  #     EXPRESS_EVENT_SECRET: ${EXPRESS_EVENT_SECRET:-dev-event-secret-12345}
+  #     EXPRESS_EVENT_URL: http://backend-express:5000/events/emit
+  #   ports:
+  #     - '4000:4000'
+  #   depends_on:
+  #     postgresql:
+  #       condition: service_healthy
+  #   networks:
+  #     - boltline_network
+  #
+  # backend-express:
+  #   build: ./backend-express
+  #   container_name: boltline_express
+  #   environment:
+  #     EXPRESS_EVENT_SECRET: ${EXPRESS_EVENT_SECRET:-dev-event-secret-12345}
+  #   ports:
+  #     - '5000:5000'
+  #   networks:
+  #     - boltline_network
+
 volumes:
   postgres_data:
   # redis_data:
