@@ -1,6 +1,7 @@
 # Design & Architecture Guide
 
-This document outlines the dual-backend architecture for building a production-ready React/GraphQL application and interview preparation patterns.
+This document outlines the dual-backend architecture for building a production-ready React/GraphQL application and
+interview preparation patterns.
 
 ## Project Structure
 
@@ -99,16 +100,16 @@ react-grapql-playground/
 In production systems (like Boltline), **separation of concerns** improves scalability and flexibility:
 
 - **Apollo GraphQL**: Handles structured data (Build, Part, TestRun CRUD operations)
-  - Normalized queries and mutations
-  - Real-time subscriptions (if needed)
-  - Type-safe API contract
-  - Cached responses reduce database load
+    - Normalized queries and mutations
+    - Real-time subscriptions (if needed)
+    - Type-safe API contract
+    - Cached responses reduce database load
 
 - **Express.js**: Handles auxiliary functionality
-  - File uploads (test reports, CAD files)
-  - Incoming webhooks (CI/CD results, sensor data)
-  - Real-time event streams (Server-Sent Events or WebSocket)
-  - Legacy or custom endpoints
+    - File uploads (test reports, CAD files)
+    - Incoming webhooks (CI/CD results, sensor data)
+    - Real-time event streams (Server-Sent Events or WebSocket)
+    - Legacy or custom endpoints
 
 Both backends can share the same PostgreSQL database and authentication, but operate independently.
 
@@ -119,6 +120,7 @@ Both backends can share the same PostgreSQL database and authentication, but ope
 **Purpose**: Provide a GraphQL API for Build, Part, TestRun CRUD operations.
 
 **Responsibilities**:
+
 - Query/mutation operations on manufacturing domain
 - DataLoader for efficient N+1 prevention (planned, not yet implemented)
 - Error handling and validation
@@ -126,6 +128,7 @@ Both backends can share the same PostgreSQL database and authentication, but ope
 - Emit events to Express event bus for real-time updates (TODO: currently stub only)
 
 **Current Status**: ✅ **FUNCTIONAL** (Resolvers implemented and tested)
+
 - Queries: `builds(limit, offset)`, `build(id)`, `testRuns(buildId)` ✅
 - Mutations: `createBuild`, `updateBuildStatus`, `addPart`, `submitTestRun` ✅
 - DataLoader: **Planned** - not yet implemented (marked as TODO in resolvers)
@@ -198,16 +201,16 @@ enum TestStatus {
 ```typescript
 // backend-graphql/src/resolvers/Query.ts
 export const queryResolvers = {
-  builds: async (_, { limit, offset }, { db, dataloaders }) => {
+  builds: async (_, {limit, offset}, {db, dataloaders}) => {
     return db.builds.findMany({
       skip: offset,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: {createdAt: "desc"},
     });
   },
-  
-  build: async (_, { id }, { db }) => {
-    return db.builds.findUnique({ where: { id } });
+
+  build: async (_, {id}, {db}) => {
+    return db.builds.findUnique({where: {id}});
   },
 };
 
@@ -216,13 +219,13 @@ export const mutationResolver = {
   Mutation: {
     async updateBuildStatus(_parent, args: { id: string; status: string }, context) {
       const updated = await context.prisma.build.update({
-        where: { id: args.id },
-        data: { status: args.status as BuildStatus },
+        where: {id: args.id},
+        data: {status: args.status as BuildStatus},
       })
-      
+
       // CURRENTLY: Emits to console.log (TODO: Wire to Express event bus)
-      emitEvent('buildStatusChanged', { buildId: updated.id, build: updated })
-      
+      emitEvent('buildStatusChanged', {buildId: updated.id, build: updated})
+
       return updated
     },
   },
@@ -231,7 +234,7 @@ export const mutationResolver = {
 /**
  * emitEvent: Stub function (currently logs to console)
  * TODO: Implement with Redis pub/sub or HTTP POST to Express
- * 
+ *
  * Production options:
  * 1. Redis Pub/Sub: await redis.publish('buildStatusChanged', JSON.stringify(event))
  * 2. HTTP Webhook: await fetch('http://localhost:5000/webhook/events', { method: 'POST', body })
@@ -245,10 +248,10 @@ function emitEvent(eventName: string, payload: any) {
 // backend-graphql/src/resolvers/Build.ts
 export const buildResolvers = {
   Build: {
-    parts: (parent, _, { loaders }) => 
+    parts: (parent, _, {loaders}) =>
       loaders.partLoader.load(parent.id),
-    
-    testRuns: (parent, _, { loaders }) =>
+
+    testRuns: (parent, _, {loaders}) =>
       loaders.testRunLoader.load(parent.id),
   },
 };
@@ -265,9 +268,9 @@ import DataLoader from "dataloader";
 export const createPartLoader = (db) => {
   return new DataLoader(async (buildIds) => {
     const parts = await db.parts.findMany({
-      where: { buildId: { in: buildIds } },
+      where: {buildId: {in: buildIds}},
     });
-    
+
     // Return array in same order as buildIds
     return buildIds.map(id =>
       parts.filter(p => p.buildId === id)
@@ -277,11 +280,14 @@ export const createPartLoader = (db) => {
 ```
 
 **Current Approach**: Resolvers fetch data directly without batch loading.
+
 - `Query.builds()` returns paginated results (no DataLoader needed)
 - `Build.parts` and `Build.testRuns` are NOT yet implemented (would benefit from DataLoader)
 
 **Interview Talking Point** (when implemented):
-> "DataLoader prevents N+1 queries by batching related queries together. If a dashboard loads 50 builds with nested parts, DataLoader combines 50 individual part queries into a single database query using `IN` clauses—reducing database round trips from 1+50M to 1+1."
+> "DataLoader prevents N+1 queries by batching related queries together. If a dashboard loads 50 builds with nested
+> parts, DataLoader combines 50 individual part queries into a single database query using `IN` clauses—reducing database
+> round trips from 1+50M to 1+1."
 
 ---
 
@@ -290,12 +296,14 @@ export const createPartLoader = (db) => {
 **Purpose**: Handle file uploads, incoming webhooks, and real-time event streaming.
 
 **Responsibilities**:
+
 - ✅ File upload endpoint with storage (S3, local, etc.)
 - ✅ Webhook handlers for external events (CI/CD, sensors)
 - ✅ Server-Sent Events (SSE) for real-time notifications
 - 🔴 Connect to GraphQL mutations (BLOCKED - Issue #7: emitEvent() is stub only)
 
 **Current Status**: ✅ **PRODUCTION READY** (54/54 tests passing)
+
 - File uploads with MIME type whitelist ✅
 - Webhook handlers for CI results and sensor data ✅
 - SSE streaming to frontend with heartbeat and cleanup ✅
@@ -339,7 +347,7 @@ const upload = multer({
       cb(null, `${fileId}${ext}`);
     },
   }),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  limits: {fileSize: 50 * 1024 * 1024}, // 50MB
   fileFilter: (_req, file, cb) => {
     // ✅ MIME type validation (Issue #19 resolved)
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
@@ -351,14 +359,14 @@ const upload = multer({
 
 router.post("/", upload.single("file"), async (req, res) => {
   const fileId = path.parse(req.file.filename).name;
-  
+
   // ✅ Emit event to event bus for SSE broadcast
   eventBus.emitFileUploaded({
     fileId,
     buildId: req.body.buildId,
     fileName: req.file.originalname,
   });
-  
+
   res.json({
     fileId,
     fileName: req.file.originalname,
@@ -368,6 +376,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 ```
 
 **Key Features**:
+
 - ✅ UUID filenames prevent collisions
 - ✅ MIME type whitelist (PDF, XLSX, images, archives)
 - ✅ File size limit (50MB)
@@ -385,14 +394,14 @@ import { Router } from "express";
 import { eventBus } from "../services/event-bus";
 
 router.post("/ci-results", async (req, res) => {
-  const { buildId, status, testsPassed, testsFailed } = req.body;
-  
+  const {buildId, status, testsPassed, testsFailed} = req.body;
+
   try {
     // Validate input
     if (!buildId || !status) {
-      return res.status(400).json({ error: "buildId and status required" });
+      return res.status(400).json({error: "buildId and status required"});
     }
-    
+
     // Emit to event bus for real-time subscribers
     eventBus.emitCIResults({
       buildId,
@@ -400,31 +409,32 @@ router.post("/ci-results", async (req, res) => {
       testsPassed,
       testsFailed,
     });
-    
-    res.json({ success: true });
+
+    res.json({success: true});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({error: error.message});
   }
 });
 
 router.post("/sensor-data", async (req, res) => {
-  const { buildId, sensorType, value } = req.body;
-  
+  const {buildId, sensorType, value} = req.body;
+
   try {
     eventBus.emitSensorData({
       buildId,
       sensorType,
       value,
     });
-    
-    res.json({ success: true });
+
+    res.json({success: true});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({error: error.message});
   }
 });
 ```
 
 **Current Limitations**:
+
 - ✅ Emits to local SSE subscribers only
 - 🔴 Does NOT call Apollo mutations (blocked by Issue #7)
 - 🔴 No verification of webhook signatures (security enhancement)
@@ -446,7 +456,7 @@ router.get("/", (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  
+
   // Track client and send connection message
   connectedClients.add(res);
   res.write(`data: ${JSON.stringify({
@@ -454,7 +464,7 @@ router.get("/", (_req: Request, res: Response) => {
     clientId: uuidv4(),
     timestamp: new Date().toISOString(),
   })}\n\n`);
-  
+
   // ✅ Send keep-alive heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
     if (res.writable) {
@@ -464,7 +474,7 @@ router.get("/", (_req: Request, res: Response) => {
       connectedClients.delete(res);
     }
   }, 30000);
-  
+
   // Clean up on disconnect
   res.on("close", () => {
     clearInterval(heartbeat);
@@ -486,8 +496,8 @@ eventBus.on("sensorData", (data) => {
 });
 
 function broadcastEvent(eventType: string, data: unknown) {
-  const message = { type: eventType, data, timestamp: new Date().toISOString() };
-  
+  const message = {type: eventType, data, timestamp: new Date().toISOString()};
+
   connectedClients.forEach((client) => {
     if (client.writable) {
       client.write(`event: ${eventType}\ndata: ${JSON.stringify(message)}\n\n`);
@@ -499,6 +509,7 @@ function broadcastEvent(eventType: string, data: unknown) {
 ```
 
 **Key Features**:
+
 - ✅ SSE connection established with unique clientId
 - ✅ Heartbeat every 30s to prevent connection timeout
 - ✅ Proper cleanup on client disconnect
@@ -513,6 +524,7 @@ function broadcastEvent(eventType: string, data: unknown) {
 **Current Status**: 🔴 **INCOMPLETE - 18 ISSUES IDENTIFIED** (See Implementation Roadmap below)
 
 **Blockers**:
+
 - Apollo Client singleton pattern broken (recreated on each render) - Issue #23
 - TypeScript compilation broken (missing GraphQL code generation) - Issue #24
 - Server Components not implemented - Issue #26
@@ -536,33 +548,35 @@ function SSEInitializer() {
   return null;
 }
 
-export function ApolloWrapper({ children }: { children: React.ReactNode }) {
+export function ApolloWrapper({children}: { children: React.ReactNode }) {
   const client = makeClient();  // 🔴 ISSUE #23: Creates new instance on EVERY render!
-  
+
   return (
-    <ApolloProvider client={client}>
-      <SSEInitializer />
+    <ApolloProvider client = {client} >
+      <SSEInitializer / >
       {children}
-    </ApolloProvider>
+      < /ApolloProvider>
   );
 }
 ```
 
 **Problem**: `makeClient()` is called on every render, creating a new Apollo Client instance.
+
 - Apollo cache is lost on re-renders
 - Subscriptions reconnect unnecessarily
 - Performance impact
 
 **Fix Required** (Issue #23):
+
 ```typescript
 // frontend/lib/apollo-client.ts (FIXED VERSION)
 let client: ApolloClient<NormalizedCacheObject> | null = null;
 
 export function makeClient() {
   if (typeof window === 'undefined') {
-    return new ApolloClient({ ... }); // SSR: create new each time
+    return new ApolloClient({...}); // SSR: create new each time
   }
-  
+
   if (!client) {
     client = new ApolloClient({
       ssrMode: false,
@@ -573,7 +587,7 @@ export function makeClient() {
       }),
     });
   }
-  
+
   return client;
 }
 ```
@@ -584,7 +598,7 @@ export function makeClient() {
 // frontend/components/FileUploader.tsx
 import { useState } from "react";
 
-export function FileUploader({ buildId }) {
+export function FileUploader({buildId}) {
   const [loading, setLoading] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -601,7 +615,7 @@ export function FileUploader({ buildId }) {
         method: "POST",
         body: formData,
       });
-      const { fileId, url } = await res.json();
+      const {fileId, url} = await res.json();
       console.log("File uploaded:", url);
     } finally {
       setLoading(false);
@@ -609,12 +623,13 @@ export function FileUploader({ buildId }) {
   };
 
   return (
-    <input 
-      type="file" 
-      onChange={handleUpload} 
-      disabled={loading}
-    />
-  );
+    <input
+      type = "file"
+  onChange = {handleUpload}
+  disabled = {loading}
+  />
+)
+  ;
 }
 ```
 
@@ -632,29 +647,29 @@ import { useEffect, useRef } from "react";
 export function useSSEEvents() {
   const client = useApolloClient();
   const eventSourceRef = useRef<EventSource | null>(null);
-  
+
   useEffect(() => {
     const expressUrl = process.env.NEXT_PUBLIC_EXPRESS_URL || "http://localhost:5000";
     const eventSource = new EventSource(`${expressUrl}/events`);
-    
+
     // ✅ Listen to Express event bus events
     eventSource.addEventListener("fileUploaded", () => {
-      client.cache.evict({ fieldName: "uploads" });
+      client.cache.evict({fieldName: "uploads"});
       client.cache.gc();
     });
-    
+
     eventSource.addEventListener("ciResults", () => {
-      client.cache.evict({ fieldName: "builds" });
+      client.cache.evict({fieldName: "builds"});
       client.cache.gc();
     });
-    
+
     eventSource.addEventListener("sensorData", () => {
-      client.cache.evict({ fieldName: "telemetry" });
+      client.cache.evict({fieldName: "telemetry"});
       client.cache.gc();
     });
-    
+
     eventSourceRef.current = eventSource;
-    
+
     return () => {
       eventSourceRef.current?.close();
     };
@@ -663,12 +678,14 @@ export function useSSEEvents() {
 ```
 
 **Current Behavior**:
+
 - ✅ Connects to Express SSE endpoint
 - ✅ Listens for events: fileUploaded, ciResults, sensorData
 - ✅ Evicts Apollo cache on events (forces refetch)
 - 🔴 Issue: No buildStatusChanged event (blocked by Issue #7)
 
 **Missing Event Flow**:
+
 ```
 GraphQL Mutation (updateBuildStatus)
   ↓
@@ -687,17 +704,18 @@ GraphQL Mutation (updateBuildStatus)
 
 ### Project Status Summary
 
-| Component | Status | Tests | Issues | Notes |
-|-----------|--------|-------|--------|-------|
-| **Express Backend** | ✅ READY | 54/54 ✅ | #5, #16, #18, #19 | File uploads, webhooks, SSE (PROD) |
-| **GraphQL Backend** | ✅ READY | TBD | #7 | Resolvers work, event emission TODO |
-| **Frontend** | 🔴 BLOCKED | TBD | #23-#40 (18 issues) | Apollo singleton broken, TS compilation broken |
-| **GraphQL ↔ Express Event Bus** | 🔴 TODO | N/A | #7 | Stub implementation only |
-| **GraphQL DataLoader** | 🔴 TODO | N/A | TBD | N+1 prevention not yet implemented |
+| Component                       | Status     | Tests   | Issues              | Notes                                          |
+|---------------------------------|------------|---------|---------------------|------------------------------------------------|
+| **Express Backend**             | ✅ READY    | 54/54 ✅ | #5, #16, #18, #19   | File uploads, webhooks, SSE (PROD)             |
+| **GraphQL Backend**             | ✅ READY    | TBD     | #7                  | Resolvers work, event emission TODO            |
+| **Frontend**                    | 🔴 BLOCKED | TBD     | #23-#40 (18 issues) | Apollo singleton broken, TS compilation broken |
+| **GraphQL ↔ Express Event Bus** | 🔴 TODO    | N/A     | #7                  | Stub implementation only                       |
+| **GraphQL DataLoader**          | 🔴 TODO    | N/A     | TBD                 | N+1 prevention not yet implemented             |
 
 ### Critical Path to Interview-Ready (5-7 hours)
 
 **Blocking Issues** (must fix first):
+
 1. **Issue #23** ⚠️ HIGH: Apollo Client singleton pattern - 30 mins
 2. **Issue #24** ⚠️ HIGH: TypeScript compilation - 45 mins
 3. **Issue #26** ⚠️ HIGH: Server Components pattern - 1 hour
@@ -705,6 +723,7 @@ GraphQL Mutation (updateBuildStatus)
 5. **Issue #7** 🔴 CRITICAL: GraphQL → Express event bus - 1 hour
 
 **Secondary Issues** (polish):
+
 6. **Issue #25**: Optimistic updates for mutations - 1 hour
 7. **Issue #28**: Error handling across layers - 45 mins
 8. **Issue #29**: Loading states - 30 mins
@@ -722,6 +741,7 @@ GraphQL Mutation (updateBuildStatus)
 **Decision**: Separate Apollo GraphQL and Express.js into two independent backends.
 
 **Rationale**:
+
 - **Scalability**: File uploads don't block GraphQL queries. Both can scale independently.
 - **Clarity**: GraphQL handles structured data (CRUD), Express handles events/webhooks.
 - **Pattern Match**: Production systems (Shopify, GitHub, Boltline) use this separation.
@@ -734,6 +754,7 @@ GraphQL Mutation (updateBuildStatus)
 **Decision**: Use SSE for one-directional real-time updates.
 
 **Rationale**:
+
 - **Simplicity**: SSE is simpler protocol than WebSocket (HTTP-based, no handshake).
 - **One-directional**: Frontend only receives updates; Express doesn't need client messages.
 - **Upgrade Path**: Easy to upgrade to WebSocket later if bidirectional needed.
@@ -746,6 +767,7 @@ GraphQL Mutation (updateBuildStatus)
 **Decision**: Use DataLoader to batch related queries.
 
 **Rationale**:
+
 - **Performance**: Reduces N+1 queries (1 + N queries becomes 1 + 1 query).
 - **Example**: 50 builds with nested parts → 2 queries instead of 1 + 50 + 50×M.
 - **Standard**: Apollo/GraphQL best practice, used by GitHub, Twitter, Shopify.
@@ -757,6 +779,7 @@ GraphQL Mutation (updateBuildStatus)
 **Decision**: Stateless JWT tokens shared across Apollo and Express.
 
 **Rationale**:
+
 - **Stateless**: No session storage; each service validates independently.
 - **Scalability**: Works with distributed microservices (each service has JWT_SECRET).
 - **Standard**: Industry standard (Auth0, Firebase, GitHub use JWT).
@@ -768,6 +791,7 @@ GraphQL Mutation (updateBuildStatus)
 **Decision**: Use Server Components for data fetching, Client Components for interactivity.
 
 **Rationale**:
+
 - **Performance**: Server Components reduce JavaScript bundle size.
 - **Security**: Secrets hidden from client (API keys, tokens).
 - **Caching**: Built-in server-side caching of queries.
@@ -849,14 +873,14 @@ GraphQL Mutation (updateBuildStatus)
 
 ### Event Names (Express Event Bus)
 
-| Event | Emitter | Payload | Subscribers |
-|-------|---------|---------|-------------|
-| `fileUploaded` | POST /upload | { fileId, buildId, fileName } | SSE clients |
-| `ciResults` | POST /webhooks/ci-results | { buildId, status, testsPassed, testsFailed } | SSE clients |
-| `sensorData` | POST /webhooks/sensor-data | { buildId, sensorType, value } | SSE clients |
-| `buildStatusChanged` | GraphQL mutation | { buildId, status } | **TODO: Wire from GraphQL** |
-| `buildCreated` | GraphQL mutation | { buildId, build } | **TODO: Wire from GraphQL** |
-| `testRunSubmitted` | GraphQL mutation | { buildId, testRun } | **TODO: Wire from GraphQL** |
+| Event                | Emitter                    | Payload                                       | Subscribers                 |
+|----------------------|----------------------------|-----------------------------------------------|-----------------------------|
+| `fileUploaded`       | POST /upload               | { fileId, buildId, fileName }                 | SSE clients                 |
+| `ciResults`          | POST /webhooks/ci-results  | { buildId, status, testsPassed, testsFailed } | SSE clients                 |
+| `sensorData`         | POST /webhooks/sensor-data | { buildId, sensorType, value }                | SSE clients                 |
+| `buildStatusChanged` | GraphQL mutation           | { buildId, status }                           | **TODO: Wire from GraphQL** |
+| `buildCreated`       | GraphQL mutation           | { buildId, build }                            | **TODO: Wire from GraphQL** |
+| `testRunSubmitted`   | GraphQL mutation           | { buildId, testRun }                          | **TODO: Wire from GraphQL** |
 
 ---
 
@@ -864,23 +888,39 @@ GraphQL Mutation (updateBuildStatus)
 
 ### Point 1: Dual-Backend Architecture
 
-> "I separate concerns into two backends: Apollo GraphQL handles structured data operations (CRUD, queries), while Express handles auxiliary concerns (file uploads, webhooks, real-time events). This isn't just for organization—it directly impacts scalability. If file uploads are slow, GraphQL queries still respond instantly. In production, each backend can scale independently: we might run 5 Apollo instances and 2 Express instances depending on load. This mirrors real systems at Shopify, GitHub, and Boltline."
+> "I separate concerns into two backends: Apollo GraphQL handles structured data operations (CRUD, queries), while
+> Express handles auxiliary concerns (file uploads, webhooks, real-time events). This isn't just for organization—it
+> directly impacts scalability. If file uploads are slow, GraphQL queries still respond instantly. In production, each
+> backend can scale independently: we might run 5 Apollo instances and 2 Express instances depending on load. This mirrors
+> real systems at Shopify, GitHub, and Boltline."
 
 ### Point 2: Real-time with Server-Sent Events
 
-> "We use Server-Sent Events for one-directional streaming because it's simpler than WebSocket—it's just HTTP with a persistent connection. When a CI webhook arrives with test results, we emit an event through the event bus that Express broadcasts to all connected frontend clients via SSE. Result: technicians see test results in <100ms without polling. The pattern is: webhook → event bus → SSE → Apollo cache eviction → UI refresh."
+> "We use Server-Sent Events for one-directional streaming because it's simpler than WebSocket—it's just HTTP with a
+> persistent connection. When a CI webhook arrives with test results, we emit an event through the event bus that Express
+> broadcasts to all connected frontend clients via SSE. Result: technicians see test results in <100ms without polling.
+> The pattern is: webhook → event bus → SSE → Apollo cache eviction → UI refresh."
 
 ### Point 3: DataLoader for N+1 Prevention (When Implemented)
 
-> "DataLoader batches related queries to prevent N+1 problems. If a dashboard loads 50 builds with nested parts and test runs, DataLoader combines 50 individual queries into a single database query using `IN` clauses. From the resolver's perspective: `loaders.partLoader.load(buildId)` returns a promise, but underneath, DataLoader batches all calls in that GraphQL request into one efficient query. Result: reducing queries from 1 + 50 + 50×M to 1 + 1."
+> "DataLoader batches related queries to prevent N+1 problems. If a dashboard loads 50 builds with nested parts and test
+> runs, DataLoader combines 50 individual queries into a single database query using `IN` clauses. From the resolver's
+> perspective: `loaders.partLoader.load(buildId)` returns a promise, but underneath, DataLoader batches all calls in that
+> GraphQL request into one efficient query. Result: reducing queries from 1 + 50 + 50×M to 1 + 1."
 
 ### Point 4: TypeScript End-to-End
 
-> "TypeScript runs end-to-end from database schema to React components. Our GraphQL schema defines the types. We generate TypeScript types from that schema. Frontend components use those types. This prevents entire classes of bugs—if the backend returns a new field, TypeScript catches it immediately in the component. No runtime surprises in production."
+> "TypeScript runs end-to-end from database schema to React components. Our GraphQL schema defines the types. We
+> generate TypeScript types from that schema. Frontend components use those types. This prevents entire classes of bugs—if
+> the backend returns a new field, TypeScript catches it immediately in the component. No runtime surprises in
+> production."
 
 ### Point 5: Event-Driven Architecture
 
-> "GraphQL mutations don't directly call Express; instead, they emit events to a shared event bus. Express listens to those events and broadcasts to clients. This loose coupling means mutations don't fail if Express is slow or down—they still succeed in the database. The UI eventually updates when the event arrives. It's more resilient than tight coupling."
+> "GraphQL mutations don't directly call Express; instead, they emit events to a shared event bus. Express listens to
+> those events and broadcasts to clients. This loose coupling means mutations don't fail if Express is slow or down—they
+> still succeed in the database. The UI eventually updates when the event arrives. It's more resilient than tight
+> coupling."
 
 ---
 
@@ -898,7 +938,8 @@ GraphQL Mutation (updateBuildStatus)
 **Current Achievement**: Schema, resolvers, and mutations are working. Event emission is stubbed.
 
 **Interview Talking Point**:
-> "I separate concerns into two backends: Apollo handles data operations with type-safe GraphQL, while Express handles auxiliary functions like file uploads and webhooks. This lets both scale independently and keeps each layer focused."
+> "I separate concerns into two backends: Apollo handles data operations with type-safe GraphQL, while Express handles
+> auxiliary functions like file uploads and webhooks. This lets both scale independently and keeps each layer focused."
 
 ---
 
@@ -912,7 +953,8 @@ GraphQL Mutation (updateBuildStatus)
 **Current Achievement**: Express backend is PRODUCTION READY with 54/54 tests passing.
 
 **Interview Talking Point**:
-> "Using Server-Sent Events for real-time updates is simpler than WebSocket for one-directional streaming. When a CI webhook arrives, I emit an event that subscribers receive instantly—technicians see test results without polling."
+> "Using Server-Sent Events for real-time updates is simpler than WebSocket for one-directional streaming. When a CI
+> webhook arrives, I emit an event that subscribers receive instantly—technicians see test results without polling."
 
 ---
 
@@ -929,7 +971,9 @@ GraphQL Mutation (updateBuildStatus)
 **Current Achievement**: Backend layers work independently. Frontend blocked waiting for above fixes.
 
 **Interview Talking Point**:
-> "Both backends share authentication (JWT) and a common database, but operate independently. If the file upload is slow, GraphQL queries still respond quickly. This architecture mirrors production systems where different concerns scale at different rates."
+> "Both backends share authentication (JWT) and a common database, but operate independently. If the file upload is
+> slow, GraphQL queries still respond quickly. This architecture mirrors production systems where different concerns scale
+> at different rates."
 
 ---
 
@@ -944,11 +988,14 @@ import EventEmitter from "events";
 const eventBus = new EventEmitter();
 
 // Apollo emits when data changes
-eventBus.emit("build:status-changed", { buildId, status });
+eventBus.emit("build:status-changed", {buildId, status});
 
 // Express listens and streams to clients
 eventBus.on("build:status-changed", (event) => {
-  broadcast to SSE clients
+  broadcast
+  to
+  SSE
+  clients
 });
 ```
 
@@ -960,6 +1007,7 @@ eventBus.on("build:status-changed", (event) => {
 ```typescript
 // backend-graphql resolver
 import redis from "redis";
+
 const pubsub = redis.createClient();
 
 await pubsub.publish("build:status-changed", JSON.stringify({
@@ -970,7 +1018,10 @@ await pubsub.publish("build:status-changed", JSON.stringify({
 // backend-express listens
 const subscriber = redis.createClient();
 await subscriber.subscribe("build:status-changed", (message) => {
-  broadcast to SSE clients
+  broadcast
+  to
+  SSE
+  clients
 });
 ```
 
@@ -983,12 +1034,287 @@ await subscriber.subscribe("build:status-changed", (message) => {
 // Apollo resolver calls Express
 await fetch("http://localhost:5000/api/build-status-changed", {
   method: "POST",
-  body: JSON.stringify({ buildId, status }),
+  body: JSON.stringify({buildId, status}),
 });
 ```
 
 **Pros**: No shared infrastructure
 **Cons**: Tight coupling, requires retry logic
+
+---
+
+## Security Architecture: Inter-Service Communication
+
+### Principle: All Inter-Service Communication Must Be Authenticated
+
+**Rationale**: In a dual-backend architecture, even "internal" service-to-service communication must be authenticated to
+prevent:
+
+1. **Event Injection Attacks**: Malicious actors on the network sending fake events (e.g., false build status)
+2. **Data Corruption**: Unauthorized clients modifying manufacturing state
+3. **Manufacturing Incidents**: In Boltline domain, fake build status can trigger real operational decisions (rework,
+   safety issues)
+
+**Example Threat**:
+
+```
+Attacker on factory WiFi:
+  POST http://localhost:5000/events/emit
+  { event: "buildStatusChanged", payload: { buildId: "B123", status: "FAILED" } }
+
+Result:
+  - All technician UIs show "Build B123: FAILED"
+  - Technician stops production line, initiates rework
+  - Reality: Build is actually RUNNING
+  - Cost: Production delay, wasted materials, safety investigation
+```
+
+### GraphQL → Express Event Bus: Shared Secret Authentication
+
+**Pattern**: Use shared secret in Authorization header for HTTP POST from GraphQL to Express.
+
+#### GraphQL Event Bus Service (Emitter)
+
+```typescript
+// backend-graphql/src/services/event-bus.ts
+const EXPRESS_EVENT_URL =
+  process.env.EXPRESS_EVENT_URL || 'http://localhost:5000/events/emit';
+const EXPRESS_EVENT_SECRET =
+  process.env.EXPRESS_EVENT_SECRET || 'dev-event-secret-change-in-production';
+
+/**
+ * Emit event to Express event bus with authentication
+ *
+ * Implementation: HTTP POST with Authorization header
+ * Authentication: Bearer token (shared secret)
+ * Error handling: Graceful degradation (log but don't throw)
+ */
+export async function emitEvent(eventName: string, payload: any): Promise<void> {
+  try {
+    await fetch(EXPRESS_EVENT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${EXPRESS_EVENT_SECRET}`  // ✅ AUTH HEADER
+      },
+      body: JSON.stringify({
+        event: eventName,
+        payload,
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    console.error(`Failed to emit event '${eventName}':`, error);
+    // Don't throw — event bus failures shouldn't break mutations
+    // Log metrics for monitoring in production
+  }
+}
+```
+
+#### Express Event Endpoint (Receiver)
+
+```typescript
+// backend-express/src/routes/events.ts
+import { validateEventSecret } from '../middleware/validateEventSecret';
+
+// ✅ Protected endpoint validates shared secret
+router.post(
+  '/emit',
+  express.json(),
+  validateEventSecret,  // Middleware validates Authorization header
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const {event, payload} = req.body;
+
+    // At this point, we know the request is authenticated
+    eventBus.emit(event, payload);
+    res.json({ok: true, event});
+  })
+);
+```
+
+#### Middleware: Validate Event Secret
+
+```typescript
+// backend-express/src/middleware/validateEventSecret.ts
+import { Request, Response, NextFunction } from 'express';
+
+export function validateEventSecret(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const authHeader = req.headers['authorization'];
+  const expectedSecret = `Bearer ${process.env.EXPRESS_EVENT_SECRET}`;
+
+  if (!authHeader || authHeader !== expectedSecret) {
+    res.status(403).json({
+      error: 'Forbidden: Invalid event secret',
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  // ✅ Request is authenticated, proceed
+  next();
+}
+```
+
+#### Environment Configuration
+
+```bash
+# .env (shared across services)
+EXPRESS_EVENT_SECRET=prod-secret-change-in-production
+
+# docker-compose.yml (development)
+backend-express:
+  environment:
+    EXPRESS_EVENT_SECRET: dev-event-secret-12345
+
+# Production deployment (e.g., Kubernetes)
+backend-graphql:
+  env:
+    - name: EXPRESS_EVENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: event-bus-secret
+          key: token
+
+backend-express:
+  env:
+    - name: EXPRESS_EVENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: event-bus-secret
+          key: token
+```
+
+### Standardized Event Names (Secure Contract)
+
+To prevent injection of unrecognized events, maintain a whitelist of valid event types:
+
+```typescript
+// backend-express/src/services/eventBus.ts
+export enum EventType {
+  // From GraphQL mutations
+  BUILD_CREATED = 'buildCreated',
+  BUILD_STATUS_CHANGED = 'buildStatusChanged',
+  PART_ADDED = 'partAdded',
+  TEST_RUN_SUBMITTED = 'testRunSubmitted',
+
+  // From Express webhooks
+  FILE_UPLOADED = 'fileUploaded',
+  CI_RESULTS = 'ciResults',
+  SENSOR_DATA = 'sensorData',
+}
+
+// Validate event types in receiver
+if (!Object.values(EventType).includes(req.body.event)) {
+  return res.status(400).json({error: 'Invalid event type'});
+}
+```
+
+### Event Payload Validation
+
+Validate event payloads to prevent injection of arbitrary data:
+
+```typescript
+// backend-express/src/validation/eventPayloads.ts
+import { z } from 'zod';
+
+const EventSchemas = {
+  buildCreated: z.object({
+    buildId: z.string().uuid(),
+    build: z.object({
+      id: z.string().uuid(),
+      status: z.enum(['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'])
+    })
+  }),
+
+  buildStatusChanged: z.object({
+    buildId: z.string().uuid(),
+    status: z.enum(['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'])
+  }),
+
+  // ... more schemas
+};
+
+// In event receiver
+function validateEventPayload(eventType: string, payload: any) {
+  const schema = EventSchemas[eventType];
+  if (!schema) {
+    throw new Error(`Unknown event type: ${eventType}`);
+  }
+
+  return schema.parse(payload);
+}
+```
+
+### Production Upgrades
+
+**Development**: Shared secret authentication (as shown above)
+
+**Production**: Upgrade to mutual TLS (mTLS) or API Gateway
+
+```typescript
+// Future: Kubernetes with Istio service mesh
+// Both services authenticate with client certificates
+// Istio enforces communication policies and encryption
+
+// Or: API Gateway (Kong, AWS API Gateway)
+// All inter-service traffic routed through gateway
+// Gateway enforces authentication and rate limits
+```
+
+### Monitoring & Logging
+
+Log all authentication events for security monitoring:
+
+```typescript
+// backend-express/src/middleware/validateEventSecret.ts
+export function validateEventSecret(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const authHeader = req.headers['authorization'];
+  const expectedSecret = `Bearer ${process.env.EXPRESS_EVENT_SECRET}`;
+
+  if (!authHeader || authHeader !== expectedSecret) {
+    // ✅ Log failed authentication attempt
+    console.warn('[SECURITY] Event auth failed', {
+      timestamp: new Date().toISOString(),
+      event: req.body?.event,
+      ip: req.ip,
+      authHeader: authHeader ? 'present' : 'missing'
+    });
+
+    res.status(403).json({error: 'Forbidden: Invalid event secret'});
+    return;
+  }
+
+  // ✅ Log successful authentication
+  console.info('[SECURITY] Event authenticated', {
+    timestamp: new Date().toISOString(),
+    event: req.body?.event,
+    ip: req.ip
+  });
+
+  next();
+}
+```
+
+### Interview Talking Point
+
+> "In a dual-backend architecture, inter-service communication must be authenticated. When GraphQL mutations emit events
+> to Express, I use a shared-secret Authorization header. This prevents event injection attacks where malicious actors
+> could send fake build status updates.
+>
+> In development, we use a simple shared secret. In production, we'd upgrade to mutual TLS (mTLS) with a service mesh
+> like Istio, or enforce authentication through an API Gateway. The pattern is the same: **verify the sender before
+processing the message**.
+>
+> This is critical in manufacturing—fake status updates could trigger real operational decisions (rework, safety
+> issues). Security shouldn't be an afterthought; it should be part of the architecture from day one."
 
 ---
 
@@ -1000,8 +1326,8 @@ await fetch("http://localhost:5000/api/build-status-changed", {
 // backend-graphql/src/resolvers/__tests__/Query.test.ts
 describe("Query.builds", () => {
   it("should return paginated builds", async () => {
-    const resolvers = createResolvers({ db: mockDb });
-    const result = await resolvers.Query.builds(null, { limit: 10, offset: 0 }, {
+    const resolvers = createResolvers({db: mockDb});
+    const result = await resolvers.Query.builds(null, {limit: 10, offset: 0}, {
       db: mockDb,
       dataloaders: mockDataloaders,
     });
@@ -1020,7 +1346,7 @@ describe("POST /upload", () => {
       .post("/upload")
       .field("buildId", "123")
       .attach("file", "test.txt");
-    
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("fileId");
   });
@@ -1036,7 +1362,7 @@ describe("Full Build Workflow", () => {
     // Create build via Apollo
     // Upload file via Express
     // Listen to SSE and verify event
-    const { getByText } = render(<BuildWorkflow />);
+    const {getByText} = render(<BuildWorkflow / >);
     // assertions...
   });
 });
@@ -1070,15 +1396,15 @@ pnpm dev:frontend  # Next.js on :3000
 
 ## Technology Rationale
 
-| Component              | Why                                                                    |
-| ---------------------- | ---------------------------------------------------------------------- |
-| **Apollo GraphQL**     | Type-safe data API, prevents N+1 with DataLoader, scales easily        |
-| **Express**            | Lightweight for auxiliary endpoints, familiar to most developers        |
-| **PostgreSQL**         | ACID guarantees for manufacturing data, proven at enterprise scale     |
-| **Server-Sent Events** | Real-time notifications with simpler infrastructure than WebSocket      |
-| **JWT Auth**           | Stateless, works across multiple backends                              |
-| **TypeScript**         | End-to-end type safety from database to UI                             |
-| **Vitest**             | Lightning-fast tests, better DX than Jest                              |
+| Component              | Why                                                                |
+|------------------------|--------------------------------------------------------------------|
+| **Apollo GraphQL**     | Type-safe data API, prevents N+1 with DataLoader, scales easily    |
+| **Express**            | Lightweight for auxiliary endpoints, familiar to most developers   |
+| **PostgreSQL**         | ACID guarantees for manufacturing data, proven at enterprise scale |
+| **Server-Sent Events** | Real-time notifications with simpler infrastructure than WebSocket |
+| **JWT Auth**           | Stateless, works across multiple backends                          |
+| **TypeScript**         | End-to-end type safety from database to UI                         |
+| **Vitest**             | Lightning-fast tests, better DX than Jest                          |
 
 ---
 
