@@ -1,0 +1,58 @@
+import DataLoader from 'dataloader'
+import { PrismaClient } from '@prisma/client'
+
+/**
+ * Part type returned from DataLoader
+ */
+export interface PartData {
+  id: string
+  buildId: string
+  name: string
+  sku: string
+  quantity: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * TestRun type returned from DataLoader
+ */
+export interface TestRunData {
+  id: string
+  buildId: string
+  status: string
+  result?: string | null
+  fileUrl?: string | null
+  completedAt?: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * GraphQL resolver context with data loaders and database client
+ */
+export interface GraphQLContext {
+  prisma: PrismaClient
+  buildPartLoader: DataLoader<string, PartData[]>
+  buildTestRunLoader: DataLoader<string, TestRunData[]>
+}
+
+/**
+ * Type for resolver parent object (Build)
+ */
+export interface BuildParent {
+  id: string
+  name: string
+  status: string
+  description?: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Type for mutation arguments with pagination
+ */
+export interface PaginationArgs {
+  limit: number
+  offset: number
+}

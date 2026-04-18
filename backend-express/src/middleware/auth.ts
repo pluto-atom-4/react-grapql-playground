@@ -10,19 +10,19 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 
-// Extend Express Request type to include user
+const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key'
+
+export interface AuthRequest extends Request {
+  user: { id: string; [key: string]: unknown }
+}
+
+// Type augmentation for Express Request
 declare global {
   namespace Express {
     interface Request {
       user?: { id: string; [key: string]: unknown }
     }
   }
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key'
-
-export interface AuthRequest extends Request {
-  user: { id: string; [key: string]: unknown }
 }
 
 /**
@@ -51,7 +51,7 @@ export function authMiddleware(
     }
     ;(_req as AuthRequest).user = decoded
     next()
-  } catch (error) {
+  } catch {
     return _res.status(401).json({ error: 'Invalid token' })
   }
 }

@@ -1,4 +1,5 @@
-import { BuildContext } from '../dataloaders'
+import type { BuildParent, GraphQLContext } from '../types'
+import type { GraphQLResolveInfo } from 'graphql'
 
 /**
  * Build type resolver.
@@ -20,7 +21,12 @@ export const buildResolver = {
      * Interview talking point: "DataLoader prevents N+1 queries by batching
      * multiple build IDs into a single database query."
      */
-    async parts(parent: any, _args: any, context: BuildContext) {
+    async parts(
+      parent: BuildParent,
+      _args: unknown,
+      context: GraphQLContext,
+      _info: GraphQLResolveInfo
+    ) {
       return context.buildPartLoader.load(parent.id)
     },
 
@@ -29,7 +35,12 @@ export const buildResolver = {
      *
      * Same batching as parts: single query for all test runs.
      */
-    async testRuns(parent: any, _args: any, context: BuildContext) {
+    async testRuns(
+      parent: BuildParent,
+      _args: unknown,
+      context: GraphQLContext,
+      _info: GraphQLResolveInfo
+    ) {
       return context.buildTestRunLoader.load(parent.id)
     },
   },

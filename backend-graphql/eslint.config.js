@@ -25,6 +25,12 @@ export default [
         process: 'readonly',
         setInterval: 'readonly',
         setTimeout: 'readonly',
+        // Node.js 18+ Fetch API globals
+        fetch: 'readonly',
+        URL: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        RequestInit: 'readonly',
       },
     },
     plugins: {
@@ -34,6 +40,7 @@ export default [
       ...js.configs.recommended.rules,
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

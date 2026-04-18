@@ -11,7 +11,7 @@
  * { fileId: string, url: string }
  */
 
-import { Router, type Router as ExpressRouter } from 'express'
+import { Router, type Router as ExpressRouter, Request, Response, NextFunction } from 'express'
 import multer, { Multer } from 'multer'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
@@ -111,16 +111,17 @@ const upload: Multer = multer({
 router.post(
   '/',
   upload.single('file'),
-  (err: any, _req: any, res: any, next: any) => {
+  (err: unknown, _req: Request, res: Response, next: NextFunction) => {
     // Handle Multer-specific errors
     if (err) {
-      if (err.code === 'LIMIT_FILE_SIZE') {
+      const multerError = err as { code?: string }
+      if (multerError.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({
           error: 'File too large',
           message: `File exceeds the maximum size limit of 50MB`,
         })
       }
-      if (err.code === 'LIMIT_PART_COUNT') {
+      if (multerError.code === 'LIMIT_PART_COUNT') {
         return res.status(400).json({
           error: 'Too many parts',
           message: 'Request contains too many form fields',
@@ -159,11 +160,11 @@ router.post(
 /**
  * GET /files/:fileId - Serve uploaded file
  */
-router.get('/:fileId', (req, res) => {
+router.get('/:fileId', (req: Request, res: Response) => {
   const filePath = path.join(uploadDir, req.params.fileId)
 
   // Simple file serving (production: use CDN or static middleware)
-  res.sendFile(filePath, (err) => {
+  res.sendFile(filePath, (err: unknown) => {
     if (err) {
       res.status(404).json({ error: 'File not found' })
     }
