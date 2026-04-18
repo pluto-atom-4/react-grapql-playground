@@ -28,7 +28,7 @@ async function main() {
   try {
     // Verify database connection
     await prisma.$queryRaw`SELECT 1`
-    console.log('✅ Database connection verified')
+    console.warn('✅ Database connection verified')
 
     // Start Apollo Server
     const { url } = await startStandaloneServer(server, {
@@ -39,7 +39,7 @@ async function main() {
       }),
     })
 
-    console.log(`
+    console.warn(`
 ╔════════════════════════════════════════╗
 ║   🚀 Apollo GraphQL Server Running    ║
 ╠════════════════════════════════════════╣

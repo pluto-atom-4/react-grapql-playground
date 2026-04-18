@@ -30,5 +30,5 @@ app.use('/events', eventsRoutes)
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-  console.log(`Express server running on port ${PORT}`)
+  console.warn(`Express server running on port ${PORT}`)
 })
