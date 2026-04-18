@@ -291,6 +291,7 @@ When discussing your implementation:
 |------|---------|
 | `docs/start-from-here.md` | 7-day practice plan and interview prep roadmap |
 | `docs/version-conflict-free-stack.md` | Tech stack versions and conflict resolution |
+| `docs/ESLINT-V9-SETUP-GUIDE.md` | ESLint v9 configuration, troubleshooting, and rules management |
 | `DESIGN.md` | Dual-backend architecture and patterns |
 | `.claude/about-me.md` | Interview context and Boltline domain |
 | `backend-graphql/src/schema.graphql` | GraphQL type definitions (Build, Part, TestRun) |
@@ -362,11 +363,29 @@ SELECT * FROM builds LIMIT 10;  # Query data
 
 - **Language**: TypeScript (strict mode enabled)
 - **Formatting**: Prettier (auto-format on save recommended)
-- **Linting**: ESLint with TypeScript rules
+- **Linting**: ESLint v9 with flat config format and TypeScript rules
 - **Testing**: Vitest for unit/integration, Playwright for E2E
 - **Package Manager**: pnpm
 
-Run `pnpm lint:fix` before committing to ensure consistency.
+### Linting & Code Quality
+
+The project uses **ESLint v9** with the new flat config format (`eslint.config.js`). This is different from the legacy `.eslintrc.js` format.
+
+```bash
+pnpm lint             # Check linting across all packages
+pnpm lint:fix         # Auto-fix linting issues
+pnpm -F frontend lint # Lint only frontend
+pnpm -F backend-graphql lint
+pnpm -F backend-express lint
+```
+
+**ESLint Configuration**: See `docs/ESLINT-V9-SETUP-GUIDE.md` for detailed setup, troubleshooting, and how to add new rules.
+
+**IDE Integration** (recommended):
+- **VS Code**: Install ESLint extension, configure in `.vscode/settings.json` to auto-fix on save
+- **JetBrains IDEs**: Enable ESLint in Settings → Languages & Frameworks → JavaScript → Code Quality Tools → ESLint
+
+For quick reference on running ESLint across the monorepo, see the first section of `docs/ESLINT-V9-SETUP-GUIDE.md`.
 
 ## Interview Prep Checklist
 

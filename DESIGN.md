@@ -1318,6 +1318,52 @@ processing the message**.
 
 ---
 
+## Code Quality & Linting
+
+### ESLint v9 Setup
+
+The project uses **ESLint v9** with a flat config format (`eslint.config.js` at repository root). This replaces the legacy `.eslintrc.js` configuration.
+
+**Key Features**:
+- **Flat Config Format**: Direct imports of plugins, explicit file patterns
+- **TypeScript Support**: Full TypeScript project analysis via `projectService: true`
+- **Monorepo Support**: Single config with file-based rules for each package
+- **Plugin Ecosystem**: TypeScript ESLint, React, React Hooks rules
+
+**Running ESLint**:
+
+```bash
+pnpm lint                           # Lint all packages
+pnpm -F frontend lint               # Lint specific package
+eslint . --ext .ts,.tsx --format json > report.json  # JSON report
+```
+
+**Adding New Rules**:
+
+1. Identify the rule from [ESLint Docs](https://eslint.org/docs/latest/rules/), [TypeScript ESLint](https://typescript-eslint.io/rules/), or plugin docs
+2. Test in `eslint.config.js` at `warn` level first
+3. Review violations: `pnpm lint`
+4. Fix code or adjust severity
+5. Document in `CONTRIBUTING.md` and commit
+
+**Common Issues & Solutions**:
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| "Could not find configuration files" | Missing `eslint.config.js` | Verify file exists at repo root |
+| "Could not load parser" | Dependencies not installed | Run `pnpm install` |
+| TypeScript compilation errors | `projectService: true` strict mode | Add explicit return types or disable projectService |
+| ESLint too slow (>30s) | Full TypeScript analysis | Lint single files, or disable projectService (trades accuracy for speed) |
+
+**IDE Integration**:
+
+- **VS Code**: Install ESLint extension, set `editor.codeActionsOnSave.source.fixAll.eslint: true` in `.vscode/settings.json`
+- **JetBrains**: Settings → Languages & Frameworks → JavaScript → Code Quality Tools → ESLint, enable auto-fix on save
+
+**Full Guide**: See `docs/ESLINT-V9-SETUP-GUIDE.md` for migration details, configuration anatomy, performance tips, and troubleshooting.
+
+---
+
 ## Testing Strategy
 
 ### Apollo Resolver Tests
