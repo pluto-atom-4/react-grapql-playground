@@ -11,6 +11,8 @@ describe('Events Route - POST /events/emit', () => {
     app = express();
     app.use(express.json());
     app.use('/events', eventsRouter);
+    // Set environment variable for tests
+    process.env.EXPRESS_EVENT_SECRET = 'test-secret-key';
   });
 
   it('should emit event when valid POST received', async () => {
@@ -18,6 +20,7 @@ describe('Events Route - POST /events/emit', () => {
 
     const response = await request(app)
       .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
       .send({
         event: 'buildCreated',
         payload: { buildId: '123', build: { id: '123', name: 'Test' } },
@@ -36,6 +39,7 @@ describe('Events Route - POST /events/emit', () => {
   it('should return 400 when event field missing', async () => {
     const response = await request(app)
       .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
       .send({
         payload: { buildId: '123' },
       });
@@ -46,9 +50,12 @@ describe('Events Route - POST /events/emit', () => {
   });
 
   it('should return 400 when payload field missing', async () => {
-    const response = await request(app).post('/events/emit').send({
-      event: 'buildCreated',
-    });
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
+      .send({
+        event: 'buildCreated',
+      });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('missing_payload');
@@ -56,7 +63,10 @@ describe('Events Route - POST /events/emit', () => {
   });
 
   it('should return 400 when neither field present', async () => {
-    const response = await request(app).post('/events/emit').send({});
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
+      .send({});
 
     expect(response.status).toBe(400);
   });
@@ -69,6 +79,7 @@ describe('Events Route - POST /events/emit', () => {
     for (const eventType of eventTypes) {
       const response = await request(app)
         .post('/events/emit')
+        .set('Authorization', 'Bearer test-secret-key')
         .send({
           event: eventType,
           payload: { data: 'test' },
@@ -92,10 +103,13 @@ describe('Events Route - POST /events/emit', () => {
       metadata: { duration: 5000, environment: 'staging' },
     };
 
-    const response = await request(app).post('/events/emit').send({
-      event: 'customEventType',
-      payload: customPayload,
-    });
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
+      .send({
+        event: 'customEventType',
+        payload: customPayload,
+      });
 
     expect(response.status).toBe(200);
     expect(emitSpy).toHaveBeenCalledWith('customEventType', customPayload);
@@ -108,6 +122,7 @@ describe('Events Route - POST /events/emit', () => {
 
     const response = await request(app)
       .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
       .send({
         event: 'testEvent',
         payload: { buildId: null, optional: undefined },
@@ -124,6 +139,7 @@ describe('Events Route - POST /events/emit', () => {
 
     const response = await request(app)
       .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
       .send({
         event: 'buildStatusChanged',
         payload: { buildId: '456', status: 'RUNNING' },
@@ -134,5 +150,99 @@ describe('Events Route - POST /events/emit', () => {
     expect(response.body).toHaveProperty('event');
 
     emitSpy.mockRestore();
+  });
+});
+
+describe('Events Route - POST /events/emit - Authentication', () => {
+  let app: Express;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/events', eventsRouter);
+    // Set environment variable for tests
+    process.env.EXPRESS_EVENT_SECRET = 'test-secret-key';
+  });
+
+  it('should return 403 when Authorization header is missing', async () => {
+    const response = await request(app)
+      .post('/events/emit')
+      .send({
+        event: 'buildCreated',
+        payload: { buildId: '123' },
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain('Invalid event secret');
+  });
+
+  it('should return 403 when Authorization header is invalid', async () => {
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer wrong-secret')
+      .send({
+        event: 'buildCreated',
+        payload: { buildId: '123' },
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain('Invalid event secret');
+  });
+
+  it('should return 403 when Authorization header has wrong format', async () => {
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', `test-secret-key`)  // Missing "Bearer " prefix
+      .send({
+        event: 'buildCreated',
+        payload: { buildId: '123' },
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain('Invalid event secret');
+  });
+
+  it('should accept request with valid Authorization header', async () => {
+    const emitSpy = vi.spyOn(eventBus, 'emit').mockImplementation(() => true);
+
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
+      .send({
+        event: 'buildCreated',
+        payload: { buildId: '123', build: { id: '123', name: 'Test' } },
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ ok: true, event: 'buildCreated' });
+    expect(emitSpy).toHaveBeenCalledWith('buildCreated', expect.any(Object));
+
+    emitSpy.mockRestore();
+  });
+
+  it('should reject request when only event is provided but no auth header', async () => {
+    const response = await request(app)
+      .post('/events/emit')
+      .send({
+        event: 'buildStatusChanged',
+        payload: { buildId: '456', status: 'RUNNING' },
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('should accept request with valid auth even for missing payload field', async () => {
+    // Auth is checked first, so if auth passes, then other validations apply
+    const response = await request(app)
+      .post('/events/emit')
+      .set('Authorization', 'Bearer test-secret-key')
+      .send({
+        event: 'buildStatusChanged',
+        // payload field missing intentionally
+      });
+
+    // Should pass auth (200) but fail payload validation (400)
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('missing_payload');
   });
 });

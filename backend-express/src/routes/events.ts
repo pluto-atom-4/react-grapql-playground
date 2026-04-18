@@ -16,6 +16,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { eventBus } from '../services/event-bus';
 import { asyncHandler } from '../middleware/error';
+import { validateEventSecret } from '../middleware/validateEventSecret';
 
 const router: ExpressRouter = Router();
 
@@ -137,11 +138,16 @@ router.get('/health', (_req, res) => {
 /**
  * POST /emit - Receive events from GraphQL backend
  * Accepts HTTP POST from Apollo GraphQL server when mutations complete.
+ * 
+ * Authentication: Requires Authorization header with shared event secret
+ * Prevents event injection attacks from unauthorized clients
+ * 
  * Body format: { event: string, payload: any, timestamp?: string }
  */
 router.post(
   '/emit',
   express.json(),
+  validateEventSecret,  // ✅ Authenticate request before processing
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { event, payload } = req.body;
 
