@@ -2,7 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "React"],
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -26,6 +26,6 @@
     "noFallthroughCasesInSwitch": true,
     "incremental": true
   },
-  "include": ["app", "components", "lib", "types", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", ".next", "dist", "__tests__"]
+  "include": ["app", "components", "lib", "types", "__tests__", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", ".next", "dist"]
 }
