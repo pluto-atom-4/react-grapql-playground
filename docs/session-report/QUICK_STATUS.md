@@ -71,7 +71,7 @@
 
 ## Quick Links
 
-- **Full Report**: [SESSION_STATUS_REPORT.md](./SESSION_STATUS_REPORT.md)
+- **Full Report**: [SESSION_STATUS_REPORT.md](SESSION_STATUS_REPORT.md)
 - **Session Documents**: `/home/pluto-atom-4/.copilot/session-state/`
 - **PR #17**: https://github.com/pluto-atom-4/react-grapql-playground/pull/17
 - **Issues**: https://github.com/pluto-atom-4/react-grapql-playground/issues
