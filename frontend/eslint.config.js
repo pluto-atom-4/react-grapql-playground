@@ -1,9 +1,17 @@
-import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import nextPlugin from '@next/eslint-plugin-next';
+import js from '@eslint/js'
+import tsPlugin from '@typescript-eslint/eslint-plugin'
+import tsParser from '@typescript-eslint/parser'
+import reactPlugin from 'eslint-plugin-react'
+import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import nextPlugin from '@next/eslint-plugin-next'
+
+// Safely spread config rules with null coalescing
+const jsRules = (js.configs?.recommended?.rules ?? {})
+const tsRecommendedRules = (tsPlugin.configs?.recommended?.rules ?? {})
+const tsTypeCheckingRules = (tsPlugin.configs?.['recommended-requiring-type-checking']?.rules ?? {})
+const reactRecommendedRules = (reactPlugin.configs?.recommended?.rules ?? {})
+const reactHooksRecommendedRules = (reactHooksPlugin.configs?.recommended?.rules ?? {})
+const nextRecommendedRules = (nextPlugin.configs?.recommended?.rules ?? {})
 
 export default [
   {
@@ -56,12 +64,12 @@ export default [
       },
     },
     rules: {
-      ...js.configs.recommended.rules,
-      ...tsPlugin.configs.recommended.rules,
-      ...tsPlugin.configs['recommended-requiring-type-checking'].rules,
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      ...nextPlugin.configs.recommended.rules,
+      ...jsRules,
+      ...tsRecommendedRules,
+      ...tsTypeCheckingRules,
+      ...reactRecommendedRules,
+      ...reactHooksRecommendedRules,
+      ...nextRecommendedRules,
       // React 19 specific overrides
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
@@ -76,4 +84,4 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
-];
+]
