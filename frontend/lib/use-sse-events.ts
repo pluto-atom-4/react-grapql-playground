@@ -13,33 +13,33 @@
 import { useApolloClient } from '@apollo/client/react'
 import { useEffect, useRef } from 'react'
 
-export function useSSEEvents() {
+export function useSSEEvents(): void {
   const client = useApolloClient()
   const eventSourceRef = useRef<EventSource | null>(null)
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const expressUrl = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000'
     const eventsUrl = `${expressUrl}/events`
 
     try {
       const eventSource = new EventSource(eventsUrl, { withCredentials: true })
 
-      eventSource.addEventListener('buildCreated', () => {
+      eventSource.addEventListener('buildCreated', (): void => {
         client.cache.evict({ fieldName: 'builds' })
         client.cache.gc()
       })
 
-      eventSource.addEventListener('buildStatusChanged', () => {
+      eventSource.addEventListener('buildStatusChanged', (): void => {
         client.cache.evict({ fieldName: 'build' })
         client.cache.gc()
       })
 
-      eventSource.addEventListener('testRunSubmitted', () => {
+      eventSource.addEventListener('testRunSubmitted', (): void => {
         client.cache.evict({ fieldName: 'testRuns' })
         client.cache.gc()
       })
 
-      eventSource.addEventListener('error', () => {
+      eventSource.addEventListener('error', (): void => {
         console.warn('SSE disconnected, will reconnect...')
         eventSource.close()
       })
@@ -49,7 +49,7 @@ export function useSSEEvents() {
       console.error('Failed to connect to SSE:', error)
     }
 
-    return () => {
+    return (): void => {
       eventSourceRef.current?.close()
     }
   }, [client])
