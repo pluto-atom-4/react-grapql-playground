@@ -58,10 +58,13 @@ function BuildDetailContent({
   }
 
   if (error || !build) {
+    const errorMessage = typeof error === 'object' && error !== null && 'message' in error 
+      ? String((error as Record<string, unknown>).message) 
+      : 'Unknown error'
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
-          <p className="error">Failed to load build: {error?.message || 'Unknown error'}</p>
+          <p className="error">Failed to load build: {errorMessage}</p>
           <button onClick={onClose} className="btn btn-primary">
             Close
           </button>

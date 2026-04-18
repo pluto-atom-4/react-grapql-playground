@@ -12,11 +12,9 @@ function SSEInitializer(): ReactElement | null {
 }
 
 export function ApolloWrapper({ children }: { children: ReactNode }): ReactElement {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return
   const client = useMemo(() => makeClient(), [])
 
   return (
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     <ApolloProvider client={client}>
       <SSEInitializer />
       {children}

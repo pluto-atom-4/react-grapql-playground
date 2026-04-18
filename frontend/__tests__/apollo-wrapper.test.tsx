@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { gql } from '@apollo/client/core'
 import { ApolloWrapper } from '../app/apollo-wrapper'
 import { useApolloClient } from '@apollo/client/react'
+import type { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 
 /**
  * Issue #23 Test Suite: Apollo Client Singleton Pattern
@@ -26,7 +26,7 @@ vi.mock('../lib/use-sse-events', () => ({
 }))
 
 // Test component that captures and exposes the Apollo client
-function TestClientCapture({ onClientCapture }: { onClientCapture: (client: any) => void }) {
+function TestClientCapture({ onClientCapture }: { onClientCapture: (client: ApolloClient<NormalizedCacheObject>) => void }): React.ReactNode {
   const client = useApolloClient()
   
   // Capture client on every render to verify it doesn't change
@@ -38,7 +38,7 @@ function TestClientCapture({ onClientCapture }: { onClientCapture: (client: any)
 }
 
 // Test component that forces re-renders
-function ReRenderTrigger({ children }: { children: React.ReactNode }) {
+function ReRenderTrigger({ children }: { children: React.ReactNode }): React.ReactNode {
   const [renderCount, setRenderCount] = useState(0)
   
   return (
@@ -56,12 +56,12 @@ function ReRenderTrigger({ children }: { children: React.ReactNode }) {
 
 describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
   describe('AC1: Client Instance Persistence', () => {
-    it('should create Apollo client exactly once with useMemo', () => {
+    it('should create Apollo client exactly once with useMemo', (): void => {
       // Verify: makeClient is called once during initial render
       // This is implicitly verified by the absence of warnings
-      const clients: any[] = []
+      const clients: ApolloClient<NormalizedCacheObject>[] = []
       
-      const TestComponent = () => {
+      const TestComponent = (): React.ReactNode => {
         const client = useApolloClient()
         if (client && !clients.includes(client)) {
           clients.push(client)
@@ -80,8 +80,8 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       expect(screen.getByTestId('wrapped')).toBeDefined()
     })
 
-    it('should persist client reference across component re-renders', async () => {
-      const capturedClients: any[] = []
+    it('should persist client reference across component re-renders', async (): Promise<void> => {
+      const capturedClients: ApolloClient<NormalizedCacheObject>[] = []
       
       render(
         <ApolloWrapper>
@@ -100,8 +100,9 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
         expect(screen.queryByTestId('test-component')).toBeDefined()
       })
       
-      const initialClientLength = capturedClients.length
-      const firstClient = capturedClients[0]
+      const _initialClientLength = capturedClients.length
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const firstClient = capturedClients[0] ?? null
       
       // Force re-render by clicking button
       const button = screen.getByTestId('rerender-button')
@@ -114,15 +115,16 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       
       // Verify: Apollo client reference is identical (same object)
       // The new captures should reference the same client
-      const secondClient = capturedClients[capturedClients.length - 1]
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const secondClient = capturedClients[capturedClients.length - 1] ?? null
       expect(firstClient).toBe(secondClient)
       expect(firstClient).toEqual(secondClient)
     })
 
-    it('should not recreate client on prop changes', async () => {
-      const capturedClients: any[] = []
+    it('should not recreate client on prop changes', (): void => {
+      const capturedClients: ApolloClient<NormalizedCacheObject>[] = []
       
-      const ChildComponent = () => {
+      const ChildComponent = (): React.ReactNode => {
         const client = useApolloClient()
         if (client && !capturedClients.find(c => c === client)) {
           capturedClients.push(client)
@@ -149,13 +151,15 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       expect(capturedClients).toHaveLength(1)
     })
 
-    it('should maintain client identity across multiple renders', async () => {
-      const clients: any[] = []
+    it('should maintain client identity across multiple renders', (): void => {
+      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+      const clients: Array<ApolloClient<NormalizedCacheObject> | null> = []
       
-      const ClientTracker = () => {
+      const ClientTracker = (): React.ReactNode => {
         const client = useApolloClient()
         clients.push(client)
-        return <div data-testid="tracker">Client ID: {client?.cache.config.resultCacheMaxSize}</div>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        return <div data-testid="tracker">Client ID: {client?.cache?.config?.resultCacheMaxSize}</div>
       }
       
       const { rerender } = render(
@@ -164,7 +168,8 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
         </ApolloWrapper>
       )
       
-      const firstClient = clients[0]
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const firstClient = clients[0] ?? null
       
       // Re-render multiple times
       for (let i = 0; i < 3; i++) {
@@ -187,7 +192,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
   })
 
   describe('AC2: Cache Persistence', () => {
-    const TEST_QUERY = gql`
+    const _TEST_QUERY = gql`
       query GetTestData {
         test {
           id
@@ -200,12 +205,13 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       vi.clearAllMocks()
     })
 
-    it('should maintain cache reference identity across re-renders', async () => {
+    it('should maintain cache reference identity across re-renders', async (): Promise<void> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cacheReferences: any[] = []
 
-      const CacheInspector = () => {
+      const CacheInspector = (): React.ReactNode => {
         const client = useApolloClient()
-        cacheReferences.push(client.cache)
+        cacheReferences.push(client?.cache)
         return <div data-testid="inspector">Cache Inspector</div>
       }
 
@@ -217,6 +223,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
         </ApolloWrapper>
       )
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const firstCache = cacheReferences[0]
 
       // Trigger re-renders
@@ -240,10 +247,10 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
   })
 
   describe('AC6: SSE Integration', () => {
-    it('should mount SSEInitializer component', () => {
+    it('should mount SSEInitializer component', (): void => {
       // The SSEInitializer is mocked in beforeEach, so we just verify
       // that the component renders without errors
-      const TestChild = () => <div data-testid="child">Child</div>
+      const TestChild = (): React.ReactNode => <div data-testid="child">Child</div>
       
       render(
         <ApolloWrapper>
@@ -254,8 +261,8 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       expect(screen.getByTestId('child')).toBeDefined()
     })
 
-    it('should render children without SSEInitializer causing issues', () => {
-      const TestContent = () => (
+    it('should render children without SSEInitializer causing issues', (): void => {
+      const TestContent = (): React.ReactNode => (
         <div data-testid="content">
           <h1>Test Content</h1>
           <p>This should render without SSE errors</p>
@@ -275,8 +282,8 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
   })
 
   describe('General Behavior', () => {
-    it('should render children correctly', () => {
-      const TestChildren = () => (
+    it('should render children correctly', (): void => {
+      const TestChildren = (): React.ReactNode => (
         <div>
           <span data-testid="child-1">Child 1</span>
           <span data-testid="child-2">Child 2</span>
@@ -293,10 +300,10 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       expect(screen.getByTestId('child-2')).toBeDefined()
     })
 
-    it('should wrap children with ApolloProvider', () => {
+    it('should wrap children with ApolloProvider', (): void => {
       // Verify that useApolloClient hook works inside children
       // This proves ApolloProvider is wrapping correctly
-      const VerifyApolloProvider = () => {
+      const VerifyApolloProvider = (): React.ReactNode => {
         const client = useApolloClient()
         return <div data-testid="verify">{client ? 'Apollo Ready' : 'No Apollo'}</div>
       }
@@ -311,13 +318,13 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       expect(verify.textContent).toBe('Apollo Ready')
     })
 
-    it('should handle nested components with Apollo', () => {
-      const DeepChild = () => {
+    it('should handle nested components with Apollo', (): void => {
+      const DeepChild = (): React.ReactNode => {
         const client = useApolloClient()
         return <div data-testid="deep">{client ? 'Deep Apollo Access' : 'No Access'}</div>
       }
 
-      const MiddleChild = () => (
+      const MiddleChild = (): React.ReactNode => (
         <div>
           <DeepChild />
         </div>
