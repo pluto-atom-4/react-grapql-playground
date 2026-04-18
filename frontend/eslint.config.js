@@ -20,7 +20,7 @@ export default [
           jsx: true,
         },
         projectService: {
-          allowDefaultProject: ['eslint.config.js', 'vitest.config.ts', 'next.config.js'],
+          allowDefaultProject: ['eslint.config.js', 'next.config.js'],
         },
       },
       globals: {
@@ -33,8 +33,10 @@ export default [
         fetch: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
-        // Node.js globals available in Next.js
+        // Node.js globals available in Next.js and config files
         process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
       },
     },
     plugins: {
