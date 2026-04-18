@@ -227,8 +227,8 @@ DESIGN.md                   ← Architecture documentation
 
 ## 🔗 Quick Links
 
-- **Full Report**: [SESSION_STATUS_REPORT.md](./SESSION_STATUS_REPORT.md)
-- **Quick Summary**: [QUICK_STATUS.md](./QUICK_STATUS.md)
+- **Full Report**: [SESSION_STATUS_REPORT.md](SESSION_STATUS_REPORT.md)
+- **Quick Summary**: [QUICK_STATUS.md](QUICK_STATUS.md)
 - **GitHub Repo**: https://github.com/pluto-atom-4/react-grapql-playground
 - **PR #17**: https://github.com/pluto-atom-4/react-grapql-playground/pull/17
 - **Issues**: https://github.com/pluto-atom-4/react-grapql-playground/issues
