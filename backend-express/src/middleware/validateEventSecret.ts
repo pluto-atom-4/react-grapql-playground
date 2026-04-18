@@ -43,7 +43,7 @@ export function validateEventSecret(
   }
 
   // ✅ Request authenticated - log and proceed
-  console.info('[SECURITY] Event authenticated', {
+  console.warn('[SECURITY] Event authenticated', {
     timestamp: new Date().toISOString(),
     event: req.body?.event,
     ip: req.ip
