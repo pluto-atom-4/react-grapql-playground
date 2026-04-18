@@ -1,4 +1,5 @@
-import { BuildContext } from '../dataloaders'
+import { BuildContext, PaginationArgs } from '../types'
+import type { GraphQLResolveInfo } from 'graphql'
 
 export const queryResolver = {
   Query: {
@@ -7,9 +8,10 @@ export const queryResolver = {
      * Does NOT use DataLoader (already paginated at DB level).
      */
     async builds(
-      _parent: any,
-      args: { limit: number; offset: number },
-      context: BuildContext
+      _parent: unknown,
+      args: PaginationArgs,
+      context: BuildContext,
+      _info: GraphQLResolveInfo
     ) {
       if (args.limit < 1 || args.limit > 100) {
         throw new Error('limit must be between 1 and 100')
@@ -29,7 +31,12 @@ export const queryResolver = {
      * Get specific build by ID.
      * Does NOT use DataLoader (single ID lookup, not a list).
      */
-    async build(_parent: any, args: { id: string }, context: BuildContext) {
+    async build(
+      _parent: unknown,
+      args: { id: string },
+      context: BuildContext,
+      _info: GraphQLResolveInfo
+    ) {
       return context.prisma.build.findUnique({
         where: { id: args.id },
       })
@@ -40,9 +47,10 @@ export const queryResolver = {
      * Does NOT use DataLoader (already filtered by buildId).
      */
     async testRuns(
-      _parent: any,
+      _parent: unknown,
       args: { buildId: string },
-      context: BuildContext
+      context: BuildContext,
+      _info: GraphQLResolveInfo
     ) {
       return context.prisma.testRun.findMany({
         where: { buildId: args.buildId },

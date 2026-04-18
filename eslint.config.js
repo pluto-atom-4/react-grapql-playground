@@ -30,12 +30,17 @@ export default [
         process: 'readonly',
         setInterval: 'readonly',
         setTimeout: 'readonly',
+        // Node.js 18+ Fetch API globals
+        fetch: 'readonly',
+        URL: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        RequestInit: 'readonly',
         // Browser globals
         window: 'readonly',
         document: 'readonly',
         navigator: 'readonly',
         location: 'readonly',
-        fetch: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
       },
@@ -49,6 +54,7 @@ export default [
       ...tsPlugin.configs['recommended-requiring-type-checking'].rules,
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
