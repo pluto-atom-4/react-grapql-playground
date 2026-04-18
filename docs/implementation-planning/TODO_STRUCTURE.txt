@@ -1,0 +1,201 @@
+================================================================================
+                    ESLint v9 MIGRATION - TODO STRUCTURE
+================================================================================
+
+PHASE 1: INVESTIGATION (5 todos) - 30-45 MIN - CAN RUN IN PARALLEL ✅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Analyze current ESLint configuration state
+
+  ├─ [ ] investigate-eslint-v9-state
+  │       └─ Check ESLint versions, existing configs, missing packages
+  │
+  ├─ [ ] analyze-root-eslintrc
+  │       └─ Extract root ESLint rules, parser settings, ignore patterns
+  │
+  ├─ [ ] analyze-frontend-eslintrc
+  │       └─ Extract React, React Hooks, Next.js v19 specific rules
+  │
+  ├─ [ ] analyze-backend-graphql-eslint
+  │       └─ Document GraphQL backend linting requirements
+  │
+  └─ [ ] analyze-backend-express-eslint
+          └─ Document Express backend linting requirements
+
+Deliverable: Detailed rule mapping for each package
+
+================================================================================
+
+PHASE 2: CONFIGURATION CREATION (4 todos) - 1-1.5 HOURS - SEQUENTIAL ⚠️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Create eslint.config.js files with flat config format
+
+  ├─ [ ] create-root-eslint-config-js [Depends: Phase 1]
+  │       └─ /eslint.config.js
+  │           • TypeScript + ESLint base rules
+  │           • Shared custom rules
+  │           • Ignore patterns
+  │
+  ├─ [ ] create-frontend-eslint-config-js [Depends: create-root-eslint-config-js]
+  │       └─ /frontend/eslint.config.js
+  │           • + React plugin
+  │           • + React Hooks plugin
+  │           • + Next.js plugin
+  │           • + React 19 specific rules
+  │
+  ├─ [ ] create-backend-graphql-eslint-config-js [Depends: create-root-eslint-config-js]
+  │       └─ /backend-graphql/eslint.config.js
+  │           • Base TypeScript rules
+  │           • GraphQL resolver patterns
+  │
+  └─ [ ] create-backend-express-eslint-config-js [Depends: create-root-eslint-config-js]
+          └─ /backend-express/eslint.config.js
+              • Base TypeScript rules
+              • Express route patterns
+
+Deliverable: 4 new eslint.config.js files
+
+================================================================================
+
+PHASE 3: DEPENDENCY MANAGEMENT (1 todo) - 15-20 MIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Ensure all ESLint v9 plugins installed
+
+  └─ [ ] install-missing-eslint-packages [Depends: Phase 1]
+          • Verify eslint ^9.1.1
+          • Verify @typescript-eslint/* ^8.1.0
+          • Check eslint-plugin-react, eslint-plugin-react-hooks
+          • Check @next/eslint-plugin-next
+          • Install missing, update pnpm-lock.yaml
+
+Deliverable: Updated pnpm-lock.yaml with v9-compatible deps
+
+================================================================================
+
+PHASE 4: TESTING (5 todos) - 30-45 MIN - SEQUENTIAL ⚠️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Verify linting passes for all packages
+
+  ├─ [ ] test-root-lint [Depends: create-root-eslint-config-js, install-missing-eslint-packages]
+  │       └─ pnpm lint
+  │           ✅ No "couldn't find eslint.config.js" errors
+  │           ✅ All rules pass
+  │
+  ├─ [ ] test-frontend-lint [Depends: create-frontend-eslint-config-js, install-missing-eslint-packages]
+  │       └─ pnpm -F frontend lint
+  │           ✅ React rules apply
+  │           ✅ React Hooks rules apply
+  │           ✅ Next.js core-web-vitals checked
+  │
+  ├─ [ ] test-backend-graphql-lint [Depends: create-backend-graphql-eslint-config-js, install-missing-eslint-packages]
+  │       └─ pnpm -F backend-graphql lint
+  │           ✅ Resolver files pass
+  │
+  ├─ [ ] test-backend-express-lint [Depends: create-backend-express-eslint-config-js, install-missing-eslint-packages]
+  │       └─ pnpm -F backend-express lint
+  │           ✅ Route handler files pass
+  │
+  └─ [ ] test-full-monorepo-lint [Depends: all Phase 4 tests]
+          └─ pnpm lint (from root)
+              ✅ All 4 packages pass
+              ✅ No errors or unexpected warnings
+
+Deliverable: All linting passes; pnpm lint command restored
+
+================================================================================
+
+PHASE 5: DOCUMENTATION & CLEANUP (2 todos) - 20-30 MIN - SEQUENTIAL ⚠️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Document changes and clean up deprecated files
+
+  ├─ [ ] document-migration-notes [Depends: test-full-monorepo-lint]
+  │       └─ Update CLAUDE.md with:
+  │           • What changed (v8 → v9)
+  │           • Why per-package configs
+  │           • How to add new rules
+  │           • Troubleshooting tips
+  │
+  └─ [ ] remove-old-eslintrc-files [Depends: document-migration-notes]
+          └─ Delete:
+              • /.eslintrc.json
+              • /frontend/.eslintrc.json
+              ✅ pnpm lint still passes (uses new eslint.config.js)
+
+Deliverable: Cleaned codebase, updated dev guide
+
+================================================================================
+
+EXECUTION STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Optimized Critical Path (3-3.5 hours total):
+
+  1. PARALLEL PHASE 1 (30-45 min)
+     └─ Start all 5 investigation tasks in parallel
+        • investigate-eslint-v9-state
+        • analyze-root-eslintrc
+        • analyze-frontend-eslintrc
+        • analyze-backend-graphql-eslint
+        • analyze-backend-express-eslint
+
+  2. PHASE 2 (1-1.5 hours, sequential after Phase 1)
+     └─ Create eslint.config.js files in order:
+        1. create-root-eslint-config-js
+        2. create-frontend-eslint-config-js (depends on root)
+        3. create-backend-graphql-eslint-config-js (depends on root)
+        4. create-backend-express-eslint-config-js (depends on root)
+
+  3. PARALLEL PHASE 3 + PHASE 2 END
+     └─ While Phase 2 completes, start:
+        • install-missing-eslint-packages
+
+  4. PHASE 4 (30-45 min, sequential after Phase 2+3)
+     └─ Test linting in order:
+        1. test-root-lint
+        2. test-frontend-lint
+        3. test-backend-graphql-lint
+        4. test-backend-express-lint
+        5. test-full-monorepo-lint
+
+  5. PHASE 5 (20-30 min, sequential after Phase 4)
+     └─ Document and cleanup:
+        1. document-migration-notes
+        2. remove-old-eslintrc-files
+
+================================================================================
+
+SUCCESS CRITERIA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All of the following must be true:
+
+  ✅ 4 new eslint.config.js files created (root, frontend, graphql, express)
+  ✅ pnpm lint runs without errors
+  ✅ No ESLint v9 "couldn't find eslint.config.js" errors
+  ✅ All existing linting rules preserved (same strictness as v8)
+  ✅ pnpm lint:fix works to auto-fix issues
+  ✅ Old .eslintrc.json files deleted
+  ✅ Development documentation updated
+  ✅ Zero test regressions
+
+================================================================================
+
+RISK REGISTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Risk                              | Severity | Mitigation
+──────────────────────────────────┼──────────┼─────────────────────────────
+ESLint v9 breaking changes        | HIGH     | Follow official guide; test incrementally
+Plugin incompatibility            | MEDIUM   | Verify all plugins support v9
+TypeScript parser issues          | MEDIUM   | Use matching @typescript-eslint/* versions
+Prettier conflicts                | LOW      | Run pnpm format:check after migration
+Monorepo config issues            | MEDIUM   | Test each package independently first
+Configuration mistakes            | MEDIUM   | Review config files before deleting old ones
+
+Rollback Plan:
+  git restore .eslintrc.json frontend/.eslintrc.json
+  rm eslint.config.js frontend/eslint.config.js backend-graphql/eslint.config.js backend-express/eslint.config.js
+  git restore package.json
+  pnpm install
+  pnpm lint  # Should use old .eslintrc.json files again
+
+================================================================================
