@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { ReactElement } from 'react'
 import {
   useBuildDetail,
   useUpdateBuildStatus,
@@ -9,13 +10,36 @@ import {
 } from '@/lib/apollo-hooks'
 import './build-detail-modal.css'
 
+interface Part {
+  id: string
+  name: string
+  sku: string
+  quantity: number
+}
+
+interface TestRun {
+  id: string
+  status: string
+  result?: string
+  completedAt?: string
+}
+
+interface BuildData {
+  id: string
+  name: string
+  status: string
+  description?: string
+  parts?: Part[]
+  testRuns?: TestRun[]
+}
+
 function BuildDetailContent({
   buildId,
   onClose,
 }: {
   buildId: string
   onClose: () => void
-}) {
+}): ReactElement {
   const { build, loading, error, refetch } = useBuildDetail(buildId)
   const { updateStatus } = useUpdateBuildStatus()
   const { addPart } = useAddPart()
@@ -26,7 +50,7 @@ function BuildDetailContent({
   if (loading) {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
           <p>Loading build details...</p>
         </div>
       </div>
@@ -36,7 +60,7 @@ function BuildDetailContent({
   if (error || !build) {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
           <p className="error">Failed to load build: {error?.message || 'Unknown error'}</p>
           <button onClick={onClose} className="btn btn-primary">
             Close
@@ -46,68 +70,76 @@ function BuildDetailContent({
     )
   }
 
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      await updateStatus(buildId, newStatus)
-      refetch()
-    } catch (error) {
-      alert(`Failed to update status: ${error}`)
-    }
+  const handleStatusChange = (newStatus: string): void => {
+    void (async (): Promise<void> => {
+      try {
+        await updateStatus(buildId, newStatus)
+        refetch()
+      } catch (error) {
+        alert(`Failed to update status: ${String(error)}`)
+      }
+    })()
   }
 
-  const handleAddPart = async () => {
+  const handleAddPart = (): void => {
     const name = prompt('Part name:')
     if (!name) return
     const sku = prompt('SKU:')
     if (!sku) return
-    const quantity = prompt('Quantity:')
-    if (!quantity) return
+    const quantityStr = prompt('Quantity:')
+    if (!quantityStr) return
 
-    try {
-      setIsAddingPart(true)
-      await addPart(buildId, name, sku, parseInt(quantity))
-      refetch()
-    } catch (error) {
-      alert(`Failed to add part: ${error}`)
-    } finally {
-      setIsAddingPart(false)
-    }
+    void (async (): Promise<void> => {
+      try {
+        setIsAddingPart(true)
+        await addPart(buildId, name, sku, parseInt(quantityStr, 10))
+        refetch()
+      } catch (error) {
+        alert(`Failed to add part: ${String(error)}`)
+      } finally {
+        setIsAddingPart(false)
+      }
+    })()
   }
 
-  const handleSubmitTestRun = async () => {
+  const handleSubmitTestRun = (): void => {
     const status = prompt('Test status (PENDING/RUNNING/PASSED/FAILED):')
     if (!status) return
 
-    try {
-      setIsSubmittingTestRun(true)
-      await submitTestRun(buildId, status)
-      refetch()
-    } catch (error) {
-      alert(`Failed to submit test run: ${error}`)
-    } finally {
-      setIsSubmittingTestRun(false)
-    }
+    void (async (): Promise<void> => {
+      try {
+        setIsSubmittingTestRun(true)
+        await submitTestRun(buildId, status)
+        refetch()
+      } catch (error) {
+        alert(`Failed to submit test run: ${String(error)}`)
+      } finally {
+        setIsSubmittingTestRun(false)
+      }
+    })()
   }
+
+  const buildData = build as BuildData
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{build.name}</h2>
+          <h2>{buildData.name}</h2>
           <button onClick={onClose} className="modal-close">×</button>
         </div>
 
         <div className="modal-body">
           <section className="build-info">
             <h3>Build Status</h3>
-            <p className={`badge status-${build.status.toLowerCase()}`}>{build.status}</p>
-            {build.description && <p>{build.description}</p>}
+            <p className={`badge status-${buildData.status.toLowerCase()}`}>{buildData.status}</p>
+            {buildData.description && <p>{buildData.description}</p>}
             <div className="status-controls">
               {['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'].map((status) => (
                 <button
                   key={status}
-                  onClick={() => handleStatusChange(status)}
-                  disabled={build.status === status}
+                  onClick={(): void => handleStatusChange(status)}
+                  disabled={buildData.status === status}
                   className="btn btn-secondary"
                 >
                   {status}
@@ -117,8 +149,8 @@ function BuildDetailContent({
           </section>
 
           <section className="parts-section">
-            <h3>Parts ({build.parts?.length || 0})</h3>
-            {build.parts && build.parts.length > 0 ? (
+            <h3>Parts ({buildData.parts?.length || 0})</h3>
+            {buildData.parts && buildData.parts.length > 0 ? (
               <table className="parts-table">
                 <thead>
                   <tr>
@@ -128,7 +160,7 @@ function BuildDetailContent({
                   </tr>
                 </thead>
                 <tbody>
-                  {build.parts.map((part: any) => (
+                  {buildData.parts.map((part: Part) => (
                     <tr key={part.id}>
                       <td>{part.name}</td>
                       <td>{part.sku}</td>
@@ -150,8 +182,8 @@ function BuildDetailContent({
           </section>
 
           <section className="test-runs-section">
-            <h3>Test Runs ({build.testRuns?.length || 0})</h3>
-            {build.testRuns && build.testRuns.length > 0 ? (
+            <h3>Test Runs ({buildData.testRuns?.length || 0})</h3>
+            {buildData.testRuns && buildData.testRuns.length > 0 ? (
               <table className="test-runs-table">
                 <thead>
                   <tr>
@@ -161,7 +193,7 @@ function BuildDetailContent({
                   </tr>
                 </thead>
                 <tbody>
-                  {build.testRuns.map((run: any) => (
+                  {buildData.testRuns.map((run: TestRun) => (
                     <tr key={run.id}>
                       <td>
                         <span className={`badge status-${run.status.toLowerCase()}`}>
@@ -197,6 +229,6 @@ export default function BuildDetailModal({
 }: {
   buildId: string
   onClose: () => void
-}) {
+}): ReactElement {
   return <BuildDetailContent buildId={buildId} onClose={onClose} />
 }

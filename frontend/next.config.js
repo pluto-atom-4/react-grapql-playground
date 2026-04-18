@@ -12,8 +12,8 @@ const nextConfig = {
     NEXT_PUBLIC_EXPRESS_URL: process.env.EXPRESS_URL || 'http://localhost:5000',
   },
   // Enable SWR for data fetching (used with Apollo)
-  headers: async () => {
-    return [
+  headers: (): import('next').NextConfig['headers'] | null | undefined => {
+    const headersList: import('next').NextConfig['headers'] = [
       {
         source: '/api/:path*',
         headers: [
@@ -24,6 +24,7 @@ const nextConfig = {
         ],
       },
     ]
+    return headersList
   },
 };
 

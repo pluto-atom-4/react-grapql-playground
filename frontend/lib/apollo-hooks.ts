@@ -46,7 +46,12 @@ interface BuildDetail extends Build {
 }
 
 // Hook: Fetch builds with pagination
-export function useBuilds(limit: number = 10, offset: number = 0) {
+export function useBuilds(limit: number = 10, offset: number = 0): {
+  builds: Array<{ id: string; name: string; status: string; createdAt: string }>
+  loading: boolean
+  error: unknown
+  refetch: () => void
+} {
   const { data, loading, error, refetch } = useQuery<{ builds: Build[] }>(BUILDS_QUERY, {
     variables: { limit, offset },
   })
@@ -55,12 +60,17 @@ export function useBuilds(limit: number = 10, offset: number = 0) {
     builds: data?.builds || [],
     loading,
     error,
-    refetch,
+    refetch: () => void refetch(),
   }
 }
 
 // Hook: Fetch single build with details
-export function useBuildDetail(buildId: string) {
+export function useBuildDetail(buildId: string): {
+  build: BuildDetail | undefined
+  loading: boolean
+  error: unknown
+  refetch: () => void
+} {
   const { data, loading, error, refetch } = useQuery<{ build: BuildDetail }>(BUILD_DETAIL_QUERY, {
     variables: { id: buildId },
     skip: !buildId,
@@ -70,12 +80,17 @@ export function useBuildDetail(buildId: string) {
     build: data?.build,
     loading,
     error,
-    refetch,
+    refetch: () => void refetch(),
   }
 }
 
 // Hook: Fetch test runs for a build
-export function useTestRuns(buildId: string) {
+export function useTestRuns(buildId: string): {
+  testRuns: TestRun[]
+  loading: boolean
+  error: unknown
+  refetch: () => void
+} {
   const { data, loading, error, refetch } = useQuery<{ testRuns: TestRun[] }>(TEST_RUNS_QUERY, {
     variables: { buildId },
     skip: !buildId,
@@ -85,12 +100,16 @@ export function useTestRuns(buildId: string) {
     testRuns: data?.testRuns || [],
     loading,
     error,
-    refetch,
+    refetch: () => void refetch(),
   }
 }
 
 // Hook: Create new build mutation
-export function useCreateBuild() {
+export function useCreateBuild(): {
+  createBuild: (name: string, description?: string) => Promise<Build | undefined>
+  loading: boolean
+  error: unknown
+} {
   const [createBuild, { loading, error }] = useMutation<{ createBuild: Build }>(
     CREATE_BUILD_MUTATION,
     {
@@ -99,7 +118,7 @@ export function useCreateBuild() {
   )
 
   return {
-    createBuild: async (name: string, description?: string) => {
+    createBuild: async (name: string, description?: string): Promise<Build | undefined> => {
       const result = await createBuild({
         variables: { name, description },
       })
@@ -111,13 +130,17 @@ export function useCreateBuild() {
 }
 
 // Hook: Update build status mutation
-export function useUpdateBuildStatus() {
+export function useUpdateBuildStatus(): {
+  updateStatus: (id: string, status: string) => Promise<Build | undefined>
+  loading: boolean
+  error: unknown
+} {
   const [updateStatus, { loading, error }] = useMutation<{ updateBuildStatus: Build }>(
     UPDATE_BUILD_STATUS_MUTATION
   )
 
   return {
-    updateStatus: async (id: string, status: string) => {
+    updateStatus: async (id: string, status: string): Promise<Build | undefined> => {
       const result = await updateStatus({
         variables: { id, status },
       })
@@ -129,11 +152,15 @@ export function useUpdateBuildStatus() {
 }
 
 // Hook: Add part to build mutation
-export function useAddPart() {
+export function useAddPart(): {
+  addPart: (buildId: string, name: string, sku: string, quantity: number) => Promise<Part | undefined>
+  loading: boolean
+  error: unknown
+} {
   const [addPart, { loading, error }] = useMutation<{ addPart: Part }>(ADD_PART_MUTATION)
 
   return {
-    addPart: async (buildId: string, name: string, sku: string, quantity: number) => {
+    addPart: async (buildId: string, name: string, sku: string, quantity: number): Promise<Part | undefined> => {
       const result = await addPart({
         variables: { buildId, name, sku, quantity },
       })
@@ -145,7 +172,11 @@ export function useAddPart() {
 }
 
 // Hook: Submit test run mutation
-export function useSubmitTestRun() {
+export function useSubmitTestRun(): {
+  submitTestRun: (buildId: string, status: string, testResult?: string, fileUrl?: string) => Promise<TestRun | undefined>
+  loading: boolean
+  error: unknown
+} {
   const [submitTestRun, { loading, error }] = useMutation<{ submitTestRun: TestRun }>(
     SUBMIT_TEST_RUN_MUTATION
   )
@@ -156,7 +187,7 @@ export function useSubmitTestRun() {
       status: string,
       testResult?: string,
       fileUrl?: string
-    ) => {
+    ): Promise<TestRun | undefined> => {
       const response = await submitTestRun({
         variables: { buildId, status, result: testResult, fileUrl },
       })

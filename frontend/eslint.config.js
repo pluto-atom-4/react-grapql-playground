@@ -25,6 +25,7 @@ export default [
       },
       globals: {
         React: 'readonly',
+        JSX: 'readonly',
         // Browser globals
         window: 'readonly',
         document: 'readonly',
@@ -33,6 +34,10 @@ export default [
         fetch: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
+        EventSource: 'readonly',
+        alert: 'readonly',
+        prompt: 'readonly',
+        console: 'readonly',
         // Node.js globals available in Next.js and config files
         process: 'readonly',
         __dirname: 'readonly',
