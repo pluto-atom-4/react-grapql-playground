@@ -1,14 +1,24 @@
 /**
  * Apollo Client configuration for Next.js 16 Server Components
  *
- * Server-side Apollo Client instance for fetching data on the server before rendering.
- * This client is used in async Server Components (e.g., app/page.tsx) to fetch initial data
- * that gets passed to client components via props. This eliminates the data waterfall and
- * enables parallel data fetching with JavaScript bundle download.
+ * DEPRECATED: Use apollo-client-server-registered.ts instead
+ *
+ * This file previously exported a singleton client which caused cache pollution
+ * (Issue #107: CRITICAL - Apollo Client Cache Pollution). The singleton pattern
+ * reused the same InMemoryCache across all requests, allowing User A's data to
+ * leak into User B's server-rendered pages in production.
+ *
+ * ⚠️ DO NOT USE: The singleton export has been removed.
+ *
+ * MIGRATION: Import from apollo-client-server-registered.ts instead:
+ * ```typescript
+ * import { getClient } from '@/lib/apollo-client-server-registered'
+ * const client = getClient()  // Fresh client per request
+ * ```
  *
  * Key differences from client-side Apollo:
  * - ssrMode is always true (not conditional)
- * - Fresh InMemoryCache() per request (no cross-request state contamination)
+ * - Fresh InMemoryCache() per request (registerApolloClient ensures this)
  * - Server-side fetch implementation
  *
  * Benefits from Issue #85 (Type Safety):
@@ -23,13 +33,15 @@ import { HttpLink } from '@apollo/client/link/http'
  * Create a new Apollo Client instance for server-side use.
  * Each request gets a fresh cache to prevent cross-request state contamination.
  *
- * @example
- * import { client } from '@/lib/apollo-client-server'
- * import { BUILDS_QUERY } from '@/lib/graphql-queries'
+ * DEPRECATED: Use registerApolloClient from apollo-client-server-registered.ts instead.
  *
- * // In an async Server Component:
- * const { data } = await client.query({ query: BUILDS_QUERY })
- * return <BuildDashboard initialBuilds={data.builds} />
+ * @example
+ * // ❌ OLD (do not use):
+ * import { client } from '@/lib/apollo-client-server'
+ *
+ * // ✅ NEW (use this):
+ * import { getClient } from '@/lib/apollo-client-server-registered'
+ * const client = getClient()
  */
 export function createApolloClientServer(): ApolloClient {
   const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
@@ -50,16 +62,3 @@ export function createApolloClientServer(): ApolloClient {
     }),
   })
 }
-
-/**
- * Singleton Apollo Client instance for server-side queries.
- * Safe to use in async Server Components and server actions.
- *
- * Note: Each request uses a fresh cache (no per-request pollution).
- * For truly request-scoped caching, create a new client per request:
- *
- * @example
- * const serverClient = createApolloClientServer()
- * const { data } = await serverClient.query({ query: BUILDS_QUERY })
- */
-export const client = createApolloClientServer()
