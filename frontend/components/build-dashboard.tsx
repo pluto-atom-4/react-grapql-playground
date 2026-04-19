@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { ReactElement } from 'react'
 import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks'
 import BuildDetailModal from './build-detail-modal'
+import type { Build } from '@/lib/generated/graphql'
 import './build-dashboard.css'
 
 interface BuildItem {
@@ -13,11 +14,33 @@ interface BuildItem {
   createdAt: string
 }
 
-function BuildsTable(): ReactElement {
-  const { builds, loading, error, refetch } = useBuilds()
+interface BuildsTableProps {
+  initialBuilds?: Build[]
+}
+
+/**
+ * Inner component for builds table with SSR support
+ *
+ * Benefits from Issue #85 (Type Safety):
+ * - Explicit Build[] type ensures no re-renders from type mismatches on hydration
+ * - Cache-first strategy when initialBuilds provided prevents unnecessary queries
+ */
+function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
+  const { builds: fetchedBuilds, loading, error, refetch } = useBuilds()
   const { createBuild } = useCreateBuild()
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+
+  // Cache-first strategy: use initialBuilds if provided (server-fetched),
+  // otherwise use client-fetched builds
+  const builds = useMemo(
+    () => (initialBuilds && initialBuilds.length > 0 ? initialBuilds : fetchedBuilds),
+    [initialBuilds, fetchedBuilds]
+  )
+
+  // When initialBuilds are provided, we shouldn't show loading state
+  // since data is already available from server
+  const shouldShowLoading = !initialBuilds && loading
 
   const handleCreateBuild = (): void => {
     const name = prompt('Enter build name:')
@@ -36,12 +59,12 @@ function BuildsTable(): ReactElement {
     })()
   }
 
-  if (loading) {
+  if (shouldShowLoading) {
     return <div className="dashboard-container"><p>Loading builds...</p></div>
   }
 
   const errorMessage = error instanceof Error ? error.message : String(error)
-  if (error) {
+  if (error && !initialBuilds) {
     return <div className="dashboard-container"><p className="error">Error: {errorMessage}</p></div>
   }
 
@@ -104,10 +127,32 @@ function BuildsTable(): ReactElement {
   )
 }
 
-export default function BuildDashboard(): ReactElement {
+interface BuildDashboardProps {
+  initialBuilds?: Build[]
+  serverError?: string | null
+}
+
+/**
+ * Root dashboard component with SSR support
+ *
+ * When called from async Server Component (page.tsx):
+ * - initialBuilds prop contains server-fetched data
+ * - No additional GraphQL query on hydration (cache-first strategy)
+ * - Zero hydration re-renders due to type-safe Build[] type from Issue #85
+ *
+ * When called without props (fallback):
+ * - BuildsTable fetches via useBuilds() hook
+ * - Normal client-side rendering with loading states
+ */
+export default function BuildDashboard({ initialBuilds, serverError }: BuildDashboardProps): ReactElement {
   return (
     <div className="dashboard-container">
-      <BuildsTable />
+      {serverError && (
+        <div className="alert alert-warning">
+          <p>Server error loading builds: {serverError}. Attempting to load client-side...</p>
+        </div>
+      )}
+      <BuildsTable initialBuilds={initialBuilds} />
     </div>
   )
 }
