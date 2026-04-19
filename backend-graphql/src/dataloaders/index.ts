@@ -1,6 +1,6 @@
 import DataLoader from 'dataloader'
 import { PrismaClient } from '@prisma/client'
-import type { PartData, TestRunData } from '../types'
+import type { BuildContext } from '../types'
 
 /**
  * BuildLoader prevents N+1 queries when resolving parts for multiple builds.
@@ -64,15 +64,12 @@ export function createBuildTestRunLoader(prisma: PrismaClient) {
  * DataLoader batches within a single request, then clears.
  * Each new GraphQL request gets fresh loaders (prevents stale cache).
  */
-export interface BuildContext {
-  prisma: PrismaClient
-  buildPartLoader: DataLoader<string, PartData[]>
-  buildTestRunLoader: DataLoader<string, TestRunData[]>
-}
-
 export function createLoaders(prisma: PrismaClient): Omit<BuildContext, 'prisma'> {
   return {
     buildPartLoader: createBuildPartLoader(prisma),
     buildTestRunLoader: createBuildTestRunLoader(prisma),
   }
 }
+
+// Re-export for convenience
+export type { BuildContext }

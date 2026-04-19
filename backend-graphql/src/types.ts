@@ -30,12 +30,16 @@ export interface TestRunData {
 
 /**
  * GraphQL resolver context with data loaders and database client
+ * Exported as both names for compatibility with existing imports
  */
-export interface GraphQLContext {
+export interface BuildContext {
   prisma: PrismaClient
   buildPartLoader: DataLoader<string, PartData[]>
   buildTestRunLoader: DataLoader<string, TestRunData[]>
 }
+
+// Alias for backward compatibility
+export type GraphQLContext = BuildContext
 
 /**
  * Type for resolver parent object (Build)
