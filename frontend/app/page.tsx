@@ -30,7 +30,6 @@ export default async function Page(): Promise<ReactElement> {
 
   try {
     // Fetch builds on the server (runs in parallel with JS bundle download)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const result = await client.query({
       query: BUILDS_QUERY,
       variables: { limit: 10, offset: 0 },
