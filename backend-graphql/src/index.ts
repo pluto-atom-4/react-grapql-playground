@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { ApolloServer } from '@apollo/server'
 import { startStandaloneServer } from '@apollo/server/standalone'
 import { prisma } from './db/client'
@@ -9,6 +10,10 @@ import { mutationResolver } from './resolvers/Mutation'
 import { buildResolver } from './resolvers/Build'
 
 const PORT = parseInt(process.env.GRAPHQL_PORT || '4000', 10)
+
+// Setup __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Read GraphQL schema SDL
 const schemaPath = path.join(__dirname, 'schema.graphql')
