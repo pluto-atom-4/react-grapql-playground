@@ -76,6 +76,12 @@ function BuildDetailContent({
   }
 
   const handleStatusChange = (newStatus: string): void => {
+    const validStatuses = [BuildStatus.Pending, BuildStatus.Running, BuildStatus.Complete, BuildStatus.Failed]
+    if (!validStatuses.includes(newStatus as BuildStatus)) {
+      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
+      return
+    }
+
     void (async (): Promise<void> => {
       try {
         await updateStatus(buildId, newStatus as BuildStatus)
@@ -110,6 +116,12 @@ function BuildDetailContent({
   const handleSubmitTestRun = (): void => {
     const status = prompt('Test status (PENDING/RUNNING/PASSED/FAILED):')
     if (!status) return
+
+    const validStatuses = [TestStatus.Pending, TestStatus.Running, TestStatus.Passed, TestStatus.Failed]
+    if (!validStatuses.includes(status as TestStatus)) {
+      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
+      return
+    }
 
     void (async (): Promise<void> => {
       try {
