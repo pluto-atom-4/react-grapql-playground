@@ -5,13 +5,13 @@
  * Catches exceptions, logs errors, and returns JSON responses.
  */
 
-import { Request, Response, NextFunction } from 'express'
+import { Request, Response, NextFunction } from 'express';
 
 export interface ErrorResponse {
-  error: string
-  message: string
-  status: number
-  details?: unknown
+  error: string;
+  message: string;
+  status: number;
+  details?: unknown;
 }
 
 export class AppError extends Error {
@@ -20,8 +20,8 @@ export class AppError extends Error {
     message: string,
     public details?: unknown
   ) {
-    super(message)
-    this.name = 'AppError'
+    super(message);
+    this.name = 'AppError';
   }
 }
 
@@ -36,7 +36,7 @@ export function errorHandler(
   _next: NextFunction
 ) {
   // Log error (in production: use proper logger)
-  console.error('[ERROR]', err)
+  console.error('[ERROR]', err);
 
   if (err instanceof AppError) {
     return res.status(err.status).json({
@@ -44,7 +44,7 @@ export function errorHandler(
       message: err.message,
       status: err.status,
       ...(err.details && typeof err.details === 'object' ? { details: err.details } : {}),
-    })
+    });
   }
 
   // Unknown error
@@ -52,7 +52,7 @@ export function errorHandler(
     error: 'Internal Server Error',
     message: err.message || 'An unexpected error occurred',
     status: 500,
-  })
+  });
 }
 
 /**
@@ -63,6 +63,6 @@ export function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next)
-  }
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 }

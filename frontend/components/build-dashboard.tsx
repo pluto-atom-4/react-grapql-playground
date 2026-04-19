@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { useState, useMemo } from 'react'
-import type { ReactElement } from 'react'
-import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks'
-import BuildDetailModal from './build-detail-modal'
-import type { Build } from '@/lib/generated/graphql'
-import './build-dashboard.css'
+import { useState, useMemo } from 'react';
+import type { ReactElement } from 'react';
+import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
+import BuildDetailModal from './build-detail-modal';
+import type { Build } from '@/lib/generated/graphql';
+import './build-dashboard.css';
 
 interface BuildItem {
-  id: string
-  name: string
-  status: string
-  createdAt: string
+  id: string;
+  name: string;
+  status: string;
+  createdAt: string;
 }
 
 interface BuildsTableProps {
-  initialBuilds?: Build[]
+  initialBuilds?: Build[];
 }
 
 /**
@@ -26,57 +26,68 @@ interface BuildsTableProps {
  * - Cache-first strategy when initialBuilds provided prevents unnecessary queries
  */
 function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
-  const { builds: fetchedBuilds, loading, error, refetch } = useBuilds()
-  const { createBuild } = useCreateBuild()
-  const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const { builds: fetchedBuilds, loading, error, refetch } = useBuilds();
+  const { createBuild } = useCreateBuild();
+  const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Cache-first strategy: use initialBuilds if provided (server-fetched),
-  // otherwise use client-fetched builds
-  const builds = useMemo(
-    () => (initialBuilds && initialBuilds.length > 0 ? initialBuilds : fetchedBuilds),
-    [initialBuilds, fetchedBuilds]
-  )
+  // Prefer fresh client-fetched data over stale server-provided initial data.
+  // This ensures mutations that call refetch() show new data immediately.
+  // On initial page load, fetchedBuilds may be empty, so we fall back to initialBuilds.
+  // Post-hydration, after any refetch(), fetchedBuilds has priority (fresh data).
+  const builds = useMemo(() => {
+    // If we have fetched data (from refetch or initial client fetch), prefer it
+    // This ensures mutations that update the server immediately reflect in the UI
+    if (fetchedBuilds && fetchedBuilds.length > 0) return fetchedBuilds;
+
+    // Otherwise fall back to server-provided data only on initial load
+    // before any client-side fetch happens
+    return initialBuilds || [];
+  }, [initialBuilds, fetchedBuilds]);
 
   // When initialBuilds are provided, we shouldn't show loading state
   // since data is already available from server
-  const shouldShowLoading = !initialBuilds && loading
+  const shouldShowLoading = !initialBuilds && loading;
 
   const handleCreateBuild = (): void => {
-    const name = prompt('Enter build name:')
-    if (!name) return
+    const name = prompt('Enter build name:');
+    if (!name) return;
 
     void (async (): Promise<void> => {
       try {
-        setIsCreating(true)
-        await createBuild(name)
-        refetch()
+        setIsCreating(true);
+        await createBuild(name);
+        refetch();
       } catch (err) {
-        alert(`Failed to create build: ${String(err)}`)
+        alert(`Failed to create build: ${String(err)}`);
       } finally {
-        setIsCreating(false)
+        setIsCreating(false);
       }
-    })()
-  }
+    })();
+  };
 
   if (shouldShowLoading) {
-    return <div className="dashboard-container"><p>Loading builds...</p></div>
+    return (
+      <div className="dashboard-container">
+        <p>Loading builds...</p>
+      </div>
+    );
   }
 
-  const errorMessage = error instanceof Error ? error.message : String(error)
+  const errorMessage = error instanceof Error ? error.message : String(error);
   if (error && !initialBuilds) {
-    return <div className="dashboard-container"><p className="error">Error: {errorMessage}</p></div>
+    return (
+      <div className="dashboard-container">
+        <p className="error">Error: {errorMessage}</p>
+      </div>
+    );
   }
 
   return (
     <>
       <div className="dashboard-header">
         <h1>Build Dashboard</h1>
-        <button
-          onClick={handleCreateBuild}
-          disabled={isCreating}
-          className="btn btn-primary"
-        >
+        <button onClick={handleCreateBuild} disabled={isCreating} className="btn btn-primary">
           {isCreating ? 'Creating...' : 'Create Build'}
         </button>
       </div>
@@ -124,12 +135,12 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
         />
       )}
     </>
-  )
+  );
 }
 
 interface BuildDashboardProps {
-  initialBuilds?: Build[]
-  serverError?: string | null
+  initialBuilds?: Build[];
+  serverError?: string | null;
 }
 
 /**
@@ -144,7 +155,10 @@ interface BuildDashboardProps {
  * - BuildsTable fetches via useBuilds() hook
  * - Normal client-side rendering with loading states
  */
-export default function BuildDashboard({ initialBuilds, serverError }: BuildDashboardProps): ReactElement {
+export default function BuildDashboard({
+  initialBuilds,
+  serverError,
+}: BuildDashboardProps): ReactElement {
   return (
     <div className="dashboard-container">
       {serverError && (
@@ -154,5 +168,5 @@ export default function BuildDashboard({ initialBuilds, serverError }: BuildDash
       )}
       <BuildsTable initialBuilds={initialBuilds} />
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import DataLoader from 'dataloader'
-import { PrismaClient } from '@prisma/client'
-import type { BuildContext } from '../types'
+import DataLoader from 'dataloader';
+import { PrismaClient } from '@prisma/client';
+import type { BuildContext } from '../types';
 
 /**
  * BuildLoader prevents N+1 queries when resolving parts for multiple builds.
@@ -19,19 +19,19 @@ export function createBuildPartLoader(prisma: PrismaClient) {
   return new DataLoader(async (buildIds: readonly string[]) => {
     const parts = await prisma.part.findMany({
       where: { buildId: { in: buildIds as string[] } },
-    })
+    });
 
     // Group parts by buildId and return in same order as buildIds
-    const partsByBuildId: Record<string, typeof parts> = {}
+    const partsByBuildId: Record<string, typeof parts> = {};
     parts.forEach((part) => {
       if (!partsByBuildId[part.buildId]) {
-        partsByBuildId[part.buildId] = []
+        partsByBuildId[part.buildId] = [];
       }
-      partsByBuildId[part.buildId].push(part)
-    })
+      partsByBuildId[part.buildId].push(part);
+    });
 
-    return buildIds.map((buildId) => partsByBuildId[buildId] || [])
-  })
+    return buildIds.map((buildId) => partsByBuildId[buildId] || []);
+  });
 }
 
 /**
@@ -44,18 +44,18 @@ export function createBuildTestRunLoader(prisma: PrismaClient) {
     const testRuns = await prisma.testRun.findMany({
       where: { buildId: { in: buildIds as string[] } },
       orderBy: { createdAt: 'desc' },
-    })
+    });
 
-    const testRunsByBuildId: Record<string, typeof testRuns> = {}
+    const testRunsByBuildId: Record<string, typeof testRuns> = {};
     testRuns.forEach((testRun) => {
       if (!testRunsByBuildId[testRun.buildId]) {
-        testRunsByBuildId[testRun.buildId] = []
+        testRunsByBuildId[testRun.buildId] = [];
       }
-      testRunsByBuildId[testRun.buildId].push(testRun)
-    })
+      testRunsByBuildId[testRun.buildId].push(testRun);
+    });
 
-    return buildIds.map((buildId) => testRunsByBuildId[buildId] || [])
-  })
+    return buildIds.map((buildId) => testRunsByBuildId[buildId] || []);
+  });
 }
 
 /**
@@ -68,8 +68,8 @@ export function createLoaders(prisma: PrismaClient): Omit<BuildContext, 'prisma'
   return {
     buildPartLoader: createBuildPartLoader(prisma),
     buildTestRunLoader: createBuildTestRunLoader(prisma),
-  }
+  };
 }
 
 // Re-export for convenience
-export type { BuildContext }
+export type { BuildContext };

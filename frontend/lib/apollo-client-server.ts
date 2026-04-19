@@ -26,8 +26,8 @@
  * - Promise types ensure proper async/await handling in Server Components
  */
 
-import { ApolloClient, InMemoryCache } from '@apollo/client'
-import { HttpLink } from '@apollo/client/link/http'
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { HttpLink } from '@apollo/client/link/http';
 
 /**
  * Create a new Apollo Client instance for server-side use.
@@ -44,7 +44,7 @@ import { HttpLink } from '@apollo/client/link/http'
  * const client = getClient()
  */
 export function createApolloClientServer(): ApolloClient {
-  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
 
   return new ApolloClient({
     // Always true for server-side rendering (not conditional like client)
@@ -60,5 +60,5 @@ export function createApolloClientServer(): ApolloClient {
       credentials: 'include',
       // HttpLink uses Node's fetch automatically in server context (Node 18+)
     }),
-  })
+  });
 }

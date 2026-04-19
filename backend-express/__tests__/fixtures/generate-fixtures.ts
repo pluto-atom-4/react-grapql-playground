@@ -5,13 +5,13 @@
  * Avoids storing large binary files in version control.
  */
 
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const FIXTURES_DIR = __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FIXTURES_DIR = __dirname;
 
 /**
  * Generate a binary file with random data for testing.
@@ -21,46 +21,43 @@ const FIXTURES_DIR = __dirname
  * @param sizeInMB - Size of the file in megabytes
  * @returns Promise resolving to the file path
  */
-export async function generateBinaryFile(
-  filename: string,
-  sizeInMB: number
-): Promise<string> {
-  const filePath = path.join(FIXTURES_DIR, filename)
-  const sizeInBytes = sizeInMB * 1024 * 1024
+export async function generateBinaryFile(filename: string, sizeInMB: number): Promise<string> {
+  const filePath = path.join(FIXTURES_DIR, filename);
+  const sizeInBytes = sizeInMB * 1024 * 1024;
 
   return new Promise((resolve, reject) => {
-    const writeStream = fs.createWriteStream(filePath)
-    let written = 0
-    const chunkSize = 1024 * 1024 // 1MB chunks
+    const writeStream = fs.createWriteStream(filePath);
+    let written = 0;
+    const chunkSize = 1024 * 1024; // 1MB chunks
 
-    writeStream.on('error', reject)
-    writeStream.on('finish', () => resolve(filePath))
+    writeStream.on('error', reject);
+    writeStream.on('finish', () => resolve(filePath));
 
     const writeChunk = () => {
       while (written < sizeInBytes) {
-        const remainingBytes = sizeInBytes - written
-        const currentChunkSize = Math.min(chunkSize, remainingBytes)
+        const remainingBytes = sizeInBytes - written;
+        const currentChunkSize = Math.min(chunkSize, remainingBytes);
 
         // Generate random data
-        const chunk = Buffer.alloc(currentChunkSize)
+        const chunk = Buffer.alloc(currentChunkSize);
         for (let i = 0; i < currentChunkSize; i++) {
-          chunk[i] = Math.floor(Math.random() * 256)
+          chunk[i] = Math.floor(Math.random() * 256);
         }
 
-        written += currentChunkSize
-        const canContinue = writeStream.write(chunk)
+        written += currentChunkSize;
+        const canContinue = writeStream.write(chunk);
 
         if (!canContinue) {
-          writeStream.once('drain', writeChunk)
-          return
+          writeStream.once('drain', writeChunk);
+          return;
         }
       }
 
-      writeStream.end()
-    }
+      writeStream.end();
+    };
 
-    writeChunk()
-  })
+    writeChunk();
+  });
 }
 
 /**
@@ -73,19 +70,19 @@ export async function cleanupFixtures(filenames: string[]): Promise<void> {
   const promises = filenames.map(
     (filename) =>
       new Promise<void>((resolve) => {
-        const filePath = path.join(FIXTURES_DIR, filename)
+        const filePath = path.join(FIXTURES_DIR, filename);
 
         fs.unlink(filePath, (err) => {
           // Ignore ENOENT (file not found) errors
           if (err && err.code !== 'ENOENT') {
-            console.warn(`Warning: Failed to clean up ${filePath}:`, err.message)
+            console.warn(`Warning: Failed to clean up ${filePath}:`, err.message);
           }
-          resolve()
-        })
+          resolve();
+        });
       })
-  )
+  );
 
-  await Promise.all(promises)
+  await Promise.all(promises);
 }
 
 /**
@@ -96,7 +93,7 @@ export async function cleanupFixtures(filenames: string[]): Promise<void> {
  * @returns Full path to the fixture file
  */
 export function getFixturePath(filename: string): string {
-  return path.join(FIXTURES_DIR, filename)
+  return path.join(FIXTURES_DIR, filename);
 }
 
 /**
@@ -106,7 +103,7 @@ export function getFixturePath(filename: string): string {
  * @returns true if file exists, false otherwise
  */
 export function fixtureExists(filename: string): boolean {
-  return fs.existsSync(getFixturePath(filename))
+  return fs.existsSync(getFixturePath(filename));
 }
 
 /**
@@ -118,9 +115,9 @@ export function fixtureExists(filename: string): boolean {
  */
 export function getFixtureSize(filename: string): number {
   try {
-    const stats = fs.statSync(getFixturePath(filename))
-    return stats.size
+    const stats = fs.statSync(getFixturePath(filename));
+    return stats.size;
   } catch {
-    return 0
+    return 0;
   }
 }

@@ -13,9 +13,9 @@
  * Fixes Issue #107: CRITICAL - Apollo Client Cache Pollution
  */
 
-import { registerApolloClient } from '@apollo/client-integration-nextjs'
-import { ApolloClient, InMemoryCache } from '@apollo/client'
-import { HttpLink } from '@apollo/client/link/http'
+import { registerApolloClient } from '@apollo/client-integration-nextjs';
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { HttpLink } from '@apollo/client/link/http';
 
 /**
  * Register Apollo Client factory for server-side use.
@@ -33,7 +33,7 @@ import { HttpLink } from '@apollo/client/link/http'
  * }
  */
 export const { getClient } = registerApolloClient(() => {
-  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
 
   return new ApolloClient({
     // Always true for server-side rendering
@@ -50,5 +50,5 @@ export const { getClient } = registerApolloClient(() => {
       credentials: 'include',
       // HttpLink uses Node's fetch automatically in server context (Node 18+)
     }),
-  })
-})
+  });
+});

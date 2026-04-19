@@ -7,11 +7,11 @@
  * Both endpoints emit events for real-time subscribers and GraphQL mutations.
  */
 
-import { Router, type Router as ExpressRouter } from 'express'
-import { eventBus } from '../services/event-bus'
-import { asyncHandler, AppError } from '../middleware/error'
+import { Router, type Router as ExpressRouter } from 'express';
+import { eventBus } from '../services/event-bus';
+import { asyncHandler, AppError } from '../middleware/error';
 
-const router: ExpressRouter = Router()
+const router: ExpressRouter = Router();
 
 /**
  * POST /webhooks/ci-results
@@ -29,14 +29,14 @@ const router: ExpressRouter = Router()
 router.post(
   '/ci-results',
   asyncHandler(async (req, res) => {
-    const { buildId, status, testsPassed, testsFailed } = req.body
+    const { buildId, status, testsPassed, testsFailed } = req.body;
 
     // Validate required fields
     if (!buildId) {
-      throw new AppError(400, 'buildId is required')
+      throw new AppError(400, 'buildId is required');
     }
     if (!status) {
-      throw new AppError(400, 'status is required')
+      throw new AppError(400, 'status is required');
     }
 
     // Emit event for real-time subscribers and GraphQL mutations
@@ -45,15 +45,15 @@ router.post(
       status,
       testsPassed: testsPassed || 0,
       testsFailed: testsFailed || 0,
-    })
+    });
 
     res.json({
       status: 'received',
       eventType: 'ciResultsReceived',
       buildId,
-    })
+    });
   })
-)
+);
 
 /**
  * POST /webhooks/sensor-data
@@ -70,17 +70,17 @@ router.post(
 router.post(
   '/sensor-data',
   asyncHandler(async (req, res) => {
-    const { buildId, sensorType, value } = req.body
+    const { buildId, sensorType, value } = req.body;
 
     // Validate required fields
     if (!buildId) {
-      throw new AppError(400, 'buildId is required')
+      throw new AppError(400, 'buildId is required');
     }
     if (!sensorType) {
-      throw new AppError(400, 'sensorType is required')
+      throw new AppError(400, 'sensorType is required');
     }
     if (value === undefined) {
-      throw new AppError(400, 'value is required')
+      throw new AppError(400, 'value is required');
     }
 
     // Emit event for real-time subscribers
@@ -88,16 +88,16 @@ router.post(
       buildId,
       sensorType,
       value,
-    })
+    });
 
     res.json({
       status: 'received',
       eventType: 'sensorDataReceived',
       buildId,
       sensorType,
-    })
+    });
   })
-)
+);
 
 /**
  * POST /webhooks/test - Echo webhook for testing
@@ -109,8 +109,8 @@ router.post(
       status: 'ok',
       received: req.body,
       timestamp: new Date().toISOString(),
-    })
+    });
   })
-)
+);
 
-export default router
+export default router;

@@ -192,7 +192,7 @@ describe('Events Route - POST /events/emit - Authentication', () => {
   it('should return 403 when Authorization header has wrong format', async () => {
     const response = await request(app)
       .post('/events/emit')
-      .set('Authorization', `test-secret-key`)  // Missing "Bearer " prefix
+      .set('Authorization', `test-secret-key`) // Missing "Bearer " prefix
       .send({
         event: 'buildCreated',
         payload: { buildId: '123' },

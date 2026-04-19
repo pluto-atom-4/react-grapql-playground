@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import type { ReactElement } from 'react'
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
   useBuildDetail,
   useUpdateBuildStatus,
@@ -9,45 +9,45 @@ import {
   useSubmitTestRun,
   BuildStatus,
   TestStatus,
-} from '@/lib/apollo-hooks'
-import './build-detail-modal.css'
+} from '@/lib/apollo-hooks';
+import './build-detail-modal.css';
 
 interface Part {
-  id: string
-  name: string
-  sku: string
-  quantity: number
+  id: string;
+  name: string;
+  sku: string;
+  quantity: number;
 }
 
 interface TestRun {
-  id: string
-  status: string
-  result?: string
-  completedAt?: string
+  id: string;
+  status: string;
+  result?: string;
+  completedAt?: string;
 }
 
 interface BuildData {
-  id: string
-  name: string
-  status: string
-  description?: string
-  parts?: Part[]
-  testRuns?: TestRun[]
+  id: string;
+  name: string;
+  status: string;
+  description?: string;
+  parts?: Part[];
+  testRuns?: TestRun[];
 }
 
 function BuildDetailContent({
   buildId,
   onClose,
 }: {
-  buildId: string
-  onClose: () => void
+  buildId: string;
+  onClose: () => void;
 }): ReactElement {
-  const { build, loading, error, refetch } = useBuildDetail(buildId)
-  const { updateStatus } = useUpdateBuildStatus()
-  const { addPart } = useAddPart()
-  const { submitTestRun } = useSubmitTestRun()
-  const [isAddingPart, setIsAddingPart] = useState(false)
-  const [isSubmittingTestRun, setIsSubmittingTestRun] = useState(false)
+  const { build, loading, error, refetch } = useBuildDetail(buildId);
+  const { updateStatus } = useUpdateBuildStatus();
+  const { addPart } = useAddPart();
+  const { submitTestRun } = useSubmitTestRun();
+  const [isAddingPart, setIsAddingPart] = useState(false);
+  const [isSubmittingTestRun, setIsSubmittingTestRun] = useState(false);
 
   if (loading) {
     return (
@@ -56,13 +56,14 @@ function BuildDetailContent({
           <p>Loading build details...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !build) {
-    const errorMessage = typeof error === 'object' && error !== null && 'message' in error 
-      ? String((error as Record<string, unknown>).message) 
-      : 'Unknown error'
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as Record<string, unknown>).message)
+        : 'Unknown error';
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
@@ -72,78 +73,90 @@ function BuildDetailContent({
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   const handleStatusChange = (newStatus: string): void => {
-    const validStatuses = [BuildStatus.Pending, BuildStatus.Running, BuildStatus.Complete, BuildStatus.Failed]
+    const validStatuses = [
+      BuildStatus.Pending,
+      BuildStatus.Running,
+      BuildStatus.Complete,
+      BuildStatus.Failed,
+    ];
     if (!validStatuses.includes(newStatus as BuildStatus)) {
-      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
-      return
+      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      return;
     }
 
     void (async (): Promise<void> => {
       try {
-        await updateStatus(buildId, newStatus as BuildStatus)
-        refetch()
+        await updateStatus(buildId, newStatus as BuildStatus);
+        refetch();
       } catch (error) {
-        alert(`Failed to update status: ${String(error)}`)
+        alert(`Failed to update status: ${String(error)}`);
       }
-    })()
-  }
+    })();
+  };
 
   const handleAddPart = (): void => {
-    const name = prompt('Part name:')
-    if (!name) return
-    const sku = prompt('SKU:')
-    if (!sku) return
-    const quantityStr = prompt('Quantity:')
-    if (!quantityStr) return
+    const name = prompt('Part name:');
+    if (!name) return;
+    const sku = prompt('SKU:');
+    if (!sku) return;
+    const quantityStr = prompt('Quantity:');
+    if (!quantityStr) return;
 
     void (async (): Promise<void> => {
       try {
-        setIsAddingPart(true)
-        await addPart(buildId, name, sku, parseInt(quantityStr, 10))
-        refetch()
+        setIsAddingPart(true);
+        await addPart(buildId, name, sku, parseInt(quantityStr, 10));
+        refetch();
       } catch (error) {
-        alert(`Failed to add part: ${String(error)}`)
+        alert(`Failed to add part: ${String(error)}`);
       } finally {
-        setIsAddingPart(false)
+        setIsAddingPart(false);
       }
-    })()
-  }
+    })();
+  };
 
   const handleSubmitTestRun = (): void => {
-    const status = prompt('Test status (PENDING/RUNNING/PASSED/FAILED):')
-    if (!status) return
+    const status = prompt('Test status (PENDING/RUNNING/PASSED/FAILED):');
+    if (!status) return;
 
-    const validStatuses = [TestStatus.Pending, TestStatus.Running, TestStatus.Passed, TestStatus.Failed]
+    const validStatuses = [
+      TestStatus.Pending,
+      TestStatus.Running,
+      TestStatus.Passed,
+      TestStatus.Failed,
+    ];
     if (!validStatuses.includes(status as TestStatus)) {
-      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
-      return
+      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      return;
     }
 
     void (async (): Promise<void> => {
       try {
-        setIsSubmittingTestRun(true)
-        await submitTestRun(buildId, status as TestStatus)
-        refetch()
+        setIsSubmittingTestRun(true);
+        await submitTestRun(buildId, status as TestStatus);
+        refetch();
       } catch (error) {
-        alert(`Failed to submit test run: ${String(error)}`)
+        alert(`Failed to submit test run: ${String(error)}`);
       } finally {
-        setIsSubmittingTestRun(false)
+        setIsSubmittingTestRun(false);
       }
-    })()
-  }
+    })();
+  };
 
-  const buildData = build as BuildData
+  const buildData = build as BuildData;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{buildData.name}</h2>
-          <button onClick={onClose} className="modal-close">×</button>
+          <button onClick={onClose} className="modal-close">
+            ×
+          </button>
         </div>
 
         <div className="modal-body">
@@ -189,11 +202,7 @@ function BuildDetailContent({
             ) : (
               <p className="empty-state">No parts added yet</p>
             )}
-            <button
-              onClick={handleAddPart}
-              disabled={isAddingPart}
-              className="btn btn-secondary"
-            >
+            <button onClick={handleAddPart} disabled={isAddingPart} className="btn btn-secondary">
               {isAddingPart ? 'Adding...' : 'Add Part'}
             </button>
           </section>
@@ -237,15 +246,15 @@ function BuildDetailContent({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function BuildDetailModal({
   buildId,
   onClose,
 }: {
-  buildId: string
-  onClose: () => void
+  buildId: string;
+  onClose: () => void;
 }): ReactElement {
-  return <BuildDetailContent buildId={buildId} onClose={onClose} />
+  return <BuildDetailContent buildId={buildId} onClose={onClose} />;
 }
