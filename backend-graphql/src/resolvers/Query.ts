@@ -1,5 +1,5 @@
-import { BuildContext, PaginationArgs } from '../types'
-import type { GraphQLResolveInfo } from 'graphql'
+import { BuildContext, PaginationArgs } from '../types';
+import type { GraphQLResolveInfo } from 'graphql';
 
 export const queryResolver = {
   Query: {
@@ -14,17 +14,17 @@ export const queryResolver = {
       _info: GraphQLResolveInfo
     ) {
       if (args.limit < 1 || args.limit > 100) {
-        throw new Error('limit must be between 1 and 100')
+        throw new Error('limit must be between 1 and 100');
       }
       if (args.offset < 0) {
-        throw new Error('offset must be >= 0')
+        throw new Error('offset must be >= 0');
       }
 
       return context.prisma.build.findMany({
         take: args.limit,
         skip: args.offset,
         orderBy: { createdAt: 'desc' },
-      })
+      });
     },
 
     /**
@@ -39,7 +39,7 @@ export const queryResolver = {
     ) {
       return context.prisma.build.findUnique({
         where: { id: args.id },
-      })
+      });
     },
 
     /**
@@ -55,7 +55,7 @@ export const queryResolver = {
       return context.prisma.testRun.findMany({
         where: { buildId: args.buildId },
         orderBy: { createdAt: 'desc' },
-      })
+      });
     },
   },
-}
+};

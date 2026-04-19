@@ -5,7 +5,7 @@
  * and execute mutations to update the GraphQL backend.
  */
 
-import { gql } from '@apollo/client/core'
+import { gql } from '@apollo/client/core';
 
 // Build type fragment (used in multiple queries)
 export const BUILD_FRAGMENT = gql`
@@ -17,7 +17,7 @@ export const BUILD_FRAGMENT = gql`
     createdAt
     updatedAt
   }
-`
+`;
 
 // Part type fragment
 export const PART_FRAGMENT = gql`
@@ -29,7 +29,7 @@ export const PART_FRAGMENT = gql`
     quantity
     createdAt
   }
-`
+`;
 
 // TestRun type fragment
 export const TEST_RUN_FRAGMENT = gql`
@@ -42,7 +42,7 @@ export const TEST_RUN_FRAGMENT = gql`
     completedAt
     createdAt
   }
-`
+`;
 
 // Query: Get all builds with pagination
 export const BUILDS_QUERY = gql`
@@ -52,7 +52,7 @@ export const BUILDS_QUERY = gql`
     }
   }
   ${BUILD_FRAGMENT}
-`
+`;
 
 // Query: Get single build with parts and test runs
 export const BUILD_DETAIL_QUERY = gql`
@@ -70,7 +70,7 @@ export const BUILD_DETAIL_QUERY = gql`
   ${BUILD_FRAGMENT}
   ${PART_FRAGMENT}
   ${TEST_RUN_FRAGMENT}
-`
+`;
 
 // Query: Get test runs for a build
 export const TEST_RUNS_QUERY = gql`
@@ -80,7 +80,7 @@ export const TEST_RUNS_QUERY = gql`
     }
   }
   ${TEST_RUN_FRAGMENT}
-`
+`;
 
 // Mutation: Create new build
 export const CREATE_BUILD_MUTATION = gql`
@@ -90,7 +90,7 @@ export const CREATE_BUILD_MUTATION = gql`
     }
   }
   ${BUILD_FRAGMENT}
-`
+`;
 
 // Mutation: Update build status
 export const UPDATE_BUILD_STATUS_MUTATION = gql`
@@ -100,7 +100,7 @@ export const UPDATE_BUILD_STATUS_MUTATION = gql`
     }
   }
   ${BUILD_FRAGMENT}
-`
+`;
 
 // Mutation: Add part to build
 export const ADD_PART_MUTATION = gql`
@@ -110,7 +110,7 @@ export const ADD_PART_MUTATION = gql`
     }
   }
   ${PART_FRAGMENT}
-`
+`;
 
 // Mutation: Submit test run result
 export const SUBMIT_TEST_RUN_MUTATION = gql`
@@ -120,4 +120,4 @@ export const SUBMIT_TEST_RUN_MUTATION = gql`
     }
   }
   ${TEST_RUN_FRAGMENT}
-`
+`;

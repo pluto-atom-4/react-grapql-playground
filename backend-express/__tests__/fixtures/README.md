@@ -7,6 +7,7 @@ This directory contains test fixtures for the Express backend tests. Fixtures ca
 ## Generated Fixtures
 
 ### large-file.bin
+
 - **Purpose**: Test file upload size limit validation (>50MB)
 - **Size**: 55MB (dynamically generated)
 - **MIME Type**: Binary data
@@ -37,22 +38,22 @@ import {
   getFixturePath,
   fixtureExists,
   getFixtureSize,
-} from './generate-fixtures'
+} from './generate-fixtures';
 
 // In your test file - generate fixture inline
 it('should test file size limits', async () => {
   // Generate fixture
-  const filePath = await generateBinaryFile('large-file.zip', 55)
-  
+  const filePath = await generateBinaryFile('large-file.zip', 55);
+
   try {
     // Use the fixture
-    const res = await request(app).post('/upload').attach('file', filePath)
-    expect(res.status).toBe(413)
+    const res = await request(app).post('/upload').attach('file', filePath);
+    expect(res.status).toBe(413);
   } finally {
     // Clean up after test
-    await cleanupFixtures(['large-file.zip'])
+    await cleanupFixtures(['large-file.zip']);
   }
-})
+});
 ```
 
 Alternatively, for setup/teardown at suite level:
@@ -61,19 +62,19 @@ Alternatively, for setup/teardown at suite level:
 describe('Upload Tests', () => {
   beforeAll(async () => {
     // Generate fixture before all tests
-    await generateBinaryFile('large-file.zip', 55)
-  })
+    await generateBinaryFile('large-file.zip', 55);
+  });
 
   afterAll(async () => {
     // Clean up after tests
-    await cleanupFixtures(['large-file.zip'])
-  })
+    await cleanupFixtures(['large-file.zip']);
+  });
 
   it('should reject files > 50MB', async () => {
-    const filePath = getFixturePath('large-file.zip')
+    const filePath = getFixturePath('large-file.zip');
     // ... test code
-  })
-})
+  });
+});
 ```
 
 ## Fixture Functions
@@ -89,8 +90,9 @@ Generates a binary file with random data.
 - **Implementation**: Uses Node.js streams to avoid loading entire file in memory
 
 **Example**:
+
 ```typescript
-const filePath = await generateBinaryFile('large-file.bin', 55)
+const filePath = await generateBinaryFile('large-file.bin', 55);
 // Creates: backend-express/__tests__/fixtures/large-file.bin (55MB)
 ```
 
@@ -104,8 +106,9 @@ Removes generated fixture files.
 - **Behavior**: Silently ignores missing files (idempotent)
 
 **Example**:
+
 ```typescript
-await cleanupFixtures(['large-file.bin', 'test-archive.zip'])
+await cleanupFixtures(['large-file.bin', 'test-archive.zip']);
 ```
 
 ### `getFixturePath(filename: string): string`
@@ -113,8 +116,9 @@ await cleanupFixtures(['large-file.bin', 'test-archive.zip'])
 Returns the full path to a fixture file (doesn't check existence).
 
 **Example**:
+
 ```typescript
-const path = getFixturePath('large-file.bin')
+const path = getFixturePath('large-file.bin');
 // Returns: /full/path/to/backend-express/__tests__/fixtures/large-file.bin
 ```
 
@@ -123,9 +127,10 @@ const path = getFixturePath('large-file.bin')
 Checks if a fixture file exists.
 
 **Example**:
+
 ```typescript
 if (fixtureExists('large-file.bin')) {
-  console.log('Fixture already exists')
+  console.log('Fixture already exists');
 }
 ```
 
@@ -134,9 +139,10 @@ if (fixtureExists('large-file.bin')) {
 Returns the size of a fixture file in bytes (0 if not found).
 
 **Example**:
+
 ```typescript
-const sizeInBytes = getFixtureSize('large-file.bin')
-const sizeInMB = sizeInBytes / (1024 * 1024)
+const sizeInBytes = getFixtureSize('large-file.bin');
+const sizeInMB = sizeInBytes / (1024 * 1024);
 ```
 
 ## File Organization
@@ -167,6 +173,7 @@ backend-express/__tests__/fixtures/large-file.bin
 ### File Generation Time
 
 Generating a 55MB file takes approximately:
+
 - **Local SSD**: 0.5-1 second
 - **Local HDD**: 2-5 seconds
 - **CI/CD environment**: Variable (depends on disk I/O)
@@ -188,22 +195,25 @@ The fixture generator uses **streaming I/O** to avoid loading the entire 55MB fi
 To add a new dynamically generated fixture:
 
 1. **Create the fixture in `beforeAll`**:
+
    ```typescript
    beforeAll(async () => {
-     await generateBinaryFile('my-fixture.bin', 100)
-   })
+     await generateBinaryFile('my-fixture.bin', 100);
+   });
    ```
 
 2. **Clean it up in `afterAll`**:
+
    ```typescript
    afterAll(async () => {
-     await cleanupFixtures(['my-fixture.bin'])
-   })
+     await cleanupFixtures(['my-fixture.bin']);
+   });
    ```
 
 3. **Use in test**:
+
    ```typescript
-   const filePath = getFixturePath('my-fixture.bin')
+   const filePath = getFixturePath('my-fixture.bin');
    // Use filePath in test
    ```
 
@@ -220,7 +230,7 @@ For small files (< 1MB), you can commit them directly to the repository:
 These don't require the generator—just add them to the fixtures directory and use them directly:
 
 ```typescript
-const filePath = path.join(__dirname, 'fixtures', 'config.json')
+const filePath = path.join(__dirname, 'fixtures', 'config.json');
 ```
 
 ## Troubleshooting
@@ -228,6 +238,7 @@ const filePath = path.join(__dirname, 'fixtures', 'config.json')
 ### File Generation Hangs
 
 If fixture generation appears to hang:
+
 1. Check available disk space
 2. Verify the fixtures directory is writable
 3. Monitor system I/O performance
@@ -236,6 +247,7 @@ If fixture generation appears to hang:
 ### Cleanup Fails
 
 If cleanup doesn't work:
+
 1. Check file permissions
 2. Verify the file isn't open in another process
 3. Look for permission errors in test output
@@ -244,6 +256,7 @@ If cleanup doesn't work:
 ### Fixture File Persists After Tests
 
 This can happen if:
+
 1. Test crashes before `afterAll` runs—manually delete the file
 2. Test runner doesn't execute `afterAll` hooks—check test configuration
 3. File has permission issues—adjust permissions and retry
@@ -251,6 +264,7 @@ This can happen if:
 ### Out of Disk Space
 
 If generating 55MB fixtures causes disk space issues:
+
 1. Check available disk space: `df -h`
 2. Clean up other test artifacts: `rm -rf node_modules/__tests__/artifacts`
 3. Reduce fixture size for testing: Use 10MB instead of 55MB

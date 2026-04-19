@@ -10,49 +10,41 @@
  * - sensorData: { buildId, sensorType, value, timestamp }
  */
 
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'events';
 
 class EventBus extends EventEmitter {
   constructor() {
-    super()
+    super();
     // Set max listeners to prevent memory leak warnings
-    this.setMaxListeners(100)
+    this.setMaxListeners(100);
   }
 
   // Emit typed events with timestamps
-  emitFileUploaded(data: {
-    fileId: string
-    buildId?: string
-    fileName: string
-  }) {
+  emitFileUploaded(data: { fileId: string; buildId?: string; fileName: string }) {
     this.emit('fileUploaded', {
       ...data,
       timestamp: new Date().toISOString(),
-    })
+    });
   }
 
   emitCIResults(data: {
-    buildId: string
-    status: string
-    testsPassed?: number
-    testsFailed?: number
+    buildId: string;
+    status: string;
+    testsPassed?: number;
+    testsFailed?: number;
   }) {
     this.emit('ciResults', {
       ...data,
       timestamp: new Date().toISOString(),
-    })
+    });
   }
 
-  emitSensorData(data: {
-    buildId: string
-    sensorType: string
-    value: unknown
-  }) {
+  emitSensorData(data: { buildId: string; sensorType: string; value: unknown }) {
     this.emit('sensorData', {
       ...data,
       timestamp: new Date().toISOString(),
-    })
+    });
   }
 }
 
-export const eventBus = new EventBus()
+export const eventBus = new EventBus();

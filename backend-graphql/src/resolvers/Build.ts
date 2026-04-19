@@ -1,5 +1,5 @@
-import type { BuildParent, GraphQLContext } from '../types'
-import type { GraphQLResolveInfo } from 'graphql'
+import type { BuildParent, GraphQLContext } from '../types';
+import type { GraphQLResolveInfo } from 'graphql';
 
 /**
  * Build type resolver.
@@ -27,7 +27,7 @@ export const buildResolver = {
       context: GraphQLContext,
       _info: GraphQLResolveInfo
     ) {
-      return context.buildPartLoader.load(parent.id)
+      return context.buildPartLoader.load(parent.id);
     },
 
     /**
@@ -41,7 +41,7 @@ export const buildResolver = {
       context: GraphQLContext,
       _info: GraphQLResolveInfo
     ) {
-      return context.buildTestRunLoader.load(parent.id)
+      return context.buildTestRunLoader.load(parent.id);
     },
   },
-}
+};

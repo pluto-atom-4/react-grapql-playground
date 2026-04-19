@@ -9,4 +9,4 @@ export {
   getFixturePath,
   fixtureExists,
   getFixtureSize,
-} from './generate-fixtures'
+} from './generate-fixtures';

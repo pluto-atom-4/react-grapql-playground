@@ -8,49 +8,49 @@
  * - Handles automatic reconnection on disconnect
  */
 
-'use client'
+'use client';
 
-import { useApolloClient } from '@apollo/client/react'
-import { useEffect, useRef } from 'react'
+import { useApolloClient } from '@apollo/client/react';
+import { useEffect, useRef } from 'react';
 
 export function useSSEEvents(): void {
-  const client = useApolloClient()
-  const eventSourceRef = useRef<EventSource | null>(null)
+  const client = useApolloClient();
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect((): (() => void) => {
-    const expressUrl = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000'
-    const eventsUrl = `${expressUrl}/events`
+    const expressUrl = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
+    const eventsUrl = `${expressUrl}/events`;
 
     try {
-      const eventSource = new EventSource(eventsUrl, { withCredentials: true })
+      const eventSource = new EventSource(eventsUrl, { withCredentials: true });
 
       eventSource.addEventListener('buildCreated', (): void => {
-        client.cache.evict({ fieldName: 'builds' })
-        client.cache.gc()
-      })
+        client.cache.evict({ fieldName: 'builds' });
+        client.cache.gc();
+      });
 
       eventSource.addEventListener('buildStatusChanged', (): void => {
-        client.cache.evict({ fieldName: 'build' })
-        client.cache.gc()
-      })
+        client.cache.evict({ fieldName: 'build' });
+        client.cache.gc();
+      });
 
       eventSource.addEventListener('testRunSubmitted', (): void => {
-        client.cache.evict({ fieldName: 'testRuns' })
-        client.cache.gc()
-      })
+        client.cache.evict({ fieldName: 'testRuns' });
+        client.cache.gc();
+      });
 
       eventSource.addEventListener('error', (): void => {
-        console.warn('SSE disconnected, will reconnect...')
-        eventSource.close()
-      })
+        console.warn('SSE disconnected, will reconnect...');
+        eventSource.close();
+      });
 
-      eventSourceRef.current = eventSource
+      eventSourceRef.current = eventSource;
     } catch (error) {
-      console.error('Failed to connect to SSE:', error)
+      console.error('Failed to connect to SSE:', error);
     }
 
     return (): void => {
-      eventSourceRef.current?.close()
-    }
-  }, [client])
+      eventSourceRef.current?.close();
+    };
+  }, [client]);
 }
