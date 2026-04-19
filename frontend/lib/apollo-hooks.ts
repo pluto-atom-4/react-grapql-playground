@@ -10,36 +10,12 @@ import {
   ADD_PART_MUTATION,
   SUBMIT_TEST_RUN_MUTATION,
 } from './graphql-queries'
+import { BuildStatus, TestStatus, type Build, type Part, type TestRun } from './generated/graphql'
 
-// Type definitions for GraphQL responses
-interface Build {
-  id: string
-  name: string
-  description?: string
-  status: string
-  createdAt: string
-  updatedAt: string
-}
+// Re-export enums for backward compatibility
+export { BuildStatus, TestStatus }
 
-interface Part {
-  id: string
-  buildId: string
-  name: string
-  sku: string
-  quantity: number
-  createdAt: string
-}
-
-interface TestRun {
-  id: string
-  buildId: string
-  status: string
-  result?: string
-  fileUrl?: string
-  completedAt?: string
-  createdAt: string
-}
-
+// Type definition for Build with details
 interface BuildDetail extends Build {
   parts: Part[]
   testRuns: TestRun[]
@@ -47,7 +23,7 @@ interface BuildDetail extends Build {
 
 // Hook: Fetch builds with pagination
 export function useBuilds(limit: number = 10, offset: number = 0): {
-  builds: Array<{ id: string; name: string; status: string; createdAt: string }>
+  builds: Array<{ id: string; name: string; status: BuildStatus; createdAt: string }>
   loading: boolean
   error: unknown
   refetch: () => void
@@ -131,7 +107,7 @@ export function useCreateBuild(): {
 
 // Hook: Update build status mutation
 export function useUpdateBuildStatus(): {
-  updateStatus: (id: string, status: string) => Promise<Build | undefined>
+  updateStatus: (id: string, status: BuildStatus) => Promise<Build | undefined>
   loading: boolean
   error: unknown
 } {
@@ -140,7 +116,7 @@ export function useUpdateBuildStatus(): {
   )
 
   return {
-    updateStatus: async (id: string, status: string): Promise<Build | undefined> => {
+    updateStatus: async (id: string, status: BuildStatus): Promise<Build | undefined> => {
       const result = await updateStatus({
         variables: { id, status },
       })
@@ -173,7 +149,7 @@ export function useAddPart(): {
 
 // Hook: Submit test run mutation
 export function useSubmitTestRun(): {
-  submitTestRun: (buildId: string, status: string, testResult?: string, fileUrl?: string) => Promise<TestRun | undefined>
+  submitTestRun: (buildId: string, status: TestStatus, testResult?: string, fileUrl?: string) => Promise<TestRun | undefined>
   loading: boolean
   error: unknown
 } {
@@ -184,7 +160,7 @@ export function useSubmitTestRun(): {
   return {
     submitTestRun: async (
       buildId: string,
-      status: string,
+      status: TestStatus,
       testResult?: string,
       fileUrl?: string
     ): Promise<TestRun | undefined> => {
