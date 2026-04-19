@@ -1,0 +1,10 @@
+overwrite: true
+schema: ./backend-graphql/src/schema.graphql
+documents: ./frontend/lib/graphql-queries.ts
+generates:
+  ./frontend/lib/generated/graphql.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+  ./frontend/lib/generated/:
+    preset: client

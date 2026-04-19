@@ -10,51 +10,12 @@ import {
   ADD_PART_MUTATION,
   SUBMIT_TEST_RUN_MUTATION,
 } from './graphql-queries'
+import { BuildStatus, TestStatus, type Build, type Part, type TestRun } from './generated/graphql'
 
-// Enums for GraphQL types
-export enum BuildStatus {
-  PENDING = 'PENDING',
-  RUNNING = 'RUNNING',
-  COMPLETE = 'COMPLETE',
-  FAILED = 'FAILED',
-}
+// Re-export enums for backward compatibility
+export { BuildStatus, TestStatus }
 
-export enum TestStatus {
-  PENDING = 'PENDING',
-  RUNNING = 'RUNNING',
-  PASSED = 'PASSED',
-  FAILED = 'FAILED',
-}
-
-// Type definitions for GraphQL responses
-interface Build {
-  id: string
-  name: string
-  description?: string
-  status: BuildStatus
-  createdAt: string
-  updatedAt: string
-}
-
-interface Part {
-  id: string
-  buildId: string
-  name: string
-  sku: string
-  quantity: number
-  createdAt: string
-}
-
-interface TestRun {
-  id: string
-  buildId: string
-  status: TestStatus
-  result?: string
-  fileUrl?: string
-  completedAt?: string
-  createdAt: string
-}
-
+// Type definition for Build with details
 interface BuildDetail extends Build {
   parts: Part[]
   testRuns: TestRun[]
