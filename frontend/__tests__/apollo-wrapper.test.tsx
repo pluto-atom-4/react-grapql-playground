@@ -5,7 +5,6 @@ import { useState } from 'react'
 import { gql } from '@apollo/client/core'
 import { ApolloWrapper } from '../app/apollo-wrapper'
 import { useApolloClient } from '@apollo/client/react'
-import type { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 
 /**
  * Issue #23 Test Suite: Apollo Client Singleton Pattern
@@ -26,7 +25,7 @@ vi.mock('../lib/use-sse-events', () => ({
 }))
 
 // Test component that captures and exposes the Apollo client
-function TestClientCapture({ onClientCapture }: { onClientCapture: (client: ApolloClient<NormalizedCacheObject>) => void }): React.ReactNode {
+function TestClientCapture({ onClientCapture }: { onClientCapture: (client: unknown) => void }): React.ReactNode {
   const client = useApolloClient()
   
   // Capture client on every render to verify it doesn't change
@@ -59,7 +58,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
     it('should create Apollo client exactly once with useMemo', (): void => {
       // Verify: makeClient is called once during initial render
       // This is implicitly verified by the absence of warnings
-      const clients: ApolloClient<NormalizedCacheObject>[] = []
+      const clients: unknown[] = []
       
       const TestComponent = (): React.ReactNode => {
         const client = useApolloClient()
@@ -81,7 +80,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
     })
 
     it('should persist client reference across component re-renders', async (): Promise<void> => {
-      const capturedClients: ApolloClient<NormalizedCacheObject>[] = []
+      const capturedClients: unknown[] = []
       
       render(
         <ApolloWrapper>
@@ -100,9 +99,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
         expect(screen.queryByTestId('test-component')).toBeDefined()
       })
       
-      const _initialClientLength = capturedClients.length
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const firstClient = capturedClients[0] ?? null
+       const firstClient = capturedClients[0] ?? null
       
       // Force re-render by clicking button
       const button = screen.getByTestId('rerender-button')
@@ -115,14 +112,14 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
       
       // Verify: Apollo client reference is identical (same object)
       // The new captures should reference the same client
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const secondClient = capturedClients[capturedClients.length - 1] ?? null
       expect(firstClient).toBe(secondClient)
       expect(firstClient).toEqual(secondClient)
     })
 
     it('should not recreate client on prop changes', (): void => {
-      const capturedClients: ApolloClient<NormalizedCacheObject>[] = []
+      const capturedClients: unknown[] = []
       
       const ChildComponent = (): React.ReactNode => {
         const client = useApolloClient()
@@ -152,14 +149,13 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
     })
 
     it('should maintain client identity across multiple renders', (): void => {
-      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-      const clients: Array<ApolloClient<NormalizedCacheObject> | null> = []
+      const clients: unknown[] = []
       
       const ClientTracker = (): React.ReactNode => {
         const client = useApolloClient()
         clients.push(client)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        return <div data-testid="tracker">Client ID: {client?.cache?.config?.resultCacheMaxSize}</div>
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        return <div data-testid="tracker">Client ID: {String(client)}</div>
       }
       
       const { rerender } = render(
@@ -168,7 +164,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
         </ApolloWrapper>
       )
       
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const firstClient = clients[0] ?? null
       
       // Re-render multiple times
@@ -192,6 +188,7 @@ describe('ApolloWrapper - Singleton Pattern (Issue #23)', () => {
   })
 
   describe('AC2: Cache Persistence', () => {
+    // @ts-expect-error intentionally unused for documentation
     const _TEST_QUERY = gql`
       query GetTestData {
         test {

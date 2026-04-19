@@ -7,6 +7,8 @@ import {
   useUpdateBuildStatus,
   useAddPart,
   useSubmitTestRun,
+  BuildStatus,
+  TestStatus,
 } from '@/lib/apollo-hooks'
 import './build-detail-modal.css'
 
@@ -76,7 +78,7 @@ function BuildDetailContent({
   const handleStatusChange = (newStatus: string): void => {
     void (async (): Promise<void> => {
       try {
-        await updateStatus(buildId, newStatus)
+        await updateStatus(buildId, newStatus as BuildStatus)
         refetch()
       } catch (error) {
         alert(`Failed to update status: ${String(error)}`)
@@ -112,7 +114,7 @@ function BuildDetailContent({
     void (async (): Promise<void> => {
       try {
         setIsSubmittingTestRun(true)
-        await submitTestRun(buildId, status)
+        await submitTestRun(buildId, status as TestStatus)
         refetch()
       } catch (error) {
         alert(`Failed to submit test run: ${String(error)}`)

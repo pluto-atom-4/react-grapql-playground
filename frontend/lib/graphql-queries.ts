@@ -94,7 +94,7 @@ export const CREATE_BUILD_MUTATION = gql`
 
 // Mutation: Update build status
 export const UPDATE_BUILD_STATUS_MUTATION = gql`
-  mutation UpdateBuildStatus($id: ID!, $status: String!) {
+  mutation UpdateBuildStatus($id: ID!, $status: BuildStatus!) {
     updateBuildStatus(id: $id, status: $status) {
       ...BuildInfo
     }
@@ -114,7 +114,7 @@ export const ADD_PART_MUTATION = gql`
 
 // Mutation: Submit test run result
 export const SUBMIT_TEST_RUN_MUTATION = gql`
-  mutation SubmitTestRun($buildId: ID!, $status: String!, $result: String, $fileUrl: String) {
+  mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String, $fileUrl: String) {
     submitTestRun(buildId: $buildId, status: $status, result: $result, fileUrl: $fileUrl) {
       ...TestRunInfo
     }
