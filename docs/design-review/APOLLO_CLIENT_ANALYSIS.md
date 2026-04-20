@@ -523,6 +523,147 @@ When discussing this implementation:
 
 ---
 
+## 6. Apollo Auth Link Pattern (Issue #27 - Authentication)
+
+### Connecting Authentication to Apollo Client
+
+The Apollo auth link (`@apollo/client/link/context`) enables JWT authentication by injecting the Authorization header into every GraphQL request.
+
+**Key Pattern**: Fresh Token Per Request
+
+```typescript
+import { setContext } from '@apollo/client/link/context'
+import { HttpLink } from '@apollo/client'
+
+// ← Called per GraphQL request, retrieves fresh token
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem('auth_token')  // Fresh per operation
+  
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    },
+  }
+})
+
+const httpLink = new HttpLink({
+  uri: 'http://localhost:4000/graphql',
+  credentials: 'include',
+})
+
+export const client = new ApolloClient({
+  link: authLink.concat(httpLink),  // ← authLink runs FIRST
+  cache: new InMemoryCache(),
+})
+```
+
+### Why Fresh Per Request?
+
+| Scenario | Without Fresh Token | With Fresh Token |
+|----------|-------------------|------------------|
+| User logs in during app session | Token stays old ❌ | Token updates immediately ✅ |
+| Multiple GraphQL ops in same render | All ops use same token ✓ | All ops use latest token ✅ |
+| Token expires during session | App doesn't notice ❌ | 401 response triggers login ✅ |
+| User logs out then logs in | Still using old user's token ❌ | Uses new user's token ✅ |
+
+**setContext Hook**: 
+- Called before each GraphQL operation
+- Retrieves token fresh from storage
+- Allows token changes to take effect immediately
+
+### Integration with AuthContext
+
+```typescript
+// frontend/app/layout.tsx
+import { AuthProvider } from '@/lib/auth-context'
+import { ApolloWrapper } from '@/lib/apollo-wrapper'
+
+export default function RootLayout({ children }) {
+  return (
+    <AuthProvider>
+      {/* ← AuthProvider (token state) must wrap ApolloWrapper */}
+      <ApolloWrapper>
+        {children}
+      </ApolloWrapper>
+    </AuthProvider>
+  )
+}
+
+// frontend/lib/apollo-wrapper.tsx
+import { useAuth } from '@/lib/auth-context'
+
+export function ApolloWrapper({ children }) {
+  const { token } = useAuth()  // ← Access token from context
+  
+  const client = useMemo(() => makeClient(), [token])  // ← Recreate if token changes
+  
+  return (
+    <ApolloProvider client={client}>
+      {children}
+    </ApolloProvider>
+  )
+}
+```
+
+**Provider Ordering**:
+```
+AuthProvider (manages token state)
+  ↓
+ApolloWrapper (client with auth link)
+  ↓
+Components (can useAuth + useQuery)
+```
+
+### Error Handling: 401 Unauthenticated
+
+Apollo errors have structure:
+```typescript
+{
+  graphQLErrors: [],
+  networkError: {
+    status: 401,
+    message: 'Unauthenticated'
+  }
+}
+```
+
+Handle in Apollo error link:
+```typescript
+import { onError } from '@apollo/client/link/error'
+
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (networkError?.status === 401) {
+    // Token invalid/expired
+    localStorage.removeItem('auth_token')
+    window.location.href = '/login'
+  }
+  if (graphQLErrors) {
+    console.error('GraphQL Error:', graphQLErrors)
+  }
+})
+
+export const client = new ApolloClient({
+  link: ApolloLink.from([errorLink, authLink, httpLink]),
+  cache: new InMemoryCache(),
+})
+```
+
+### Related Pattern: Fresh Per-Request Context
+
+Both Apollo auth link and backend context follow the same principle:
+
+| Layer | Implementation | Benefit |
+|-------|-----------------|---------|
+| **Frontend** | setContext called per GraphQL operation | Fresh token per request |
+| **Backend** | Context factory in Apollo Server | Fresh user context per request |
+| **Principle** | Per-request isolation | Prevents token/user mixing |
+| **Documentation** | See `FRESH_PER_REQUEST_PATTERN.md` | Unified security pattern |
+
+This demonstrates **architectural consistency**: the same security principle applied at multiple layers.
+
+---
+
 ## Conclusion
 
 The project now has **comprehensive documentation** for Apollo Client patterns:
