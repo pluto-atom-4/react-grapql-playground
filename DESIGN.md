@@ -531,66 +531,439 @@ function broadcastEvent(eventType: string, data: unknown) {
 - Real-time event listener connected but GraphQL mutations can't emit events - Issue #7
 - JWT authentication not wired across layers - Issue #27
 
+### Frontend Data Fetching Patterns & Apollo Client Strategy
+
+Next.js 13+ with React 19 combines **Server Components** and **Client Components** to optimize initial load time and user interactivity. Apollo Client configuration differs significantly between these contexts:
+
+#### Architecture Overview: Three Data Fetching Layers
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Server Request (Node.js Runtime)                         │
+├──────────────────────────────────────────────────────────┤
+│ 1. Server Component (async)                              │
+│    ├─ getClient() [apollo-client-server-registered]      │
+│    ├─ Fresh cache per request                            │
+│    └─ Fetches initial data → passes to Client Component  │
+│                                                           │
+│ 2. Streaming HTML Response to Browser                    │
+│    └─ Includes initial props (hydration data)            │
+└──────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────┐
+│ Client Runtime (Browser)                                 │
+├──────────────────────────────────────────────────────────┤
+│ 3. Client Component (interactive)                        │
+│    ├─ makeClient() [apollo-client] with useMemo          │
+│    ├─ Singleton cache persists across renders            │
+│    ├─ Mutations update cache immediately                 │
+│    └─ Real-time events refresh via SSE listener          │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### Why Two Apollo Configurations?
+
+**Server-Side: `apollo-client-server-registered.ts`**
+
+Uses `registerApolloClient()` from `@apollo/client-integration-nextjs`:
+- **Fresh cache per request**: Prevents data leaking between different users
+- **Automatic per-request isolation**: Built-in by Apollo's official integration
+- **Security**: No singleton cache means no accidental cross-request contamination
+- **Example use case**: Server Component needs to fetch initial Builds list for dashboard
+
+**Client-Side: `apollo-client.ts` (with `useMemo` wrapper)**
+
+Simple singleton factory wrapped in `useMemo`:
+- **Persistent cache across renders**: Critical for state management and UX
+- **Optimistic updates**: Mutations show instant feedback before server confirms
+- **Real-time subscriptions**: SSE listeners and WebSocket connections stay active
+- **Example use case**: Client Component mutates build status, cache updates immediately, UI shows "✓ Complete" instantly
+
+#### Decision Tree: Which Configuration to Use?
+
+```
+┌─ Is this a Server Component (async, top-level)?
+│  YES → Use registerApolloClient (apollo-client-server-registered.ts)
+│        const client = getClient()
+│        const { data } = await client.query({ query: GET_BUILDS })
+│        return <BuildsList builds={data.builds} />  // Pass data as props
+│
+└─ Is this a Client Component ('use client')?
+   YES → Use makeClient with useMemo (apollo-client.ts)
+         const client = useMemo(() => makeClient(), [])
+         // Use hooks: useQuery, useMutation, useSubscription
+```
+
+#### Best Practices by Context
+
+**Server Components (per-request Apollo client)**
+```typescript
+// ✅ DO: Fetch in async Server Component
+import { getClient } from '@/lib/apollo-client-server-registered'
+import { BUILDS_QUERY } from '@/lib/graphql-queries'
+
+export default async function BuildsPage() {
+  const client = getClient()
+  const { data } = await client.query({ query: BUILDS_QUERY })
+  
+  // Pass to Client Component (no double-fetch on hydration)
+  return <BuildList initialBuilds={data.builds} />
+}
+
+// ❌ DON'T: Use client-side hooks in Server Component
+// ❌ DON'T: Create multiple getClient() instances (reuse single client per render)
+```
+
+**Client Components (singleton Apollo client)**
+```typescript
+'use client'
+import { useMemo } from 'react'
+import { useQuery, useMutation } from '@apollo/client'
+import { makeClient } from '@/lib/apollo-client'
+
+export function BuildList({ initialBuilds }: { initialBuilds: Build[] }) {
+  // ✅ DO: Create singleton client once with useMemo
+  const client = useMemo(() => makeClient(), [])
+  
+  // ✅ DO: Use hooks inside Client Component
+  const { data, refetch } = useQuery(BUILDS_QUERY)
+  
+  // ✅ DO: Use mutations with optimistic updates
+  const [updateStatus] = useMutation(UPDATE_STATUS, {
+    optimisticResponse: { updateBuild: { id, status: 'COMPLETE' } }
+  })
+  
+  return (
+    // Component JSX
+  )
+}
+
+// ❌ DON'T: Call makeClient() on every render (do it in useMemo)
+// ❌ DON'T: Try to use server-side getClient() in Client Component
+```
+
+#### Data Flow & Hydration Strategy
+
+**Goal**: Avoid double-fetching (server + client) on page load
+
+```typescript
+// 1. SERVER COMPONENT - Fetch initial data
+export default async function Page() {
+  const client = getClient()
+  const { data } = await client.query({ query: GET_BUILDS })
+  
+  // 2. PASS AS PROPS to Client Component
+  return <BuildsClient initialBuilds={data.builds} />
+}
+
+// 3. CLIENT COMPONENT - Use passed data, handle mutations
+'use client'
+export function BuildsClient({ initialBuilds }: { initialBuilds: Build[] }) {
+  const client = useMemo(() => makeClient(), [])
+  const [builds, setBuilds] = useState(initialBuilds)
+  
+  // 4. Mutations update local state immediately (optimistic)
+  const [updateStatus] = useMutation(UPDATE_STATUS, {
+    onCompleted: (data) => {
+      setBuilds(builds.map(b => b.id === data.updateBuild.id ? data.updateBuild : b))
+    }
+  })
+  
+  return <BuildList builds={builds} onStatusChange={updateStatus} />
+}
+```
+
+**Why not query in Client Component on mount?**
+- ❌ Double-fetch: Server renders with data, then client fetches again
+- ❌ Slower perceived performance (loading spinner after SSR)
+- ❌ Wastes bandwidth (fetches same data twice)
+
+**Why pass data as props?**
+- ✅ Single fetch (server only)
+- ✅ Instant rendering (no loading state on first paint)
+- ✅ Bandwidth efficient
+- ✅ Better SEO (server renders full HTML content)
+
+#### Apollo Client Configuration Details
+
+**Client-Side Configuration (`apollo-client.ts`)**:
+```typescript
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
+
+export function makeClient(): ApolloClient {
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+
+  return new ApolloClient({
+    // Detects if server or client automatically
+    ssrMode: typeof window === 'undefined',
+    
+    // Fresh cache, but wrapped in useMemo so it's shared across renders
+    cache: new InMemoryCache(),
+    
+    // HTTP link to GraphQL endpoint
+    link: new HttpLink({
+      uri: graphqlUrl,
+      // Include cookies/auth headers
+      credentials: 'include',
+    }),
+  })
+}
+```
+
+**Server-Side Configuration (`apollo-client-server-registered.ts`)**:
+```typescript
+import { registerApolloClient } from '@apollo/client-integration-nextjs'
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
+
+// registerApolloClient ensures fresh client per request
+export const { getClient } = registerApolloClient(() => {
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+
+  return new ApolloClient({
+    // Always true for server rendering
+    ssrMode: true,
+
+    // Fresh cache per request (prevents cross-request pollution)
+    // Apollo's registerApolloClient handles this automatically
+    cache: new InMemoryCache(),
+
+    link: new HttpLink({
+      uri: graphqlUrl,
+      // Server context includes cookies/auth headers
+      credentials: 'include',
+    }),
+  })
+})
+```
+
+#### Cache Management Strategy
+
+| Aspect | Server Cache | Client Cache |
+|--------|--------------|--------------|
+| **Lifecycle** | Per HTTP request | Per browser session |
+| **Shared?** | Isolated (fresh each request) | Singleton (shared across renders) |
+| **Data persistence** | Garbage collected after response | Lives until page reload |
+| **Mutations** | Fetch fresh data, send response | Update cache, mutations update immediately |
+| **Risk** | None (fresh cache) | Cache pollution if not careful |
+| **Usage** | Initial page load | User interactions, mutations, subscriptions |
+
+#### Real-Time Event Handling with Apollo Cache
+
+When Express emits real-time events (SSE), update Apollo cache:
+
+```typescript
+'use client'
+import { useEffect } from 'react'
+import { useApolloClient } from '@apollo/client'
+
+export function RealtimeListener() {
+  const client = useApolloClient()  // Get singleton client
+
+  useEffect(() => {
+    const eventSource = new EventSource('http://localhost:5000/events')
+
+    eventSource.addEventListener('buildStatusChanged', (event) => {
+      const { buildId, status } = JSON.parse(event.data)
+
+      // Update Apollo cache (invalidates related queries)
+      client.cache.evict({ fieldName: 'builds' })
+      client.cache.evict({ fieldName: `build:${buildId}` })
+      client.cache.gc()
+
+      // Or: Update specific query cache
+      client.cache.writeQuery({
+        query: BUILD_DETAIL_QUERY,
+        variables: { id: buildId },
+        data: { build: { id: buildId, status, __typename: 'Build' } }
+      })
+    })
+
+    return () => eventSource.close()
+  }, [client])
+
+  return null
+}
+```
+
+#### Performance Implications
+
+| Metric | Server Components | Client Components |
+|--------|-------------------|-------------------|
+| **First Paint** | ✅ Faster (HTML from server) | ⚠️ Slower (JS downloads first) |
+| **Interactive** | ⚠️ Slower (wait for JS) | ✅ Faster (already rendering) |
+| **Bundle Size** | ✅ Smaller (no Apollo Client) | ⚠️ Larger (full Apollo Client) |
+| **API Calls** | ⚠️ Server calls (user sees load time) | ✅ Background fetch (don't block render) |
+| **Caching** | ✅ Browser cache works | ✅ Apollo cache works |
+| **SEO** | ✅ Content in HTML | ❌ Content is JavaScript |
+| **Ideal For** | Initial page load, SEO | Mutations, interactive features, real-time |
+
+**Recommendation**: Use **Server Components for data fetching, Client Components for interactivity**.
+
+#### Common Pitfalls to Avoid
+
+1. **Using client-side hooks in Server Components**
+   ```typescript
+   // ❌ WON'T WORK - Server Components can't use hooks
+   export default function Page() {
+     const { data } = useQuery(BUILDS_QUERY)  // Error!
+   }
+   
+   // ✅ DO THIS - Use async/await
+   export default async function Page() {
+     const client = getClient()
+     const { data } = await client.query({ query: BUILDS_QUERY })
+   }
+   ```
+
+2. **Calling makeClient() outside useMemo in Client Components**
+   ```typescript
+   // ❌ WRONG - Creates new client on every render
+   export function MyComponent() {
+     const client = makeClient()  // New instance every render!
+   }
+   
+   // ✅ CORRECT - Singleton via useMemo
+   export function MyComponent() {
+     const client = useMemo(() => makeClient(), [])
+   }
+   ```
+
+3. **Double-fetching data**
+   ```typescript
+   // ❌ WRONG - Server fetches, then Client fetches again
+   export default async function Page() {
+     const client = getClient()
+     const { data } = await client.query({ query: GET_BUILDS })
+     
+     return <BuildsClient />  // This will fetch again on mount!
+   }
+   
+   // ✅ CORRECT - Server fetches, pass to Client
+   export default async function Page() {
+     const client = getClient()
+     const { data } = await client.query({ query: GET_BUILDS })
+     
+     return <BuildsClient initialBuilds={data.builds} />  // No re-fetch
+   }
+   ```
+
+4. **Forgetting SSR hydration**
+   ```typescript
+   // ❌ WRONG - Client cache starts empty
+   const client = useMemo(() => makeClient(), [])
+   
+   // ✅ CORRECT - Hydrate cache with server data
+   const client = useMemo(() => makeClient(), [])
+   useEffect(() => {
+     client.cache.writeQuery({
+       query: BUILDS_QUERY,
+       data: { builds: initialBuilds }
+     })
+   }, [])
+   ```
+
 ### Apollo Client Setup
 
-**Status**: ⚠️ **PARTIALLY WORKING** (Creates new client on every render)
+**Status**: ✅ **WORKING** (Implements singleton pattern with useMemo)
+
+The project uses two separate Apollo Client configurations:
+
+#### 1. Server-Side: `apollo-client-server-registered.ts`
+
+For Server Components requiring per-request isolation:
 
 ```typescript
-// frontend/app/apollo-wrapper.tsx (CURRENT - PROBLEMATIC)
+// frontend/lib/apollo-client-server-registered.ts
+import { registerApolloClient } from '@apollo/client-integration-nextjs'
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
+
+export const { getClient } = registerApolloClient(() => {
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+
+  return new ApolloClient({
+    ssrMode: true,
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: graphqlUrl,
+      credentials: 'include',
+    }),
+  })
+})
+```
+
+**Usage in Server Component**:
+```typescript
+import { getClient } from '@/lib/apollo-client-server-registered'
+import { BUILDS_QUERY } from '@/lib/graphql-queries'
+
+export default async function BuildsPage() {
+  const client = getClient()
+  const { data } = await client.query({ query: BUILDS_QUERY })
+  
+  return <BuildsList initialBuilds={data.builds} />
+}
+```
+
+#### 2. Client-Side: `apollo-client.ts` (with useMemo wrapper)
+
+For Client Components with persistent singleton cache:
+
+```typescript
+// frontend/lib/apollo-client.ts
+import { ApolloClient, InMemoryCache } from '@apollo/client'
+import { HttpLink } from '@apollo/client/link/http'
+
+export function makeClient(): ApolloClient {
+  const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql'
+
+  return new ApolloClient({
+    ssrMode: typeof window === 'undefined',
+    cache: new InMemoryCache(),
+    link: new HttpLink({
+      uri: graphqlUrl,
+      credentials: 'include',
+    }),
+  })
+}
+```
+
+**Usage in Client Component via ApolloWrapper**:
+```typescript
+// frontend/app/apollo-wrapper.tsx
 'use client'
 
-import { ApolloProvider } from "@apollo/client/react";
-import { makeClient } from "@/lib/apollo-client";
-import { useSSEEvents } from "@/lib/use-sse-events";
+import { useMemo } from 'react'
+import type { ReactNode, ReactElement } from 'react'
+import { ApolloProvider } from '@apollo/client/react'
+import { makeClient } from '@/lib/apollo-client'
+import { useSSEEvents } from '@/lib/use-sse-events'
 
-function SSEInitializer() {
-  useSSEEvents();
-  return null;
+function SSEInitializer(): ReactElement | null {
+  useSSEEvents()
+  return null
 }
 
-export function ApolloWrapper({children}: { children: React.ReactNode }) {
-  const client = makeClient();  // 🔴 ISSUE #23: Creates new instance on EVERY render!
+export function ApolloWrapper({ children }: { children: ReactNode }): ReactElement {
+  // ✅ Singleton client via useMemo (not recreated on render)
+  const client = useMemo(() => makeClient(), [])
 
   return (
-    <ApolloProvider client = {client} >
-      <SSEInitializer / >
+    <ApolloProvider client={client}>
+      <SSEInitializer />
       {children}
-      < /ApolloProvider>
-  );
+    </ApolloProvider>
+  )
 }
 ```
 
-**Problem**: `makeClient()` is called on every render, creating a new Apollo Client instance.
-
-- Apollo cache is lost on re-renders
-- Subscriptions reconnect unnecessarily
-- Performance impact
-
-**Fix Required** (Issue #23):
-
-```typescript
-// frontend/lib/apollo-client.ts (FIXED VERSION)
-let client: ApolloClient<NormalizedCacheObject> | null = null;
-
-export function makeClient() {
-  if (typeof window === 'undefined') {
-    return new ApolloClient({...}); // SSR: create new each time
-  }
-
-  if (!client) {
-    client = new ApolloClient({
-      ssrMode: false,
-      cache: new InMemoryCache(),
-      link: new HttpLink({
-        uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
-        credentials: 'include',
-      }),
-    });
-  }
-
-  return client;
-}
-```
+**Key Fix (Issue #23 - RESOLVED)**:
+- ✅ `useMemo` ensures `makeClient()` is only called once
+- ✅ Apollo cache persists across renders
+- ✅ SSE listeners remain connected
+- ✅ Performance optimized
 
 ### Uploading Files to Express
 
