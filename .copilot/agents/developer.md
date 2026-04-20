@@ -147,6 +147,75 @@ pnpm seed                      # Seed sample data (Builds, Parts, TestRuns)
 pnpm generate                  # Generate TypeScript types from GraphQL schema
 ```
 
+## Git Branch Setup Workflow (Pre-Commit)
+
+Before making any code changes or committing, ensure you're on a proper feature branch:
+
+### 1. **Check Current Branch**
+
+```bash
+# View current branch
+git branch --show-current
+
+# Should output: main (if on main) or feat/... / fix/... (if on feature branch)
+```
+
+**Action**: If you're on `main`, proceed to Step 2. If you're already on a feature branch, skip to Code Quality Assurance section.
+
+### 2. **Determine Work Type & Create Feature Branch**
+
+Based on the nature of your work, create an appropriately named feature branch:
+
+```bash
+# Feature implementation (new functionality)
+git checkout -b feat/short-description
+
+# Bug fix
+git checkout -b fix/bug-description
+
+# Documentation, guides, README
+git checkout -b docs/doc-description
+
+# Code refactoring (no behavior change)
+git checkout -b refactor/refactor-description
+
+# Tests or test improvements
+git checkout -b test/test-description
+
+# Dependencies, build config, tooling
+git checkout -b chore/chore-description
+```
+
+**Branch Naming Conventions**:
+- Use **kebab-case** (lowercase with hyphens)
+- Keep descriptive but concise (30 characters max after prefix)
+- Include issue number if applicable: `feat/issue-118-jwt-auth`
+- Examples:
+  - `feat/apollo-client-best-practices` ✅
+  - `feat/user-auth-implementation` ✅
+  - `fix/n-plus-one-resolver-query` ✅
+  - `docs/graphql-schema-guide` ✅
+  - `test/dashboard-integration-tests` ✅
+  - `refactor/extract-event-bus-logic` ✅
+
+### 3. **Verify Branch Creation**
+
+```bash
+# Confirm you're on the new branch
+git branch --show-current
+
+# View the branch (should show your new feature branch as current)
+git branch -vv
+```
+
+**Expected output**: You should see your feature branch marked with `*` indicating it's the current branch.
+
+### 4. **Proceed to Code Quality Assurance**
+
+Once on your feature branch, proceed to the Code Quality Assurance Workflow section below.
+
+---
+
 ## Code Quality Assurance Workflow (Pre-Commit)
 
 Before committing code changes, execute this **QA checklist** to ensure quality standards:
@@ -216,37 +285,64 @@ pnpm audit --fix  # Only if safe; prefer manual review for security fixes
 ### QA Pre-Commit Workflow
 
 ```
-Code Changes
+Start Implementation
   ↓
-1. pnpm lint            (Check style/type errors across all packages)
+1. git branch --show-current   (Check current branch)
+  ├─ On main? → Create feature branch (feat/, fix/, docs/, etc.)
+  └─ On feature branch? → Continue
+  ↓
+2. Make code changes
+  ↓
+3. pnpm generate               (Regenerate GraphQL types - if modified GraphQL schema/operations)
+  ├─ Changes in backend-graphql/ or frontend graphql ops? → Run pnpm generate
+  ├─ Fails? → Fix schema/operations → Re-run
+  └─ Passes? → Continue
+  ↓
+4. pnpm lint                   (Check style/type errors across all packages)
   ├─ Fails? → pnpm lint:fix → Re-check
   └─ Passes? → Continue
   ↓
-2. pnpm format:check    (Check formatting across all packages)
+5. pnpm format:check           (Check formatting across all packages)
   ├─ Fails? → pnpm format → Re-check
   └─ Passes? → Continue
   ↓
-3. pnpm test            (Run test suite for affected layers)
+6. pnpm test                   (Run test suite for affected layers)
   ├─ Fails? → Fix code → Re-run
   └─ Passes? → Continue
   ↓
-4. pnpm audit (from root)(Check vulnerabilities)
+7. pnpm audit (from root)      (Check vulnerabilities)
   ├─ Issues? → Review & plan fixes
   └─ Passes? → Ready to commit
   ↓
-Ready for commit + code review
+Ready for git add + commit + push
 ```
+
+**Step 3 Clarification (GraphQL Code Generation)**:
+
+When to run `pnpm generate`:
+
+- ✅ **Modified GraphQL schema** (`backend-graphql/src/schema.graphql`)
+- ✅ **Added/modified GraphQL operations** (queries, mutations in `frontend/lib/graphql/`)
+- ✅ **Changed resolver return types** (to sync frontend types)
+- ❌ **No need to run** if only modifying non-schema backend code (middleware, utils, tests)
 
 ### Command Shortcuts for Development
 
 Create a local script to run all QA checks at once (optional):
 
 ```bash
-# From monorepo root:
+# From monorepo root (standard QA pipeline):
 pnpm lint && \
 pnpm format && \
 pnpm test && \
 echo "✅ All QA checks passed!"
+
+# With GraphQL codegen (if modified schema/operations):
+pnpm generate && \
+pnpm lint && \
+pnpm format && \
+pnpm test && \
+echo "✅ All checks passed including GraphQL codegen!"
 ```
 
 **Developer Responsibility**: Always run these checks before pushing commits. This ensures:
