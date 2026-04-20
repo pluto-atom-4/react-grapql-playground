@@ -1789,6 +1789,411 @@ describe("Full Build Workflow", () => {
 
 ---
 
+## Frontend Authentication & Apollo Integration
+
+JWT authentication is a critical security layer that protects the GraphQL API and ensures each user's data remains isolated. This section documents the fresh-per-request pattern applied to authentication.
+
+### Overview: Fresh Per-Request Authentication Pattern
+
+Authentication follows the same **Fresh Per-Request Pattern** used for Apollo cache isolation (see Part 1 above):
+
+```
+Frontend (React)                       Backend (Apollo GraphQL)
+    ↓                                         ↓
+User logs in → AuthContext stores      GraphQL context factory
+JWT token → Apollo link attaches        extracts JWT from header
+Authorization header → per-request      → validates signature
+(fresh token injection)                 → adds user to context
+                                        → fresh context per request
+```
+
+**Key Principle**: Token extraction and user context creation happen **per GraphQL request**, never globally. This prevents token mixing between concurrent users.
+
+### Frontend Authentication Architecture
+
+#### 1. AuthContext: Token Management
+
+**File**: `frontend/lib/auth-context.tsx` (to be created for Issue #27)
+
+```typescript
+import { createContext, useContext, ReactNode } from 'react'
+
+interface AuthContextType {
+  isAuthenticated: boolean
+  userId?: string
+  token?: string
+  login: (email: string, password: string) => Promise<void>
+  logout: () => void
+  loading: boolean
+  error?: string
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // Manage token state (localStorage dev, httpOnly prod)
+  // Provide login/logout functions
+  // Expose useAuth() hook for components
+  return (
+    <AuthContext.Provider value={...}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used inside AuthProvider')
+  }
+  return context
+}
+```
+
+**Key Responsibilities**:
+- Store JWT token (localStorage in dev, httpOnly cookies in production)
+- Provide `login(email, password)` function
+- Provide `logout()` function that clears token
+- Expose `useAuth()` hook for components
+- Persist token across page reloads (dev only)
+
+#### 2. Apollo Auth Link: Token Injection
+
+**File**: `frontend/lib/apollo-client.ts` (modification)
+
+```typescript
+import { setContext } from '@apollo/client/link/context'
+import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client'
+
+// ← Fresh token retrieved per GraphQL request (not globally)
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem('auth_token')
+  
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    },
+  }
+})
+
+const httpLink = new HttpLink({
+  uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
+  credentials: 'include',
+})
+
+export const client = new ApolloClient({
+  link: authLink.concat(httpLink),  // ← authLink runs FIRST
+  cache: new InMemoryCache(),
+})
+```
+
+**How It Works**:
+1. Before each GraphQL request, `setContext` is called
+2. Retrieves token from localStorage (fresh per request)
+3. Adds `Authorization: Bearer {token}` header
+4. Header is sent with GraphQL query/mutation
+5. If no token, header is omitted (unauthenticated request)
+
+**Why Fresh Per-Request**:
+- Token might have changed between requests (user logged in/out)
+- Multiple GraphQL operations in same render should use same token
+- `setContext` is called per operation, not globally
+
+#### 3. Login Component
+
+**File**: `frontend/components/login.tsx` (to be created for Issue #27)
+
+```typescript
+'use client'
+
+import { FormEvent } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { useRouter } from 'next/navigation'
+
+export function LoginForm() {
+  const { login, error, loading } = useAuth()
+  const router = useRouter()
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const form = e.currentTarget
+    const email = new FormData(form).get('email')
+    const password = new FormData(form).get('password')
+    
+    try {
+      await login(email as string, password as string)
+      router.push('/dashboard')
+    } catch (err) {
+      // Error handled by AuthContext
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <input name="password" type="password" required />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
+      {error && <p className="error">{error}</p>}
+    </form>
+  )
+}
+```
+
+#### 4. App Layout: AuthProvider Wrapping
+
+**File**: `frontend/app/layout.tsx` (modification)
+
+```typescript
+import { AuthProvider } from '@/lib/auth-context'
+import { ApolloWrapper } from '@/lib/apollo-wrapper'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <AuthProvider>
+          {/* ← AuthProvider must wrap ApolloWrapper */}
+          {/* so Apollo auth link can access useAuth token */}
+          <ApolloWrapper>
+            {children}
+          </ApolloWrapper>
+        </AuthProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+**Provider Order Matters**:
+```
+AuthProvider (top-level context for token)
+  └─ ApolloWrapper (client with auth link)
+     └─ Components (can use useAuth + useQuery)
+```
+
+If order reversed, Apollo auth link can't access token from AuthContext.
+
+### Backend Authentication: GraphQL
+
+#### 1. JWT Middleware: Token Extraction & Validation
+
+**File**: `backend-graphql/src/middleware/auth.ts` (verify/update for Issue #27)
+
+```typescript
+import jwt from 'jsonwebtoken'
+import { Request } from 'express'
+
+export interface AuthContext {
+  userId?: string
+  token?: string
+  isAuthenticated: boolean
+}
+
+export function extractAuthContext(req: Request): AuthContext {
+  // ← Called per GraphQL request (fresh context)
+  const authHeader = req.headers.authorization
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { isAuthenticated: false }
+  }
+
+  const token = authHeader.slice(7)
+  
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET!,
+    ) as { sub: string; iat: number; exp: number }
+    
+    return {
+      isAuthenticated: true,
+      userId: decoded.sub,
+      token,
+    }
+  } catch (error) {
+    // Invalid or expired token
+    return { isAuthenticated: false }
+  }
+}
+```
+
+**Key Points**:
+- Extracts JWT from `Authorization: Bearer {token}` header
+- Validates JWT signature using JWT_SECRET
+- Returns fresh context with `userId` if valid
+- Returns unauthenticated context if invalid/missing
+
+#### 2. Apollo Server Context: User Binding
+
+**File**: `backend-graphql/src/index.ts` (modification)
+
+```typescript
+import { ApolloServer } from '@apollo/server'
+import { extractAuthContext } from './middleware/auth'
+import { initializeDataLoaders } from './dataloaders'
+
+const server = new ApolloServer({
+  typeDefs: schema,
+  resolvers,
+  context: async ({ req }) => {
+    // ← Fresh context factory, called per GraphQL request
+    const auth = extractAuthContext(req)
+    
+    return {
+      prisma: new PrismaClient(),
+      auth,  // ← Fresh auth context
+      user: auth.isAuthenticated ? { id: auth.userId } : null,
+      dataloaders: initializeDataLoaders(),
+    }
+  },
+})
+```
+
+**What This Provides to Resolvers**:
+```typescript
+// Inside resolver
+async function buildResolver(
+  parent,
+  args,
+  context: GraphQLContext  // ← Has auth data
+) {
+  // Check if user authenticated
+  if (!context.user) {
+    throw new AuthenticationError('Not authenticated')
+  }
+  
+  // Fetch builds for this user only
+  const builds = await context.prisma.build.findMany({
+    where: { userId: context.user.id },  // ← Data isolation per user
+  })
+  
+  return builds
+}
+```
+
+#### 3. Protected Resolvers: User Data Isolation
+
+**File**: `backend-graphql/src/resolvers/Query.ts` (modify for Issue #27)
+
+```typescript
+export const queryResolvers = {
+  async builds(_, __, { user, prisma }) {
+    // Require authentication
+    if (!user) {
+      throw new AuthenticationError('Must be logged in to view builds')
+    }
+    
+    // Return only this user's builds
+    return prisma.build.findMany({
+      where: { userId: user.id },
+    })
+  },
+
+  async build(_, { id }, { user, prisma }) {
+    if (!user) {
+      throw new AuthenticationError('Must be logged in')
+    }
+    
+    const build = await prisma.build.findUnique({
+      where: { id },
+    })
+    
+    // Verify user owns this build
+    if (build?.userId !== user.id) {
+      throw new ForbiddenError('Not authorized to view this build')
+    }
+    
+    return build
+  },
+}
+```
+
+### Security Considerations
+
+#### Token Storage (Dev vs. Production)
+
+**Development** (Current):
+- Token stored in `localStorage`
+- ⚠️ Vulnerable to XSS (JavaScript can steal it)
+- Acceptable for development only
+
+**Production** (Recommended):
+- Token stored in `httpOnly` cookie
+- ✅ Immune to XSS (JavaScript cannot access)
+- Cookie sent automatically with requests
+- Requires HTTPS (cannot send over HTTP)
+
+**Migration Path**:
+```typescript
+// Dev: localStorage
+localStorage.setItem('auth_token', token)
+
+// Prod: httpOnly cookie
+Set-Cookie: auth_token=JWT_VALUE; HttpOnly; Secure; SameSite=Strict
+```
+
+#### Token Expiration & Refresh
+
+**Current** (Simple):
+- Token expires after 1 hour (JWT `exp` claim)
+- User must login again
+- Acceptable for short sessions
+
+**Future** (Recommended - Issue #27 follow-up):
+- Access token: 15 minutes
+- Refresh token: 7 days (rotation)
+- User stays logged in without re-authenticating
+- More secure: compromised access token has limited window
+
+#### CORS & Credentials
+
+**Apollo Client Setup** (required):
+```typescript
+const httpLink = new HttpLink({
+  uri: 'http://localhost:4000/graphql',
+  credentials: 'include',  // ← Send cookies with requests
+})
+```
+
+**Apollo Server Setup** (required):
+```typescript
+new ApolloServer({
+  plugins: {
+    didResolveOperation: async (context) => {
+      // CORS headers are set by apollo-server-express
+    },
+  },
+})
+```
+
+### Interview Talking Points: Authentication
+
+**Question: "How do you prevent token leaks between users?"**
+
+"I apply the same Fresh Per-Request pattern used for Apollo cache isolation. Every GraphQL request has its own context that extracts and validates the JWT token from the Authorization header. This prevents token mixing between concurrent requests. The pattern is:
+
+1. Frontend: Apollo auth link retrieves token per GraphQL operation
+2. Backend: Context factory extracts token per HTTP request
+3. Each request gets isolated, fresh auth context
+4. Tokens never leak between users"
+
+**Question: "How is authentication integrated with Apollo?"**
+
+"Apollo auth link (`@apollo/client/link/context`) intercepts every GraphQL operation and injects the Authorization header. This happens at the transport layer before the request reaches Apollo Server. The key is that it's fresh per operation—if token changes between queries, the new token is used immediately."
+
+**Question: "How do you ensure users only see their own data?"**
+
+"At the resolver level, I verify `context.user` exists and matches the resource owner. For queries, I filter by `where: { userId: context.user.id }`. For mutations, I verify the user has permission. Even if someone guesses a build ID, they can't access it without ownership verification in the resolver."
+
+---
+
 ## Environment & Startup
 
 ### .env (shared across backends)

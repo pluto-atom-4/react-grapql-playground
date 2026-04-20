@@ -306,6 +306,66 @@ Client Layer (Singleton)
 
 ---
 
+## Authentication & Security (Issue #27 Integration)
+
+### Authentication Architecture (In Progress)
+
+JWT authentication is being integrated across the full stack using the **Fresh Per-Request Pattern** documented in `FRESH_PER_REQUEST_PATTERN.md`.
+
+#### Frontend Authentication
+- **AuthContext**: React Context for token management
+- **Login Component**: Email/password form with error handling
+- **Apollo Auth Link**: `setContext` hook injects Authorization header per GraphQL operation
+- **Token Storage**: localStorage (dev), httpOnly cookies (production)
+
+#### Backend Authentication
+- **Auth Middleware**: JWT validation and user context extraction
+- **Apollo Server Context**: Fresh context factory called per GraphQL request
+- **Protected Resolvers**: User data isolation with ownership verification
+- **Error Handling**: 401 Unauthenticated, 403 Forbidden responses
+
+#### Unified Security Principle
+Both Apollo cache isolation (Issue #26) and authentication (Issue #27) follow identical pattern:
+- **Server-side**: Fresh context per HTTP request
+- **No cross-request contamination**: User A ≠ User B
+- **Per-request isolation**: Prevents data/token leaks
+
+### Related Documentation
+
+- **FRESH_PER_REQUEST_PATTERN.md**: Complete security pattern documentation
+- **DESIGN.md**: "Frontend Authentication & Apollo Integration" section (Issue #113)
+- **APOLLO_CLIENT_ANALYSIS.md**: "Apollo Auth Link Pattern" section (Issue #113)
+
+### Implementation Roadmap
+
+**Phase 1**: Frontend Auth Context (1 hour)
+- [ ] Create AuthContext with login/logout
+- [ ] Build Login component
+- [ ] Implement Apollo auth link
+- [ ] Wrap app with AuthProvider
+
+**Phase 2**: Backend JWT Validation (1 hour)
+- [ ] Verify auth middleware
+- [ ] Configure Apollo Server context
+- [ ] Add user to context for resolvers
+- [ ] Implement protected resolvers
+
+**Phase 3**: Testing & Verification (1 hour)
+- [ ] Unit tests for auth context
+- [ ] Integration tests for GraphQL mutations
+- [ ] E2E tests for full auth flow
+- [ ] Verify all 10 acceptance criteria
+
+### Interview Talking Points
+
+**"How does authentication prevent cross-user data leaks?"**
+> "I apply Fresh Per-Request pattern: token extraction and user context creation happen per GraphQL request, never globally. Even with 10,000 concurrent users, each request gets isolated auth context. User A's token never mixes with User B's request."
+
+**"How is JWT integrated with Apollo Client?"**
+> "Apollo auth link (`@apollo/client/link/context`) intercepts every GraphQL operation and injects Authorization header. This is fresh per operation—if user logs in, next mutation uses new token immediately."
+
+---
+
 ## Conclusion
 
 The Apollo Client strategy in this project follows **industry best practices** for Next.js 13+ with React 19:
