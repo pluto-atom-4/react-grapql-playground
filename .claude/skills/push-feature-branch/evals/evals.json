@@ -1,0 +1,26 @@
+{
+  "skill_name": "push-feature-branch",
+  "evals": [
+    {
+      "id": 0,
+      "name": "happy-path-new-docs",
+      "prompt": "Create a feature branch to add Apollo Client best practices documentation. I've created a new file called docs/apollo-client-best-practices.md",
+      "expected_output": "Skill should: (1) detect the new file, (2) auto-generate a branch name like 'feat/apollo-client-best-practices', (3) show the file for user confirmation, (4) create the branch, (5) stage the file, (6) commit with proper message and Copilot trailer, (7) push to remote. User should see prompts at each step and be able to confirm/modify.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "edge-case-unstaged-changes",
+      "prompt": "I have some unstaged changes and a new file. I want to create a feature branch for a bug fix. My changes are: modified lib/resolver.ts (N+1 fix) and new file docs/bugfix-report.md",
+      "expected_output": "Skill should: (1) warn about unstaged changes, (2) show which files will be staged (only the new one?), (3) ask user to confirm, (4) generate branch name like 'fix/n-plus-one-bug', (5) proceed with commit and push. User should be able to review before staging.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "edge-case-existing-branch",
+      "prompt": "Create a feature branch for adding tests for the dashboard component. I notice there might already be a branch for this work.",
+      "expected_output": "Skill should: (1) generate a suggested branch name like 'feat/dashboard-component-tests' or 'test/dashboard-tests', (2) check if the branch exists, (3) if it exists, ask user whether to use the existing branch or create a new one with a different name, (4) proceed accordingly with staging, committing, and pushing.",
+      "files": []
+    }
+  ]
+}

@@ -387,6 +387,41 @@ pnpm -F backend-express lint
 
 For quick reference on running ESLint across the monorepo, see the first section of `docs/ESLINT-V9-SETUP-GUIDE.md`.
 
+## Project-Specific Skills
+
+This project includes custom Claude Code skills to streamline common development workflows.
+
+### push-feature-branch
+
+Automates the complete feature branch workflow: checking git status, creating feature branches, staging files, committing with proper messages, and pushing to remote.
+
+**Invoke with:**
+```
+@claude Create a feature branch for [your task description]
+@claude Create a feature branch, commit, and push to remote
+```
+
+**Examples:**
+```
+"Create a feature branch for adding Apollo Client best practices documentation"
+"Set up a branch for fixing the N+1 query issue"
+"Create a feature branch for dashboard component tests"
+```
+
+**Features:**
+- ✅ Auto-generates descriptive branch names (e.g., `feat/apollo-client-best-practices`)
+- ✅ Reviews files before staging — shows what will be committed
+- ✅ Warns about unstaged changes and uncommitted changes
+- ✅ Supports selective staging of individual files
+- ✅ Template-based commits with Copilot co-author trailer
+- ✅ Pre-push verification (`git log` check)
+- ✅ Handles existing branch edge cases (use existing or create variant)
+- ✅ Error recovery guidance for common git failures
+
+**Workflow:** 8-step guided process from git status check → final git state summary
+
+**See also:** `.claude/skills/push-feature-branch/SKILL.md` for complete documentation and workflow details.
+
 ## Interview Prep Checklist
 
 From the 7-day plan, this repository targets:
