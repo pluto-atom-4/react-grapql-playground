@@ -1,5 +1,5 @@
 import DataLoader from 'dataloader';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Part, TestRun } from '@prisma/client';
 
 /**
  * BuildLoader prevents N+1 queries when resolving parts for multiple builds.
@@ -66,8 +66,8 @@ export function createBuildTestRunLoader(prisma: PrismaClient) {
  * Note: Does NOT include user (handled separately by auth middleware)
  */
 export interface DataLoaders {
-  buildPartLoader: DataLoader<string, any>;
-  buildTestRunLoader: DataLoader<string, any>;
+  buildPartLoader: DataLoader<string, Part[]>;
+  buildTestRunLoader: DataLoader<string, TestRun[]>;
 }
 
 export function createLoaders(prisma: PrismaClient): DataLoaders {
