@@ -530,6 +530,10 @@ function broadcastEvent(eventType: string, data: unknown) {
 - Server Components not implemented - Issue #26
 - Real-time event listener connected but GraphQL mutations can't emit events - Issue #7
 - JWT authentication not wired across layers - Issue #27
+- ⚠️ **CRITICAL**: Backend JWT validation has security issues - Issue #123 (follow-up to #118)
+  - Context factory crashes on invalid JWT (DoS vulnerability)
+  - Missing JWT id field type validation
+  - Type inconsistencies in DataLoaders interface
 
 ### Frontend Data Fetching Patterns & Apollo Client Strategy
 
@@ -1157,7 +1161,23 @@ GraphQL Mutation (updateBuildStatus)
 - **Scalability**: Works with distributed microservices (each service has JWT_SECRET).
 - **Standard**: Industry standard (Auth0, Firebase, GitHub use JWT).
 
-**Current State**: Not yet wired in frontend (Issue #27).
+**Current State**: Backend implementation in progress (Issue #118); **3 security issues identified** (Issue #123).
+
+**Backend JWT Status** ⚠️:
+- ✅ JWT extraction and validation middleware implemented
+- ✅ All resolvers require authentication
+- ❌ Context factory crashes on invalid JWT (DoS vulnerability) - Issue #123
+- ❌ Missing JWT id field type validation - Issue #123
+- ❌ Type inconsistencies in DataLoaders - Issue #123
+
+**Frontend Status**: Not yet wired - blocked by Issue #123 fixes, then Issue #27.
+
+**Proceeding Order**:
+1. Fix Issue #123 (backend JWT security fixes) - 65 min total
+   - Phase 1: Context factory error handling (30 min, CRITICAL)
+   - Phase 2: JWT payload type validation (20 min, HIGH)
+   - Phase 3: DataLoaders type consolidation (15 min, MEDIUM)
+2. Implement Issue #27 (frontend auth) - depends on #123 fixes
 
 #### 5. Why Next.js Server Components?
 
@@ -1337,7 +1357,11 @@ GraphQL Mutation (updateBuildStatus)
 - [ ] Fix Apollo Client singleton pattern (Issue #23)
 - [ ] Fix TypeScript compilation (Issue #24)
 - [ ] Implement Server Components pattern (Issue #26)
-- [ ] Wire JWT authentication across layers (Issue #27)
+- [ ] Fix backend JWT security issues (Issue #123) ⚠️ **CRITICAL** - must complete before #27
+  - [ ] Fix context factory crash on invalid JWT
+  - [ ] Add JWT payload type validation
+  - [ ] Consolidate DataLoaders types
+- [ ] Wire JWT authentication across layers (Issue #27) - depends on #123
 - [ ] Wire GraphQL mutations to Express event bus (Issue #7)
 - [ ] Write integration tests connecting frontend, Apollo, and Express
 
