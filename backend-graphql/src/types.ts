@@ -1,5 +1,6 @@
 import DataLoader from 'dataloader';
 import { PrismaClient } from '@prisma/client';
+import type { AuthUser } from './middleware/auth';
 
 /**
  * Part type returned from DataLoader
@@ -29,10 +30,12 @@ export interface TestRunData {
 }
 
 /**
- * GraphQL resolver context with data loaders and database client
+ * GraphQL resolver context with data loaders, database client, and authenticated user.
+ * User is extracted from JWT token in context factory; null if no valid token.
  * Exported as both names for compatibility with existing imports
  */
 export interface BuildContext {
+  user: AuthUser | null;
   prisma: PrismaClient;
   buildPartLoader: DataLoader<string, PartData[]>;
   buildTestRunLoader: DataLoader<string, TestRunData[]>;

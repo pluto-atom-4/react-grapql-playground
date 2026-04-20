@@ -7,15 +7,17 @@ import type { GraphQLResolveInfo } from 'graphql';
  * Mutation resolvers with event emission to Express event bus.
  *
  * Pattern:
- * 1. Validate input
- * 2. Perform database mutation
- * 3. Emit event to Express event bus (for real-time SSE)
- * 4. Return result
+ * 1. Require authentication (context.user must exist)
+ * 2. Validate input
+ * 3. Perform database mutation
+ * 4. Emit event to Express event bus (for real-time SSE)
+ * 5. Return result
  */
 export const mutationResolver = {
   Mutation: {
     /**
      * Create a new build in PENDING status.
+     * Requires authentication.
      */
     async createBuild(
       _parent: unknown,
@@ -23,6 +25,11 @@ export const mutationResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       if (!args.name || args.name.trim().length === 0) {
         throw new Error('name is required');
       }
@@ -44,6 +51,7 @@ export const mutationResolver = {
 
     /**
      * Update build status and emit real-time event.
+     * Requires authentication.
      *
      * Interview talking point: "Mutation updates DB, then emits event
      * to Express event bus, which broadcasts to frontend SSE listeners.
@@ -55,6 +63,11 @@ export const mutationResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       const validStatuses = ['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'];
       if (!validStatuses.includes(args.status)) {
         throw new Error(`status must be one of: ${validStatuses.join(', ')}`);
@@ -82,6 +95,7 @@ export const mutationResolver = {
 
     /**
      * Add a part to a build.
+     * Requires authentication.
      */
     async addPart(
       _parent: unknown,
@@ -89,6 +103,11 @@ export const mutationResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       if (!args.name || args.name.trim().length === 0) {
         throw new Error('name is required');
       }
@@ -125,6 +144,7 @@ export const mutationResolver = {
 
     /**
      * Submit a test run result for a build.
+     * Requires authentication.
      */
     async submitTestRun(
       _parent: unknown,
@@ -137,6 +157,11 @@ export const mutationResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       const validStatuses = ['PENDING', 'RUNNING', 'PASSED', 'FAILED'];
       if (!validStatuses.includes(args.status)) {
         throw new Error(`status must be one of: ${validStatuses.join(', ')}`);

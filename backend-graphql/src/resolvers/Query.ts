@@ -5,6 +5,7 @@ export const queryResolver = {
   Query: {
     /**
      * List all builds with pagination.
+     * Requires authentication.
      * Does NOT use DataLoader (already paginated at DB level).
      */
     async builds(
@@ -13,6 +14,11 @@ export const queryResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       if (args.limit < 1 || args.limit > 100) {
         throw new Error('limit must be between 1 and 100');
       }
@@ -29,6 +35,7 @@ export const queryResolver = {
 
     /**
      * Get specific build by ID.
+     * Requires authentication.
      * Does NOT use DataLoader (single ID lookup, not a list).
      */
     async build(
@@ -37,6 +44,11 @@ export const queryResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       return context.prisma.build.findUnique({
         where: { id: args.id },
       });
@@ -44,6 +56,7 @@ export const queryResolver = {
 
     /**
      * List test runs for a specific build.
+     * Requires authentication.
      * Does NOT use DataLoader (already filtered by buildId).
      */
     async testRuns(
@@ -52,6 +65,11 @@ export const queryResolver = {
       context: BuildContext,
       _info: GraphQLResolveInfo
     ) {
+      // Require authentication
+      if (!context.user) {
+        throw new Error('Unauthorized');
+      }
+
       return context.prisma.testRun.findMany({
         where: { buildId: args.buildId },
         orderBy: { createdAt: 'desc' },

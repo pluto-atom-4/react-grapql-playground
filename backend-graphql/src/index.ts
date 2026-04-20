@@ -4,10 +4,12 @@ import { fileURLToPath } from 'url';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { prisma } from './db/client';
-import { createLoaders, BuildContext } from './dataloaders';
+import { createLoaders } from './dataloaders';
+import type { BuildContext } from './types';
 import { queryResolver } from './resolvers/Query';
 import { mutationResolver } from './resolvers/Mutation';
 import { buildResolver } from './resolvers/Build';
+import { extractUserFromToken } from './middleware/auth';
 
 const PORT = parseInt(process.env.GRAPHQL_PORT || '4000', 10);
 
@@ -38,10 +40,18 @@ async function main() {
     // Start Apollo Server
     const { url } = await startStandaloneServer(server, {
       listen: { port: PORT },
-      context: async () => ({
-        prisma,
-        ...createLoaders(prisma),
-      }),
+      context: async ({ req }) => {
+        // Extract user from JWT token in Authorization header
+        const user = extractUserFromToken(req.headers.authorization);
+        const loaders = createLoaders(prisma);
+
+        return {
+          user,
+          prisma,
+          buildPartLoader: loaders.buildPartLoader,
+          buildTestRunLoader: loaders.buildTestRunLoader,
+        };
+      },
     });
 
     console.warn(`
