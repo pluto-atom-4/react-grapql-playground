@@ -41,8 +41,15 @@ async function main() {
     const { url } = await startStandaloneServer(server, {
       listen: { port: PORT },
       context: async ({ req }) => {
-        // Extract user from JWT token in Authorization header
-        const user = extractUserFromToken(req.headers.authorization);
+        // Extract user from JWT token, handling errors gracefully
+        let user = null;
+        try {
+          user = extractUserFromToken(req.headers.authorization);
+        } catch (error) {
+          console.error('Failed to extract user from token:', error instanceof Error ? error.message : error);
+          // Continue with null user; protected resolvers will reject the request
+        }
+
         const loaders = createLoaders(prisma);
 
         return {

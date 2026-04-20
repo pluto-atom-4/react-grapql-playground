@@ -21,6 +21,20 @@ export interface AuthUser {
 }
 
 /**
+ * Type guard to validate JWT payload structure.
+ * Ensures decoded token has id field that is a non-empty string.
+ */
+export function isValidJWTPayload(decoded: unknown): decoded is { id: string } {
+  return (
+    typeof decoded === 'object' &&
+    decoded !== null &&
+    'id' in decoded &&
+    typeof (decoded as Record<string, unknown>).id === 'string' &&
+    (decoded as Record<string, unknown>).id !== ''
+  );
+}
+
+/**
  * Extract and validate JWT token from Authorization header.
  * Returns user object if token is valid, null if no token provided.
  * Throws error if token is invalid or expired.
@@ -48,13 +62,13 @@ export function extractUserFromToken(
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Validate payload shape: must have id field
-    if (typeof decoded === 'string' || !('id' in decoded)) {
-      throw new Error('Invalid token payload: missing id field');
+    // Validate payload shape: must have id field that is a non-empty string
+    if (!isValidJWTPayload(decoded)) {
+      throw new Error('Invalid token payload: id must be a non-empty string');
     }
 
     return {
-      id: (decoded as AuthUser).id,
+      id: decoded.id,
       ...Object.fromEntries(
         Object.entries(decoded).filter(([key]) => key !== 'iat' && key !== 'exp')
       ),

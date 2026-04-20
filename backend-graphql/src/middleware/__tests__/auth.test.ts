@@ -71,13 +71,40 @@ describe('auth middleware', () => {
       }).toThrow('Token expired');
     });
 
+    it('should throw error for token with null id', () => {
+      const invalidToken = jwt.sign({ id: null }, JWT_SECRET, { expiresIn: '24h' });
+      const authHeader = `Bearer ${invalidToken}`;
+
+      expect(() => {
+        extractUserFromToken(authHeader);
+      }).toThrow('Invalid token payload: id must be a non-empty string');
+    });
+
+    it('should throw error for token with numeric id', () => {
+      const invalidToken = jwt.sign({ id: 123 }, JWT_SECRET, { expiresIn: '24h' });
+      const authHeader = `Bearer ${invalidToken}`;
+
+      expect(() => {
+        extractUserFromToken(authHeader);
+      }).toThrow('Invalid token payload: id must be a non-empty string');
+    });
+
+    it('should throw error for token with empty string id', () => {
+      const invalidToken = jwt.sign({ id: '' }, JWT_SECRET, { expiresIn: '24h' });
+      const authHeader = `Bearer ${invalidToken}`;
+
+      expect(() => {
+        extractUserFromToken(authHeader);
+      }).toThrow('Invalid token payload: id must be a non-empty string');
+    });
+
     it('should throw error for token without id field', () => {
       const invalidToken = jwt.sign({ name: 'John' }, JWT_SECRET, { expiresIn: '24h' });
       const authHeader = `Bearer ${invalidToken}`;
 
       expect(() => {
         extractUserFromToken(authHeader);
-      }).toThrow('Invalid token payload: missing id field');
+      }).toThrow('Invalid token payload: id must be a non-empty string');
     });
 
     it('should throw error for string payload (not object)', () => {
@@ -88,7 +115,7 @@ describe('auth middleware', () => {
 
       expect(() => {
         extractUserFromToken(authHeader);
-      }).toThrow('Invalid token payload: missing id field');
+      }).toThrow('Invalid token payload: id must be a non-empty string');
     });
 
     it('should preserve additional payload fields', () => {
