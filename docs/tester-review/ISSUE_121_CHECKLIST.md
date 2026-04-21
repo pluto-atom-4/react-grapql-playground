@@ -31,7 +31,7 @@
   - [ ] Contains: next/router mock, next/image mock
   - **Time:** 10 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § Frontend Vitest Setup
+  - **Reference:** ISSUE_121_STRUCTURE.md § Frontend Vitest Setup
 
 - [ ] **1.1.4** Update frontend vitest.config.ts
   - [ ] Add setupFiles: ['./vitest.setup.ts']
@@ -39,7 +39,7 @@
   - [ ] Add reporters: ['verbose']
   - **Time:** 10 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § Frontend Vitest Setup
+  - **Reference:** ISSUE_121_STRUCTURE.md § Frontend Vitest Setup
 
 - [ ] **1.1.5** Verify backend-graphql vitest config
   - [ ] Check `backend-graphql/vitest.config.ts` exists
@@ -73,7 +73,7 @@
   - [ ] Export helper functions: getValidUser(), getInvalidUser()
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § users.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § users.ts
 
 - [ ] **1.2.2** Create `frontend/__tests__/fixtures/graphql.ts`
   - [ ] Export LOGIN_MUTATION
@@ -82,7 +82,7 @@
   - [ ] Export mock response objects
   - **Time:** 30 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § graphql.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § graphql.ts
 
 - [ ] **1.2.3** Create `frontend/__tests__/fixtures/mocks.ts`
   - [ ] Export createLoginSuccessMock() function
@@ -93,7 +93,7 @@
   - [ ] Export createGetBuildsMock(), createGetBuildMock() helpers
   - **Time:** 40 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § mocks.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § mocks.ts
 
 #### Backend-GraphQL Fixtures
 
@@ -102,14 +102,14 @@
   - [ ] Include: valid token, expired token, wrong secret, no user id, empty user id
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § tokens.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § tokens.ts
 
 - [ ] **1.2.5** Create `backend-graphql/src/__tests__/fixtures/graphql.ts`
   - [ ] Export GraphQL schema fixtures (if applicable)
   - [ ] Export mutation/query fixtures for backend testing
   - **Time:** 15 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § backend fixtures
+  - **Reference:** ISSUE_121_STRUCTURE.md § backend fixtures
 
 **Deliverable:** All fixture files created and syntax-verified
 **Verification:** `pnpm build` passes, no TS errors
@@ -128,7 +128,7 @@
   - [ ] Both handle MockedProvider + AuthProvider wrapping
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § apollo-mock.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § apollo-mock.ts
 
 - [ ] **1.3.2** Create `frontend/__tests__/helpers/storage.ts`
   - [ ] Export createStorageMock() function
@@ -136,7 +136,7 @@
   - [ ] Export helper functions: getTokenFromStorage(), setTokenInStorage(), etc.
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § storage.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § storage.ts
 
 - [ ] **1.3.3** Create `frontend/__tests__/helpers/auth.ts`
   - [ ] Export renderUseAuthHook() function
@@ -144,7 +144,7 @@
   - [ ] Export simulateLogout() helper
   - **Time:** 15 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § auth.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § auth.ts
 
 #### Backend-GraphQL Helpers
 
@@ -156,7 +156,7 @@
   - [ ] Export createBearerHeader() function
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § jwt.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § jwt.ts
 
 - [ ] **1.3.5** Create `backend-graphql/src/__tests__/helpers/resolvers.ts`
   - [ ] Export createMockContext() function
@@ -165,7 +165,7 @@
   - [ ] Export createUnauthenticatedContext() helper
   - **Time:** 20 min
   - **Status:** ⚪ Not started
-  - **Reference:** TEST_STRUCTURE.md § resolvers.ts
+  - **Reference:** ISSUE_121_STRUCTURE.md § resolvers.ts
 
 **Deliverable:** All helper files created and syntax-verified
 **Verification:** `pnpm build` passes, helpers can be imported
@@ -246,7 +246,7 @@
   - [ ] Context updated with token
   - **Status:** ⚪ Not started
   - **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.1.1
 
 - [ ] **2.1.2** Test Case 1.1.2: Token Persists in Context
   - [ ] Token available immediately after login
@@ -254,7 +254,7 @@
   - [ ] Token available to child components via useAuth
   - **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.1.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.1.2
 
 - [ ] **2.1.3** Test Case 1.1.3: User Data Available After Login
   - [ ] User object returned from login
@@ -282,7 +282,7 @@
   - [ ] Verify token available in useAuth hook
   - **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.2.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.2.1
 
 - [ ] **2.1.7** Test Case 1.2.2: Token Persists After Page Refresh
   - [ ] Login user
@@ -305,7 +305,7 @@
   - [ ] Verify logout completes without error
   - **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.3.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.3.1
 
 - [ ] **2.1.10** Test Case 1.3.2: Logout Removes from localStorage
   - [ ] Login user (token in localStorage)
@@ -314,7 +314,7 @@
   - [ ] Verify localStorage.getItem('auth_token') is null
   - **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.3.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.3.2
 
 - [ ] **2.1.11** Test Case 1.3.3: Redirect to /login After Logout
   - [ ] Login user
@@ -323,7 +323,7 @@
   - [ ] Verify redirect happens
   - **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.3.3
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.3.3
 
 - [ ] **2.1.12** Test Case 1.3.4: Subsequent Requests Lack Auth Header
   - [ ] Login user
@@ -339,7 +339,7 @@
   - [ ] Verify no errors throughout
   - **Status:** ⚪ Not started
   - **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 1.4.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 1.4.1
 
 - [ ] **2.1.14** Test Case 1.4.2: Multiple Login/Logout Cycles
   - [ ] Login → Logout → Login → Logout
@@ -380,7 +380,7 @@
 - [ ] **2.2.1** Test Case 2.1.1: Redirect to /login without token from /dashboard
   - [ ] Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 2.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 2.1.1
 
 - [ ] **2.2.2** Test Case 2.1.2: Redirect to /login without token from /builds
   - [ ] **Status:** ⚪ Not started
@@ -397,7 +397,7 @@
 - [ ] **2.2.5** Test Case 2.2.1: Query builds rejected without token
   - [ ] **Status:** ⚪ Not started
   - [ ] **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 2.2.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 2.2.1
 
 - [ ] **2.2.6** Test Case 2.2.2: Query build(id) rejected without token
   - [ ] **Status:** ⚪ Not started
@@ -418,7 +418,7 @@
 - [ ] **2.2.10** Test Case 2.3.1: Valid token sent as Bearer header
   - [ ] **Status:** ⚪ Not started
   - [ ] **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 2.3.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 2.3.1
 
 - [ ] **2.2.11** Test Case 2.3.2: Missing Authorization header rejected
   - [ ] **Status:** ⚪ Not started
@@ -451,7 +451,7 @@
 - [ ] **2.3.1** Test Case 3.1.1: Invalid Credentials - Wrong Password
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 3.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 3.1.1
 
 - [ ] **2.3.2** Test Case 3.1.2: Invalid Credentials - Nonexistent Email
   - [ ] **Status:** ⚪ Not started
@@ -464,7 +464,7 @@
 - [ ] **2.3.4** Test Case 3.2.1: Expired Token → 401 → Redirect to /login
   - [ ] **Status:** ⚪ Not started
   - **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 3.2.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 3.2.1
 
 - [ ] **2.3.5** Test Case 3.2.2: Malformed Token → Error → Redirect
   - [ ] **Status:** ⚪ Not started
@@ -481,7 +481,7 @@
 - [ ] **2.3.8** Test Case 3.3.1: Server Error (500) - Display Error
   - [ ] **Status:** ⚪ Not started
   - [ ] **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 3.3.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 3.3.1
 
 - [ ] **2.3.9** Test Case 3.3.2: Network Timeout - Display Retry Option
   - [ ] **Status:** ⚪ Not started
@@ -541,17 +541,17 @@
 - [ ] **3.1.1** Test Case 4.1.1: User A Logs In → User A Data in Context
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 4.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 4.1.1
 
 - [ ] **3.1.2** Test Case 4.1.2: User B Logs In → User A Cleared → User B Data
   - [ ] **Status:** ⚪ Not started
   - **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 4.1.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 4.1.2
 
 - [ ] **3.1.3** Test Case 4.1.3: User A Queries Don't Return User B Data
   - [ ] **Status:** ⚪ Not started
   - **Time:** 20 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 4.1.3
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 4.1.3
 
 - [ ] **3.1.4** Test Case 4.2.1: Two Browser Tabs → Independent Tokens
   - [ ] **Status:** ⚪ Not started
@@ -591,32 +591,32 @@
 - [ ] **3.2.1** Test Case 5.1.1: Login Mutation Generates Valid JWT
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.1.1
 
 - [ ] **3.2.2** Test Case 5.1.2: Token Contains Correct User ID
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.1.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.1.2
 
 - [ ] **3.2.3** Test Case 5.1.3: Token Has 24-Hour Expiration
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.1.3
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.1.3
 
 - [ ] **3.2.4** Test Case 5.2.1: Valid Token Passes Middleware
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.2.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.2.1
 
 - [ ] **3.2.5** Test Case 5.2.2: Expired Token Rejected with 401
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.2.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.2.2
 
 - [ ] **3.2.6** Test Case 5.2.3: Invalid Signature Rejected with Error
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 5.2.3
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 5.2.3
 
 - [ ] **3.2.7** Test Case 5.3.1: Re-login Generates New Token
   - [ ] **Status:** ⚪ Not started
@@ -652,12 +652,12 @@
 - [ ] **3.3.1** Test Case 6.1.1: Token Never Logged in Plain Text
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 6.1.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 6.1.1
 
 - [ ] **3.3.2** Test Case 6.1.2: Token Not Exposed in URL Parameters
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 6.1.2
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 6.1.2
 
 - [ ] **3.3.3** Test Case 6.2.1: Password Never Logged or Stored
   - [ ] **Status:** ⚪ Not started
@@ -670,7 +670,7 @@
 - [ ] **3.3.5** Test Case 6.3.1: Login with Empty Email → Validation Error
   - [ ] **Status:** ⚪ Not started
   - **Time:** 10 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 6.3.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 6.3.1
 
 - [ ] **3.3.6** Test Case 6.3.2: Login with 1000-char Email → Graceful Handling
   - [ ] **Status:** ⚪ Not started
@@ -679,7 +679,7 @@
 - [ ] **3.3.7** Test Case 6.4.1: Double-Click Submit → Single Request Only
   - [ ] **Status:** ⚪ Not started
   - **Time:** 15 min
-  - **Reference:** TEST_PLAN_ISSUE_121.md § Test Case 6.4.1
+  - **Reference:** ISSUE_121_PLAN.md § Test Case 6.4.1
 
 - [ ] **3.3.8** Test Case 6.4.2: Form Submission with Pending Request → Disabled
   - [ ] **Status:** ⚪ Not started
@@ -898,8 +898,8 @@
 ## POST-IMPLEMENTATION CHECKLIST
 
 - [ ] **5.2.1** All deliverables created
-  - [ ] TEST_PLAN_ISSUE_121.md ✅
-  - [ ] TEST_STRUCTURE.md ✅
+  - [ ] ISSUE_121_PLAN.md ✅
+  - [ ] ISSUE_121_STRUCTURE.md ✅
   - [ ] TEST_COVERAGE_MATRIX.md (to create)
   - [ ] TEST_REPORT_ISSUE_121.md (to create)
   - [ ] 61 new test files/cases
