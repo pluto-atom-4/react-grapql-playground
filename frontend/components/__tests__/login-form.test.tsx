@@ -57,6 +57,13 @@ function MockLoginForm() {
     if (password.length < 8) {
       return 'Password must be at least 8 characters';
     }
+
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!hasLetter || !hasNumber) {
+      return 'Password must contain letters and numbers';
+    }
+
     return undefined;
   };
 
@@ -307,6 +314,47 @@ describe('LoginForm Component', () => {
       });
     });
 
+    it('password with only letters is rejected', async () => {
+      const user = userEvent.setup();
+      render(<MockLoginForm />);
+
+      const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
+      await user.type(passwordInput, 'abcdefgh');
+      fireEvent.blur(passwordInput);
+
+      await waitFor(() => {
+        expect(screen.getByText('Password must contain letters and numbers')).toBeInTheDocument();
+      });
+    });
+
+    it('password with only numbers is rejected', async () => {
+      const user = userEvent.setup();
+      render(<MockLoginForm />);
+
+      const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
+      await user.type(passwordInput, '12345678');
+      fireEvent.blur(passwordInput);
+
+      await waitFor(() => {
+        expect(screen.getByText('Password must contain letters and numbers')).toBeInTheDocument();
+      });
+    });
+
+    it('password with mixed letters and numbers is accepted', async () => {
+      const user = userEvent.setup();
+      render(<MockLoginForm />);
+
+      const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
+      await user.type(passwordInput, 'Password123');
+      fireEvent.blur(passwordInput);
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Password must contain letters and numbers')
+        ).not.toBeInTheDocument();
+      });
+    });
+
     it('real-time validation: errors show on blur', async () => {
       const _user = userEvent.setup();
       render(<MockLoginForm />);
@@ -475,7 +523,7 @@ describe('LoginForm Component', () => {
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'InvalidPassword');
+      await user.type(passwordInput, 'InvalidPassword1');
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -498,7 +546,7 @@ describe('LoginForm Component', () => {
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'InvalidPassword');
+      await user.type(passwordInput, 'InvalidPassword1');
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -565,7 +613,7 @@ describe('LoginForm Component', () => {
 
       // First attempt: fails
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'InvalidPassword');
+      await user.type(passwordInput, 'InvalidPassword1');
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -599,7 +647,7 @@ describe('LoginForm Component', () => {
 
       const testEmail = 'test@example.com';
       await user.type(emailInput, testEmail);
-      await user.type(passwordInput, 'InvalidPassword');
+      await user.type(passwordInput, 'InvalidPassword1');
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -623,7 +671,7 @@ describe('LoginForm Component', () => {
       const emailInput = screen.getByPlaceholderText('you@example.com');
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      const testPassword = 'InvalidPassword';
+      const testPassword = 'InvalidPassword1';
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, testPassword);
       await user.click(submitButton);
