@@ -132,6 +132,7 @@ router.post(
       return;
     }
     next();
+    return;
   },
   asyncHandler(async (req, res) => {
     if (!req.file) {

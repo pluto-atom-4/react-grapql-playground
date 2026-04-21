@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mutationResolver } from '../Mutation';
 import { generateToken } from '../../middleware/auth';
+import DataLoader from 'dataloader';
 import type { BuildContext } from '../../types';
+import type { Part, TestRun } from '@prisma/client';
 import type { GraphQLResolveInfo } from 'graphql';
 import bcrypt from 'bcrypt';
 
@@ -28,8 +30,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -61,8 +69,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -96,8 +110,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       // Generate a token via the resolver
@@ -128,8 +148,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -148,8 +174,14 @@ describe('Login Mutation Resolver', () => {
       mockContext = {
         user: null,
         prisma: {} as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await expect(
@@ -166,8 +198,14 @@ describe('Login Mutation Resolver', () => {
       mockContext = {
         user: null,
         prisma: {} as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await expect(
@@ -188,8 +226,14 @@ describe('Login Mutation Resolver', () => {
             findUnique: vi.fn().mockResolvedValue(null),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       // Non-existent user returns generic error (which prevents email enumeration)
@@ -220,8 +264,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       // Short password doesn't match hash, returns generic error
@@ -243,8 +293,14 @@ describe('Login Mutation Resolver', () => {
             findUnique: vi.fn().mockResolvedValue(null),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await expect(
@@ -273,8 +329,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await expect(
@@ -306,8 +368,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -328,8 +396,14 @@ describe('Login Mutation Resolver', () => {
             findUnique: vi.fn().mockResolvedValue(null),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       // Both wrong email and wrong password return same generic message
@@ -389,8 +463,14 @@ describe('Login Mutation Resolver', () => {
             findUnique: findUniqueMock,
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await mutationResolver.Mutation.login(
@@ -422,8 +502,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -458,8 +544,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       const result = await mutationResolver.Mutation.login(
@@ -494,8 +586,14 @@ describe('Login Mutation Resolver', () => {
             findUnique: findUniqueMock,
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       await mutationResolver.Mutation.login(
@@ -525,8 +623,14 @@ describe('Login Mutation Resolver', () => {
             }),
           },
         } as unknown as BuildContext['prisma'],
-        buildPartLoader: undefined,
-        buildTestRunLoader: undefined,
+        buildPartLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, Part[]>,
+        buildTestRunLoader: {
+          load: vi.fn().mockResolvedValue([]),
+          loadMany: vi.fn().mockResolvedValue([[]]),
+        } as unknown as DataLoader<string, TestRun[]>,
       };
 
       // bcrypt.compare will throw or return false with invalid hash
