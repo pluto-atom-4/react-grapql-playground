@@ -1,7 +1,9 @@
 import { BuildContext } from '../types';
 import { BuildStatus, TestStatus } from '@prisma/client';
 import { emitEvent } from '../services/event-bus';
+import { generateToken } from '../middleware/auth';
 import type { GraphQLResolveInfo } from 'graphql';
+import bcrypt from 'bcrypt';
 
 /**
  * Mutation resolvers with event emission to Express event bus.
@@ -15,6 +17,55 @@ import type { GraphQLResolveInfo } from 'graphql';
  */
 export const mutationResolver = {
   Mutation: {
+    /**
+     * Authenticate user with email and password.
+     * Returns JWT token valid for 24 hours.
+     *
+     * Interview talking point: "Login mutation validates credentials against
+     * bcrypt hash, then generates JWT token. Token is sent to frontend via GraphQL,
+     * stored in localStorage, and injected into all subsequent GraphQL requests."
+     */
+    async login(
+      _parent: unknown,
+      args: { email: string; password: string },
+      context: BuildContext,
+      _info: GraphQLResolveInfo
+    ) {
+      // Validate input
+      if (!args.email || args.email.trim().length === 0) {
+        throw new Error('email is required');
+      }
+      if (!args.password || args.password.length === 0) {
+        throw new Error('password is required');
+      }
+
+      // Find user by email
+      const user = await context.prisma.user.findUnique({
+        where: { email: args.email.toLowerCase() },
+      });
+
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Compare password with hash
+      const passwordMatch = await bcrypt.compare(args.password, user.passwordHash);
+      if (!passwordMatch) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Generate JWT token
+      const token = generateToken(user.id);
+
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      };
+    },
+
     /**
      * Create a new build in PENDING status.
      * Requires authentication.
