@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode, ReactElement } from 'react';
+import { AuthProvider } from '@/lib/auth-context';
 import { ApolloWrapper } from './apollo-wrapper';
 import './globals.css';
 
@@ -12,7 +13,9 @@ export default function RootLayout({ children }: { children: ReactNode }): React
   return (
     <html lang="en">
       <body>
-        <ApolloWrapper>{children}</ApolloWrapper>
+        <AuthProvider>
+          <ApolloWrapper>{children}</ApolloWrapper>
+        </AuthProvider>
       </body>
     </html>
   );
