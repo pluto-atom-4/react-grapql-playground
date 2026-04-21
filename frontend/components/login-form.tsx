@@ -35,9 +35,12 @@ export default function LoginForm() {
       }
     },
     onError: (error) => {
-      const graphQLError = error as { message?: string; graphQLErrors?: Array<{ message?: string }> };
+      const graphQLError = error as {
+        message?: string;
+        graphQLErrors?: Array<{ message?: string }>;
+      };
       const message = graphQLError.message || graphQLError.graphQLErrors?.[0]?.message;
-      
+
       if (message === 'Invalid email or password') {
         setGeneralError('Invalid email or password');
         setFormState((prev) => ({ ...prev, password: '' }));

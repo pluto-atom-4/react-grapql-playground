@@ -1,17 +1,17 @@
-import js from '@eslint/js'
-import tsPlugin from '@typescript-eslint/eslint-plugin'
-import tsParser from '@typescript-eslint/parser'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
-import nextPlugin from '@next/eslint-plugin-next'
+import js from '@eslint/js';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import nextPlugin from '@next/eslint-plugin-next';
 
 // Safely spread config rules with null coalescing
-const jsRules = (js.configs?.recommended?.rules ?? {})
-const tsRecommendedRules = (tsPlugin.configs?.recommended?.rules ?? {})
-const tsTypeCheckingRules = (tsPlugin.configs?.['recommended-requiring-type-checking']?.rules ?? {})
-const reactRecommendedRules = (reactPlugin.configs?.recommended?.rules ?? {})
-const reactHooksRecommendedRules = (reactHooksPlugin.configs?.recommended?.rules ?? {})
-const nextRecommendedRules = (nextPlugin.configs?.recommended?.rules ?? {})
+const jsRules = js.configs?.recommended?.rules ?? {};
+const tsRecommendedRules = tsPlugin.configs?.recommended?.rules ?? {};
+const tsTypeCheckingRules = tsPlugin.configs?.['recommended-requiring-type-checking']?.rules ?? {};
+const reactRecommendedRules = reactPlugin.configs?.recommended?.rules ?? {};
+const reactHooksRecommendedRules = reactHooksPlugin.configs?.recommended?.rules ?? {};
+const nextRecommendedRules = nextPlugin.configs?.recommended?.rules ?? {};
 
 export default [
   {
@@ -54,7 +54,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      'react': reactPlugin,
+      react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       '@next/next': nextPlugin,
     },
@@ -84,4 +84,4 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
-]
+];

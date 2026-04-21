@@ -25,16 +25,51 @@ describe('Resolver Authentication', () => {
     // In production, use real Prisma for integration testing
     mockPrisma = {
       build: {
-        create: async () => ({ id: '1', name: 'Test', status: 'PENDING', createdAt: new Date(), updatedAt: new Date() }),
-        findUnique: async () => ({ id: '1', name: 'Test', status: 'PENDING', createdAt: new Date(), updatedAt: new Date() }),
+        create: async () => ({
+          id: '1',
+          name: 'Test',
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        findUnique: async () => ({
+          id: '1',
+          name: 'Test',
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
         findMany: async () => [],
-        update: async () => ({ id: '1', name: 'Test', status: 'RUNNING', createdAt: new Date(), updatedAt: new Date() }),
+        update: async () => ({
+          id: '1',
+          name: 'Test',
+          status: 'RUNNING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
       },
       part: {
-        create: async () => ({ id: '1', buildId: '1', name: 'Part', sku: 'SKU', quantity: 1, createdAt: new Date(), updatedAt: new Date() }),
+        create: async () => ({
+          id: '1',
+          buildId: '1',
+          name: 'Part',
+          sku: 'SKU',
+          quantity: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
       },
       testRun: {
-        create: async () => ({ id: '1', buildId: '1', status: 'PASSED', result: 'PASS', fileUrl: '', completedAt: new Date(), createdAt: new Date(), updatedAt: new Date() }),
+        create: async () => ({
+          id: '1',
+          buildId: '1',
+          status: 'PASSED',
+          result: 'PASS',
+          fileUrl: '',
+          completedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
         findMany: async () => [],
       },
     } as unknown as PrismaClient;
@@ -143,9 +178,9 @@ describe('Resolver Authentication', () => {
         _info: GraphQLResolveInfo
       ) => Promise<unknown>;
 
-      await expect(resolver(null, { name: 'Test Build' }, mockContextNoAuth, mockInfo)).rejects.toThrow(
-        'Unauthorized'
-      );
+      await expect(
+        resolver(null, { name: 'Test Build' }, mockContextNoAuth, mockInfo)
+      ).rejects.toThrow('Unauthorized');
     });
 
     it('should allow createBuild mutation with authentication', async () => {
@@ -187,7 +222,12 @@ describe('Resolver Authentication', () => {
       ) => Promise<unknown>;
 
       await expect(
-        resolver(null, { buildId: '1', name: 'Part', sku: 'SKU123', quantity: 1 }, mockContextNoAuth, mockInfo)
+        resolver(
+          null,
+          { buildId: '1', name: 'Part', sku: 'SKU123', quantity: 1 },
+          mockContextNoAuth,
+          mockInfo
+        )
       ).rejects.toThrow('Unauthorized');
     });
 

@@ -41,9 +41,7 @@ export function isValidJWTPayload(decoded: unknown): decoded is { id: string } {
  *
  * Handles IncomingHttpHeaders where Authorization can be string | string[] | undefined
  */
-export function extractUserFromToken(
-  authHeader: string | string[] | undefined
-): AuthUser | null {
+export function extractUserFromToken(authHeader: string | string[] | undefined): AuthUser | null {
   // Handle IncomingHttpHeaders array case
   const header = Array.isArray(authHeader) ? authHeader[0] : authHeader;
 

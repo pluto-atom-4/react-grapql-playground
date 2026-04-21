@@ -20,4 +20,3 @@ export default function RootLayout({ children }: { children: ReactNode }): React
     </html>
   );
 }
-
