@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Issue #121 - Backend Integration Tests: Token Management
  * Tests JWT token generation, validation, and refresh
@@ -185,7 +185,7 @@ describe('Backend: Token Management Integration', () => {
   describe('Protected Query Enforcement', () => {
     it('AC#8: resolver should check user context before executing query', () => {
       // Simulate resolver logic
-      const executeQuery = (user: any) => {
+      const executeQuery = (user: any): { builds: Array<{ id: string }> } => {
         if (!user) {
           throw new Error('Unauthorized');
         }
