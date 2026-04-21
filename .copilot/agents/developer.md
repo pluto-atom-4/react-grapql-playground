@@ -104,6 +104,120 @@ When implementing features or fixing bugs, use these GitHub Copilot CLI commands
 /share                         # Share implementation approach with team
 ```
 
+## Planning & Issue Management Workflow
+
+When the Orchestrator requests a plan for an issue (e.g., "Let @developer agent /plan the implementation for Issue #119"), follow this workflow:
+
+### 1. **Create Implementation Plan**
+
+Request a plan for the GitHub issue:
+```bash
+Let @developer agent /plan the implementation for Issue #XXX
+```
+
+The Developer Agent will:
+- Fetch the GitHub issue and review requirements
+- Analyze the codebase to understand current state
+- Create a comprehensive implementation plan with:
+  - Problem statement
+  - Acceptance criteria
+  - 5-8 detailed todos (each independently implementable)
+  - File structure and dependencies
+  - Critical technical notes
+  - Testing strategy
+  - Interview talking points
+  - Known blockers/assumptions
+
+### 2. **Post Plan as GitHub Comment** (REQUIRED)
+
+After creating the plan, the Developer Agent MUST post it as a comment to the GitHub issue:
+
+```bash
+# Save plan to temporary file
+cat > /tmp/issue-plan-comment.md << 'EOF'
+# Your comprehensive plan content here
+EOF
+
+# Post as comment to GitHub issue
+gh issue comment XXX --body-file /tmp/issue-plan-comment.md
+
+# Or post directly with body (if no special characters):
+gh issue comment XXX --body "## Plan Summary\n\n..."
+```
+
+**Why This Matters**:
+- ✅ Plan becomes visible to all team members (not just agent session)
+- ✅ Team can review and provide feedback directly on the issue
+- ✅ Creates audit trail of planning decisions
+- ✅ Unblocks implementation once approved
+- ✅ Enables discussion and clarification in issue comments
+
+### 3. **Plan Content Format**
+
+The posted comment should include:
+
+| Section | Purpose | Example |
+|---------|---------|---------|
+| **Status & Effort** | Overview | "45 minutes, Depends On #118 (COMPLETED)" |
+| **Summary** | What will be built | 3-4 sentence overview |
+| **Acceptance Criteria** | Must-haves checklist | 10-13 items with [ ] checkboxes |
+| **8 Detailed Todos** | Implementation sequence | Each with effort, dependencies, acceptance criteria |
+| **Technical Notes** | Critical decisions | SSR safety, link ordering, type guards |
+| **Architecture Diagram** | Visual structure | ASCII or text-based |
+| **Interview Points** | Discussion material | 3-4 key talking points |
+| **Known Considerations** | Blockers/assumptions | Limitations and follow-up tasks |
+
+### 4. **Workflow Summary**
+
+```
+Orchestrator Request (Issue #XXX)
+  ↓
+1. Developer Agent creates implementation plan
+  ├─ Analyzes issue and codebase
+  ├─ Breaks down into 5-8 todos
+  └─ Adds technical depth (SSR safety, type guards, etc.)
+  ↓
+2. Developer Agent posts plan as GitHub comment
+  ├─ Uses gh issue comment XXX --body-file /tmp/plan.md
+  └─ Saves full plan to session workspace (plan.md)
+  ↓
+3. Team reviews plan on GitHub issue
+  ├─ Provides feedback or approves
+  └─ Discusses concerns in issue comments
+  ↓
+4. Orchestrator approves and initiates implementation
+  └─ Developer implements following todos in order
+
+✅ Result: Clear, transparent, documented planning process
+```
+
+### 5. **Example: Issue #119**
+
+When planning Issue #119 (Frontend Auth Context & Apollo Link):
+
+1. Created comprehensive plan (679 lines, 22KB)
+2. Posted to GitHub as comment with summary sections
+3. Team can now review, discuss, and provide feedback
+4. Implementation can proceed with clear acceptance criteria
+
+**Comment Posted To**: https://github.com/pluto-atom-4/react-grapql-playground/issues/119#issuecomment-4284738380
+
+### 6. **Session Workspace Storage**
+
+In addition to posting to GitHub, save the full plan to the session workspace:
+
+```
+Session Workspace Structure:
+├── plan.md                          ← Full implementation plan (679 lines)
+├── issue-XXX-closure-review.md      ← Verification after completion (if applicable)
+└── research/                        ← Supporting analysis (issue comments, codebase exploration)
+```
+
+This ensures:
+- ✅ Full plan available locally during implementation
+- ✅ Developer can reference detailed notes without re-fetching issue
+- ✅ Plan survives session transitions (persisted workspace)
+
 ## CLI Development Commands
 
 ```bash
@@ -586,16 +700,16 @@ When implementing features, keep real-world constraints in mind:
 
 **Developer ↔ Copilot CLI Tools**:
 
-| Task                      | Tool         | Usage                                          |
-| ------------------------- | ------------ | ---------------------------------------------- |
-| Start new feature         | `/plan`      | Create task breakdown before coding            |
-| Code implementation       | Editor + LSP | Write code with language server support        |
-| Verify changes            | `/diff`      | Review all changes before commit               |
-| Quality check             | `/review`    | Automated code review on changes               |
-| Architecture clarification| `/ask`       | Clarify dual-backend impacts                   |
-| Debug failing test        | `/lsp`       | Use language server diagnostics                |
-| Share implementation      | `/share`     | Document approach for Reviewer/Orchestrator    |
-| Commit changes            | Git          | Include Co-authored-by trailer (see CLAUDE.md) |
+| Task                       | Tool         | Usage                                                |
+| -------------------------- | ------------ | ---------------------------------------------------- |
+| Plan issue implementation  | `/plan`      | Create breakdown + post plan comment to GitHub issue |
+| Code implementation        | Editor + LSP | Write code with language server support              |
+| Verify changes             | `/diff`      | Review all changes before commit                     |
+| Quality check              | `/review`    | Automated code review on changes                     |
+| Architecture clarification | `/ask`       | Clarify dual-backend impacts                         |
+| Debug failing test         | `/lsp`       | Use language server diagnostics                      |
+| Share implementation       | `/share`     | Document approach for Reviewer/Orchestrator          |
+| Commit changes             | Git          | Include Co-authored-by trailer (see CLAUDE.md)       |
 
 **When to Escalate**:
 
