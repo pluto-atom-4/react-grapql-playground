@@ -46,7 +46,10 @@ async function main() {
         try {
           user = extractUserFromToken(req.headers.authorization);
         } catch (error) {
-          console.error('Failed to extract user from token:', error instanceof Error ? error.message : error);
+          console.error(
+            'Failed to extract user from token:',
+            error instanceof Error ? error.message : error
+          );
           // Continue with null user; protected resolvers will reject the request
         }
 

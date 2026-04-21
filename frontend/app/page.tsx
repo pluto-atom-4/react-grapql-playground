@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { getClient } from '@/lib/apollo-client-server-registered';
 import { BUILDS_QUERY } from '@/lib/graphql-queries';
 import BuildDashboard from '@/components/build-dashboard';
+import ProtectedRoute from '@/components/protected-route';
 import type { Build } from '@/lib/generated/graphql';
 
 /**
@@ -54,5 +55,9 @@ export default async function Page(): Promise<ReactElement> {
     serverError = err instanceof Error ? err.message : 'Unknown error fetching builds';
   }
 
-  return <BuildDashboard initialBuilds={initialBuilds} serverError={serverError} />;
+  return (
+    <ProtectedRoute>
+      <BuildDashboard initialBuilds={initialBuilds} serverError={serverError} />
+    </ProtectedRoute>
+  );
 }

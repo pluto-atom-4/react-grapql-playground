@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, ReactElement, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  ReactElement,
+  useRef,
+} from 'react';
 
 export interface AuthContextType {
   token: string | null;
