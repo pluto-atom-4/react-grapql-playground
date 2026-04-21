@@ -1813,89 +1813,405 @@ describe("Full Build Workflow", () => {
 
 ---
 
-## Frontend Authentication & Apollo Integration
+## Frontend & Backend Authentication: JWT Implementation
 
-JWT authentication is a critical security layer that protects the GraphQL API and ensures each user's data remains isolated. This section documents the fresh-per-request pattern applied to authentication.
+JWT authentication is a critical security layer that protects the GraphQL API and ensures each user's data remains isolated. This section documents the comprehensive JWT authentication system, from frontend login form through backend token validation, with end-to-end type safety.
 
-### Overview: Fresh Per-Request Authentication Pattern
+### Overview: JWT Authentication Flow
 
-Authentication follows the same **Fresh Per-Request Pattern** used for Apollo cache isolation (see Part 1 above):
+Authentication follows a **Fresh Per-Request Pattern** for both frontend and backend:
 
 ```
 Frontend (React)                       Backend (Apollo GraphQL)
     ↓                                         ↓
-User logs in → AuthContext stores      GraphQL context factory
-JWT token → Apollo link attaches        extracts JWT from header
-Authorization header → per-request      → validates signature
-(fresh token injection)                 → adds user to context
-                                        → fresh context per request
+1. User enters email + password    1. GraphQL context factory
+2. LoginForm validates locally     2. Extracts JWT from Authorization header
+3. Sends mutation to GraphQL       3. Validates JWT signature using JWT_SECRET
+4. Backend generates JWT (24h)     4. Extracts userId from JWT payload
+5. Frontend stores token           5. Injects fresh AuthUser object into context
+6. Apollo auth link injects        6. Fresh context per request (prevents token mixing)
+   Bearer header per-request
+7. Subsequent requests sent        7. Resolvers check context.user for auth
+   with token
 ```
 
-**Key Principle**: Token extraction and user context creation happen **per GraphQL request**, never globally. This prevents token mixing between concurrent users.
+**Key Principles**:
+- **Fresh Per-Request**: Token extraction happens per GraphQL request, never globally
+- **Generic Error Messages**: Login fails with "Invalid email or password" (prevents user enumeration)
+- **Password Validation**: 8+ characters with letters AND numbers
+- **Token Expiration**: 24-hour JWT expiration (refresh token future enhancement)
+- **Type Safety**: End-to-end TypeScript from database to UI
 
 ### Frontend Authentication Architecture
 
-#### 1. AuthContext: Token Management
+#### 1. LoginForm Component: Validation & Error Handling
 
-**File**: `frontend/lib/auth-context.tsx` (to be created for Issue #27)
+**File**: `frontend/components/login-form.tsx`
+
+The LoginForm component implements comprehensive client-side validation with real-time error messages:
 
 ```typescript
-import { createContext, useContext, ReactNode } from 'react'
+'use client';
 
-interface AuthContextType {
-  isAuthenticated: boolean
-  userId?: string
-  token?: string
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  loading: boolean
-  error?: string
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { LOGIN_MUTATION } from '@/lib/graphql-queries';
+
+interface ValidationErrors {
+  email?: string;
+  password?: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface FormState {
+  email: string;
+  password: string;
+}
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  // Manage token state (localStorage dev, httpOnly prod)
-  // Provide login/logout functions
-  // Expose useAuth() hook for components
+export default function LoginForm() {
+  const [formState, setFormState] = useState<FormState>({ email: '', password: '' });
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const [loginMutation, { loading }] = useMutation<{
+    login: { token: string; user: { id: string; email: string } };
+  }>(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      const token = data?.login?.token;
+      if (token) {
+        login(token);
+        router.push('/');
+      }
+    },
+    onError: (error) => {
+      if (error.message === 'Invalid email or password') {
+        setGeneralError('Invalid email or password');
+        setFormState((prev) => ({ ...prev, password: '' }));
+      } else {
+        setGeneralError(error.message || 'Login failed. Please try again.');
+      }
+    },
+  });
+
+  // Email validation: required + contains @
+  const validateEmail = (email: string): string | undefined => {
+    if (!email.trim()) {
+      return 'Email is required';
+    }
+    if (!email.includes('@')) {
+      return 'Enter a valid email address';
+    }
+    return undefined;
+  };
+
+  // Password validation: 8+ chars with letters AND numbers
+  const validatePassword = (password: string): string | undefined => {
+    if (!password) {
+      return 'Password is required';
+    }
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!hasLetter || !hasNumber) {
+      return 'Password must contain letters and numbers';
+    }
+
+    return undefined;
+  };
+
+  // Validate entire form before submission
+  const validateForm = (): boolean => {
+    const emailError = validateEmail(formState.email);
+    const passwordError = validatePassword(formState.password);
+
+    const errors: ValidationErrors = {};
+    if (emailError) errors.email = emailError;
+    if (passwordError) errors.password = passwordError;
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    setFormState((prev) => ({ ...prev, [name]: value }));
+    setGeneralError(null);
+
+    // Real-time validation on-change if field was touched
+    if (touched[name as keyof typeof touched]) {
+      const error =
+        name === 'email'
+          ? validateEmail(value)
+          : name === 'password'
+            ? validatePassword(value)
+            : undefined;
+
+      setValidationErrors((prev) => ({
+        ...prev,
+        [name]: error,
+      }));
+    }
+  };
+
+  const handleBlur = (e: ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    // Mark field as touched for real-time validation
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    const error =
+      name === 'email'
+        ? validateEmail(value)
+        : name === 'password'
+          ? validatePassword(value)
+          : undefined;
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+    setGeneralError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    // Execute login mutation with email/password
+    (async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = globalThis.setTimeout(() => {
+          controller.abort();
+        }, 30000);
+
+        try {
+          await loginMutation({
+            variables: {
+              email: formState.email.toLowerCase(),
+              password: formState.password,
+            },
+          });
+        } finally {
+          globalThis.clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          setGeneralError(error.message);
+        } else {
+          setGeneralError('Login failed. Please try again.');
+        }
+      }
+    })();
+  };
+
+  const isFormValid =
+    !validationErrors.email && !validationErrors.password && formState.email && formState.password;
+
   return (
-    <AuthContext.Provider value={...}>
-      {children}
-    </AuthContext.Provider>
-  )
+    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-center mb-8">Sign In</h1>
+
+      {/* General error message */}
+      {generalError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-700 text-sm">{generalError}</p>
+        </div>
+      )}
+
+      {/* Email input with inline validation */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value={formState.email}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          disabled={loading}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            validationErrors.email
+              ? 'border-red-300 focus:ring-red-500'
+              : 'border-gray-300 focus:ring-blue-500'
+          } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+          placeholder="you@example.com"
+        />
+        {validationErrors.email && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+        )}
+      </div>
+
+      {/* Password input with inline validation */}
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          value={formState.password}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          disabled={loading}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+            validationErrors.password
+              ? 'border-red-300 focus:ring-red-500'
+              : 'border-gray-300 focus:ring-blue-500'
+          } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+          placeholder="••••••••"
+        />
+        {validationErrors.password && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+        )}
+      </div>
+
+      {/* Submit button with loading state */}
+      <button
+        type="submit"
+        disabled={!isFormValid || loading}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+      >
+        {loading ? (
+          <>
+            <span className="inline-block animate-spin">🔄</span>
+            <span>Signing in...</span>
+          </>
+        ) : (
+          'Sign In'
+        )}
+      </button>
+    </form>
+  );
+}
+```
+
+**Key Features**:
+- **Email Validation**: Required, must contain @ symbol
+- **Password Validation**: 8+ characters with both letters AND numbers
+- **Real-time Validation**: On-blur first validation, then on-change after field touched
+- **Inline Error Messages**: Show validation errors next to fields (not modals)
+- **Loading State**: Disable inputs and show spinner during submission
+- **Generic Error Messages**: "Invalid email or password" for security (no user enumeration)
+- **Token Storage**: On success, receives JWT token and calls `login(token)`
+- **Redirect**: After login, router redirects to home page
+
+#### 2. AuthContext: Token Management & Session Persistence
+
+**File**: `frontend/lib/auth-context.tsx`
+
+The AuthContext provides token management and session persistence across page reloads:
+
+```typescript
+'use client';
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  ReactElement,
+  useRef,
+} from 'react';
+
+export interface AuthContextType {
+  token: string | null;
+  login: (token: string) => void;
+  logout: () => void;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const AUTH_TOKEN_KEY = 'auth_token';
+
+export function AuthProvider({ children }: { children: ReactNode }): ReactElement {
+  const [token, setToken] = useState<string | null>(null);
+  const isInitialized = useRef(false);
+
+  // Session persistence: recover token from localStorage on app startup
+  useEffect(() => {
+    if (!isInitialized.current && typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      setToken(storedToken);
+      isInitialized.current = true;
+    }
+  }, []);
+
+  const login = (newToken: string): void => {
+    setToken(newToken);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+    }
+  };
+
+  const logout = (): void => {
+    setToken(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  };
+
+  const value: AuthContextType = {
+    token,
+    login,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
+  return context;
 }
 ```
 
 **Key Responsibilities**:
-- Store JWT token (localStorage in dev, httpOnly cookies in production)
-- Provide `login(email, password)` function
-- Provide `logout()` function that clears token
-- Expose `useAuth()` hook for components
-- Persist token across page reloads (dev only)
+- **Token Storage**: Stores JWT token in React state (localStorage persisted in dev)
+- **Session Persistence**: Recovers token from localStorage on app startup (prevents login loop)
+- **Login Method**: Accepts token from GraphQL mutation, saves to localStorage, updates state
+- **Logout Method**: Clears token from state and localStorage
+- **useAuth Hook**: Exposes token, login, logout to components
+- **Type Safety**: Full TypeScript types for context and hook
 
-#### 2. Apollo Auth Link: Token Injection
+**Pattern**: `useAuth()` must be called within AuthProvider scope (checked with error if not)
 
-**File**: `frontend/lib/apollo-client.ts` (modification)
+#### 3. Apollo Auth Link: Token Injection Per-Request
+
+**File**: `frontend/lib/apollo.ts`
+
+The Apollo auth link injects the JWT token into every GraphQL request's Authorization header:
 
 ```typescript
 import { setContext } from '@apollo/client/link/context'
 import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client'
 
-// ← Fresh token retrieved per GraphQL request (not globally)
+// Fresh token retrieved per GraphQL request (not globally)
+// This ensures if user logs in/out between operations, new token is used
 const authLink = setContext((_, { headers }) => {
+  // Retrieve token fresh from localStorage per operation
   const token = localStorage.getItem('auth_token')
   
   return {
     headers: {
       ...headers,
+      // Inject Bearer token if present
       authorization: token ? `Bearer ${token}` : '',
     },
   }
@@ -1903,72 +2219,33 @@ const authLink = setContext((_, { headers }) => {
 
 const httpLink = new HttpLink({
   uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
-  credentials: 'include',
+  credentials: 'include',  // Send cookies with cross-origin requests
 })
 
 export const client = new ApolloClient({
-  link: authLink.concat(httpLink),  // ← authLink runs FIRST
+  // authLink runs FIRST, then httpLink
+  // This ensures every request has fresh token
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 })
 ```
 
 **How It Works**:
-1. Before each GraphQL request, `setContext` is called
-2. Retrieves token from localStorage (fresh per request)
-3. Adds `Authorization: Bearer {token}` header
-4. Header is sent with GraphQL query/mutation
-5. If no token, header is omitted (unauthenticated request)
+1. Before each GraphQL request, `setContext` callback is invoked
+2. Retrieves token fresh from localStorage (per-operation basis)
+3. Injects `Authorization: Bearer {token}` header into request
+4. If no token exists, header is omitted (unauthenticated request)
+5. HTTP transport layer sends request with header to Apollo server
 
-**Why Fresh Per-Request**:
-- Token might have changed between requests (user logged in/out)
-- Multiple GraphQL operations in same render should use same token
-- `setContext` is called per operation, not globally
+**Why Per-Request**:
+- Token might change between GraphQL operations (user logged in/out)
+- Multiple concurrent operations should use same token (no race conditions)
+- `setContext` is called per operation, providing fresh token injection
+- Prevents stale token usage if token expired mid-operation
 
-#### 3. Login Component
+#### 4. App Layout: Provider Wrapping Order
 
-**File**: `frontend/components/login.tsx` (to be created for Issue #27)
-
-```typescript
-'use client'
-
-import { FormEvent } from 'react'
-import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
-
-export function LoginForm() {
-  const { login, error, loading } = useAuth()
-  const router = useRouter()
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const email = new FormData(form).get('email')
-    const password = new FormData(form).get('password')
-    
-    try {
-      await login(email as string, password as string)
-      router.push('/dashboard')
-    } catch (err) {
-      // Error handled by AuthContext
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input name="email" type="email" required />
-      <input name="password" type="password" required />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Logging in...' : 'Login'}
-      </button>
-      {error && <p className="error">{error}</p>}
-    </form>
-  )
-}
-```
-
-#### 4. App Layout: AuthProvider Wrapping
-
-**File**: `frontend/app/layout.tsx` (modification)
+**File**: `frontend/app/layout.tsx`
 
 ```typescript
 import { AuthProvider } from '@/lib/auth-context'
@@ -1982,9 +2259,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* AuthProvider MUST wrap ApolloWrapper */}
+        {/* so Apollo auth link can access useAuth context */}
         <AuthProvider>
-          {/* ← AuthProvider must wrap ApolloWrapper */}
-          {/* so Apollo auth link can access useAuth token */}
           <ApolloWrapper>
             {children}
           </ApolloWrapper>
@@ -1997,70 +2274,228 @@ export default function RootLayout({
 
 **Provider Order Matters**:
 ```
-AuthProvider (top-level context for token)
-  └─ ApolloWrapper (client with auth link)
-     └─ Components (can use useAuth + useQuery)
+AuthProvider (provides useAuth + token state)
+  └─ ApolloWrapper (apolloClient with auth link)
+     └─ Components (can call useAuth + useQuery)
 ```
 
-If order reversed, Apollo auth link can't access token from AuthContext.
+If reversed, Apollo auth link cannot access token from AuthContext (context not in scope).
 
-### Backend Authentication: GraphQL
+#### 5. Protected Routes: Client-Side Auth Checks
+
+**File**: `frontend/lib/protected-route.tsx`
+
+```typescript
+'use client';
+
+import { ReactNode } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import { Navigate } from 'react-router-dom';
+
+export function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { token } = useAuth();
+
+  if (!token) {
+    // Redirect unauthenticated users to login
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+```
+
+**Pattern**:
+- Wrap components that require authentication with `<ProtectedRoute>`
+- If token missing, redirect to /login page
+- Prevents flash of unauth content (check before render)
+- Loading state optional (skeleton UI while checking token)
+
+### Backend Authentication: GraphQL & JWT Middleware
 
 #### 1. JWT Middleware: Token Extraction & Validation
 
-**File**: `backend-graphql/src/middleware/auth.ts` (verify/update for Issue #27)
+**File**: `backend-graphql/src/middleware/auth.ts`
+
+The JWT middleware extracts and validates JWT tokens from Authorization headers, with type-safe payload validation:
 
 ```typescript
-import jwt from 'jsonwebtoken'
-import { Request } from 'express'
+/**
+ * JWT Authentication Middleware for GraphQL
+ *
+ * Extracts and validates JWT tokens from Authorization headers.
+ * Returns user object if valid, or null if no token provided.
+ * Throws error if token is invalid or expired.
+ *
+ * Pattern: Authorization: Bearer <token>
+ */
 
-export interface AuthContext {
-  userId?: string
-  token?: string
-  isAuthenticated: boolean
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
+
+/**
+ * User object extracted from JWT token
+ */
+export interface AuthUser {
+  id: string;
+  [key: string]: unknown;
 }
 
-export function extractAuthContext(req: Request): AuthContext {
-  // ← Called per GraphQL request (fresh context)
-  const authHeader = req.headers.authorization
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { isAuthenticated: false }
+/**
+ * Type guard to validate JWT payload structure.
+ * Ensures decoded token has id field that is a non-empty string.
+ *
+ * This prevents DoS attacks where malformed JWT payloads could crash
+ * the context factory. Type validation happens before context injection.
+ */
+export function isValidJWTPayload(decoded: unknown): decoded is { id: string } {
+  return (
+    typeof decoded === 'object' &&
+    decoded !== null &&
+    'id' in decoded &&
+    typeof (decoded as Record<string, unknown>).id === 'string' &&
+    (decoded as Record<string, unknown>).id !== ''
+  );
+}
+
+/**
+ * Extract and validate JWT token from Authorization header.
+ * Returns user object if token is valid, null if no token provided.
+ * Throws error if token is invalid or expired.
+ *
+ * Handles IncomingHttpHeaders where Authorization can be string | string[] | undefined
+ * (Node.js HTTP sometimes returns arrays for duplicate headers)
+ */
+export function extractUserFromToken(authHeader: string | string[] | undefined): AuthUser | null {
+  // Handle IncomingHttpHeaders array case (multiple Authorization headers)
+  const header = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+
+  // Return null if no header or doesn't start with "Bearer "
+  if (!header || !header.startsWith('Bearer ')) {
+    return null;
   }
 
-  const token = authHeader.slice(7)
-  
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!,
-    ) as { sub: string; iat: number; exp: number }
-    
-    return {
-      isAuthenticated: true,
-      userId: decoded.sub,
-      token,
-    }
-  } catch (error) {
-    // Invalid or expired token
-    return { isAuthenticated: false }
+  // Extract token (everything after "Bearer ")
+  const token = header.substring(7);
+
+  if (!token) {
+    return null;
   }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Validate payload shape: must have id field that is a non-empty string
+    if (!isValidJWTPayload(decoded)) {
+      throw new Error('Invalid token payload: id must be a non-empty string');
+    }
+
+    return {
+      id: decoded.id,
+      // Include other JWT claims (but exclude iat/exp)
+      ...Object.fromEntries(
+        Object.entries(decoded).filter(([key]) => key !== 'iat' && key !== 'exp')
+      ),
+    };
+  } catch (error) {
+    // Provide specific error messages for different JWT failures
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new Error('Token expired');
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      throw new Error('Invalid token');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Generate a JWT token for user authentication.
+ * Tokens expire in 24 hours.
+ *
+ * Usage: const token = generateToken(user.id)
+ */
+export function generateToken(userId: string): string {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '24h' });
 }
 ```
 
-**Key Points**:
-- Extracts JWT from `Authorization: Bearer {token}` header
-- Validates JWT signature using JWT_SECRET
-- Returns fresh context with `userId` if valid
-- Returns unauthenticated context if invalid/missing
+**Key Features**:
+- **Extracts Bearer Token**: Handles `Authorization: Bearer {token}` header format
+- **Type Safety**: `isValidJWTPayload()` type guard validates payload structure before use
+- **Error Handling**: Specific error messages for expired vs invalid tokens (helpful for debugging)
+- **Header Array Handling**: Handles Node.js edge case where headers can be arrays
+- **24-Hour Expiration**: Tokens valid for 24 hours, then require re-login
+- **Generic Validation**: Doesn't expose internal validation details to client
 
-#### 2. Apollo Server Context: User Binding
+#### 2. Login Mutation Resolver
 
-**File**: `backend-graphql/src/index.ts` (modification)
+**File**: `backend-graphql/src/resolvers/Mutation.ts`
+
+The login mutation handles password verification and JWT generation:
+
+```typescript
+async login(
+  _parent: unknown,
+  args: { email: string; password: string },
+  context: BuildContext,
+  _info: GraphQLResolveInfo
+) {
+  // Validate input
+  if (!args.email || args.email.trim().length === 0) {
+    throw new Error('email is required');
+  }
+  if (!args.password || args.password.length === 0) {
+    throw new Error('password is required');
+  }
+
+  // Find user by email (case-insensitive)
+  const user = await context.prisma.user.findUnique({
+    where: { email: args.email.toLowerCase() },
+  });
+
+  if (!user) {
+    // Generic error message: prevents user enumeration
+    throw new Error('Invalid email or password');
+  }
+
+  // Compare plaintext password with bcrypt hash
+  const passwordMatch = await bcrypt.compare(args.password, user.passwordHash);
+  if (!passwordMatch) {
+    // Generic error message: prevents user enumeration
+    throw new Error('Invalid email or password');
+  }
+
+  // Generate JWT token (valid for 24 hours)
+  const token = generateToken(user.id);
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+    },
+  };
+}
+```
+
+**Security Patterns**:
+- **Generic Error Messages**: Returns "Invalid email or password" regardless of failure reason (prevents user enumeration)
+- **Bcrypt Comparison**: Compares plaintext password against bcrypt hash (not plaintext storage)
+- **Email Normalization**: Converts email to lowercase for case-insensitive lookup
+- **Token Generation**: Uses `generateToken()` which signs JWT with 24-hour expiration
+
+**Interview Talking Point**: "I use generic error messages to prevent user enumeration. If I said 'user not found' vs 'password incorrect', an attacker could probe for valid emails. Both failures return 'Invalid email or password'."
+
+#### 3. Apollo Server Context: User Binding
+
+**File**: `backend-graphql/src/index.ts`
+
+The Apollo server context factory extracts JWT and injects user into resolvers:
 
 ```typescript
 import { ApolloServer } from '@apollo/server'
-import { extractAuthContext } from './middleware/auth'
+import { extractUserFromToken } from './middleware/auth'
 import { initializeDataLoaders } from './dataloaders'
 
 const server = new ApolloServer({
@@ -2068,74 +2503,163 @@ const server = new ApolloServer({
   resolvers,
   context: async ({ req }) => {
     // ← Fresh context factory, called per GraphQL request
-    const auth = extractAuthContext(req)
-    
+    // Extract user from JWT (or null if missing/invalid)
+    let user = null;
+    try {
+      user = extractUserFromToken(req.headers.authorization);
+    } catch (error) {
+      // Token present but invalid (expired, malformed, etc)
+      console.error('JWT validation error:', error);
+      // Continue with user = null (resolver will check context.user)
+    }
+
     return {
       prisma: new PrismaClient(),
-      auth,  // ← Fresh auth context
-      user: auth.isAuthenticated ? { id: auth.userId } : null,
+      user,  // ← Fresh user per request (null if unauthenticated)
       dataloaders: initializeDataLoaders(),
-    }
+    };
   },
 })
 ```
 
 **What This Provides to Resolvers**:
 ```typescript
-// Inside resolver
+// Inside resolver, context has user object or null
 async function buildResolver(
   parent,
   args,
-  context: GraphQLContext  // ← Has auth data
+  context: GraphQLContext  // ← Has fresh user per-request
 ) {
   // Check if user authenticated
   if (!context.user) {
-    throw new AuthenticationError('Not authenticated')
+    throw new Error('Unauthorized');
   }
-  
-  // Fetch builds for this user only
+
+  // Fetch builds for this user only (data isolation)
   const builds = await context.prisma.build.findMany({
-    where: { userId: context.user.id },  // ← Data isolation per user
-  })
-  
-  return builds
+    where: { userId: context.user.id },
+  });
+
+  return builds;
 }
 ```
 
-#### 3. Protected Resolvers: User Data Isolation
+#### 4. Protected Resolvers: Authorization Checks
 
-**File**: `backend-graphql/src/resolvers/Query.ts` (modify for Issue #27)
+**File**: `backend-graphql/src/resolvers/Query.ts`
+
+Protected resolvers verify user authentication and ownership:
 
 ```typescript
 export const queryResolvers = {
-  async builds(_, __, { user, prisma }) {
+  async builds(
+    _parent: unknown,
+    args: { limit: number; offset: number },
+    context: BuildContext,
+    _info: GraphQLResolveInfo
+  ) {
     // Require authentication
-    if (!user) {
-      throw new AuthenticationError('Must be logged in to view builds')
+    if (!context.user) {
+      throw new Error('Unauthorized');
     }
-    
-    // Return only this user's builds
-    return prisma.build.findMany({
-      where: { userId: user.id },
-    })
+
+    // Return only this user's builds (data isolation)
+    return context.prisma.build.findMany({
+      where: { userId: context.user.id },
+      skip: args.offset,
+      take: args.limit,
+      orderBy: { createdAt: 'desc' },
+    });
   },
 
-  async build(_, { id }, { user, prisma }) {
-    if (!user) {
-      throw new AuthenticationError('Must be logged in')
+  async build(
+    _parent: unknown,
+    args: { id: string },
+    context: BuildContext,
+    _info: GraphQLResolveInfo
+  ) {
+    if (!context.user) {
+      throw new Error('Unauthorized');
     }
-    
-    const build = await prisma.build.findUnique({
-      where: { id },
-    })
-    
+
+    const build = await context.prisma.build.findUnique({
+      where: { id: args.id },
+    });
+
+    if (!build) {
+      throw new Error('Build not found');
+    }
+
     // Verify user owns this build
-    if (build?.userId !== user.id) {
-      throw new ForbiddenError('Not authorized to view this build')
+    if (build.userId !== context.user.id) {
+      throw new Error('Unauthorized');
     }
-    
-    return build
+
+    return build;
   },
+};
+```
+
+**Authorization Pattern**:
+1. Check `context.user` exists (unauthenticated users get null)
+2. Throw error if user not authenticated
+3. Filter queries by `userId: context.user.id` (user only sees their data)
+4. For direct lookups, verify ownership after fetch
+
+**Interview Talking Point**: "Authorization happens at the resolver level. Even if an attacker guesses a build ID and sends a query, the resolver checks that the user owns that build. Ownership verification prevents horizontal privilege escalation."
+
+### Password Validation Specification
+
+**Requirement** (Issue #120, Acceptance Criterion 4):
+
+Password must meet ALL of the following criteria:
+- Minimum 8 characters
+- Must contain at least one letter (A-Z, a-z)
+- Must contain at least one number (0-9)
+
+**Validation Function**:
+
+```typescript
+const validatePassword = (password: string): string | undefined => {
+  if (!password) {
+    return 'Password is required';
+  }
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters';
+  }
+
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  if (!hasLetter || !hasNumber) {
+    return 'Password must contain letters and numbers';
+  }
+
+  return undefined;
+};
+```
+
+**Examples**:
+
+| Password | Valid? | Reason |
+|----------|--------|--------|
+| `Password123` | ✅ Yes | 11 chars, has letters & numbers |
+| `Password1` | ✅ Yes | 9 chars, has letters & numbers |
+| `abcdefgh` | ❌ No | No numbers |
+| `12345678` | ❌ No | No letters |
+| `Pass1` | ❌ No | Only 5 characters |
+| `P@ss123!` | ✅ Yes | 8 chars, has letters & numbers (special chars allowed) |
+
+**Backend Validation** (redundant security):
+
+While frontend validates password format, backend should also validate during login to prevent API misuse:
+
+```typescript
+// Backend could validate during signup (if implemented)
+if (password.length < 8) throw new Error('Password too short');
+const hasLetter = /[a-zA-Z]/.test(password);
+const hasNumber = /[0-9]/.test(password);
+if (!hasLetter || !hasNumber) {
+  throw new Error('Password must contain letters and numbers');
 }
 ```
 
@@ -2145,13 +2669,14 @@ export const queryResolvers = {
 
 **Development** (Current):
 - Token stored in `localStorage`
-- ⚠️ Vulnerable to XSS (JavaScript can steal it)
+- ⚠️ Vulnerable to XSS (JavaScript can steal it if DOM is compromised)
 - Acceptable for development only
+- Visible in browser DevTools Application tab
 
 **Production** (Recommended):
 - Token stored in `httpOnly` cookie
 - ✅ Immune to XSS (JavaScript cannot access)
-- Cookie sent automatically with requests
+- Cookie sent automatically with requests (requires `credentials: 'include'`)
 - Requires HTTPS (cannot send over HTTP)
 
 **Migration Path**:
@@ -2160,61 +2685,538 @@ export const queryResolvers = {
 localStorage.setItem('auth_token', token)
 
 // Prod: httpOnly cookie
-Set-Cookie: auth_token=JWT_VALUE; HttpOnly; Secure; SameSite=Strict
+// Set-Cookie: auth_token=JWT_VALUE; HttpOnly; Secure; SameSite=Strict
 ```
 
 #### Token Expiration & Refresh
 
 **Current** (Simple):
-- Token expires after 1 hour (JWT `exp` claim)
-- User must login again
+- Token expires after 24 hours (JWT `exp` claim)
+- User must login again after 24 hours
 - Acceptable for short sessions
 
-**Future** (Recommended - Issue #27 follow-up):
-- Access token: 15 minutes
-- Refresh token: 7 days (rotation)
-- User stays logged in without re-authenticating
-- More secure: compromised access token has limited window
+**Future** (Recommended Enhancement):
+- Access token: 15 minutes (short window for compromise)
+- Refresh token: 7 days (enables long sessions without password)
+- Automatic refresh: If access token expires, use refresh token to get new access token
+- More secure: Compromised access token has limited impact window
 
-#### CORS & Credentials
-
-**Apollo Client Setup** (required):
+**Implementation** (future enhancement):
 ```typescript
-const httpLink = new HttpLink({
-  uri: 'http://localhost:4000/graphql',
-  credentials: 'include',  // ← Send cookies with requests
-})
+// Current
+const token = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '24h' });
+
+// Future
+const accessToken = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '15m' });
+const refreshToken = jwt.sign({ id: userId, isRefresh: true }, JWT_SECRET, { expiresIn: '7d' });
 ```
 
-**Apollo Server Setup** (required):
+#### Generic Error Messages Prevent User Enumeration
+
+**Bad** (Leaks user information):
 ```typescript
-new ApolloServer({
-  plugins: {
-    didResolveOperation: async (context) => {
-      // CORS headers are set by apollo-server-express
-    },
+const user = await db.user.findUnique({ where: { email } });
+if (!user) throw new Error('User not found');  // ❌ Attacker knows email doesn't exist
+
+const match = await bcrypt.compare(password, user.passwordHash);
+if (!match) throw new Error('Password incorrect');  // ❌ Attacker knows email is valid
+```
+
+**Good** (Generic message):
+```typescript
+const user = await db.user.findUnique({ where: { email } });
+if (!user) throw new Error('Invalid email or password');  // ✅ Same message
+
+const match = await bcrypt.compare(password, user.passwordHash);
+if (!match) throw new Error('Invalid email or password');  // ✅ Same message
+```
+
+An attacker cannot determine whether an email is registered or if the password is wrong—both return the same generic error.
+
+#### Bcrypt Password Hashing
+
+**Current Implementation**:
+```typescript
+const passwordMatch = await bcrypt.compare(args.password, user.passwordHash);
+```
+
+**Why Not Plaintext**:
+- ❌ Never store plaintext passwords
+- ❌ Database breach exposes all passwords
+- ❌ Violates user trust and regulations (GDPR, etc)
+
+**Why Bcrypt**:
+- ✅ Intentionally slow (1 second per comparison)
+- ✅ Makes brute-force attacks impractical (1M password attempts = ~11 days)
+- ✅ Industry standard (used by GitHub, Twitter, most major services)
+- ✅ Built-in salt (randomizes hash, prevents rainbow tables)
+
+**Future Consideration**:
+- Upgrade to Argon2 if bcrypt becomes deprecated (better than bcrypt)
+
+#### JWT Token Validation Per-Request
+
+**Fresh Extraction Pattern**:
+```typescript
+// Per-request extraction (NOT globally cached)
+context: async ({ req }) => {
+  let user = null;
+  try {
+    user = extractUserFromToken(req.headers.authorization);
+  } catch (error) {
+    console.error('JWT validation error:', error);
+  }
+  return { user, ...otherContext };
+}
+```
+
+**Why Fresh Per-Request**:
+- Token might be revoked (e.g., user logged out in another tab)
+- No global cache means no stale tokens
+- Validation happens for every request
+- Prevents token reuse after expiration
+
+#### Type Guard Prevents DoS Attacks
+
+**Bad** (Can crash on malformed JWT):
+```typescript
+const decoded = jwt.verify(token, JWT_SECRET) as any;
+// If payload missing 'id' field, decoder.id is undefined
+// Passing undefined to database crashes resolver
+```
+
+**Good** (Type guard validates structure):
+```typescript
+export function isValidJWTPayload(decoded: unknown): decoded is { id: string } {
+  return (
+    typeof decoded === 'object' &&
+    decoded !== null &&
+    'id' in decoded &&
+    typeof (decoded as Record<string, unknown>).id === 'string' &&
+    (decoded as Record<string, unknown>).id !== ''
+  );
+}
+
+if (!isValidJWTPayload(decoded)) {
+  throw new Error('Invalid token payload');
+}
+```
+
+An attacker cannot crash the server by sending a JWT with missing/malformed payload fields.
+
+### Testing Patterns for Authentication
+
+#### Unit Tests: Validation Functions
+
+**File**: `frontend/components/__tests__/login-form.test.tsx`
+
+```typescript
+describe('LoginForm Validation', () => {
+  it('should reject email without @', () => {
+    const error = validateEmail('notanemail');
+    expect(error).toBe('Enter a valid email address');
+  });
+
+  it('should accept valid email', () => {
+    const error = validateEmail('user@example.com');
+    expect(error).toBeUndefined();
+  });
+
+  it('should reject password < 8 chars', () => {
+    const error = validatePassword('Pass1');
+    expect(error).toBe('Password must be at least 8 characters');
+  });
+
+  it('should reject password without letters', () => {
+    const error = validatePassword('12345678');
+    expect(error).toBe('Password must contain letters and numbers');
+  });
+
+  it('should reject password without numbers', () => {
+    const error = validatePassword('abcdefgh');
+    expect(error).toBe('Password must contain letters and numbers');
+  });
+
+  it('should accept password with letters and numbers', () => {
+    const error = validatePassword('Password123');
+    expect(error).toBeUndefined();
+  });
+});
+```
+
+#### Unit Tests: JWT Middleware
+
+**File**: `backend-graphql/src/__tests__/auth.test.ts`
+
+```typescript
+describe('JWT Middleware', () => {
+  it('should extract valid token', () => {
+    const token = generateToken('user-123');
+    const user = extractUserFromToken(`Bearer ${token}`);
+    expect(user?.id).toBe('user-123');
+  });
+
+  it('should return null for missing header', () => {
+    const user = extractUserFromToken(undefined);
+    expect(user).toBeNull();
+  });
+
+  it('should return null for non-Bearer header', () => {
+    const user = extractUserFromToken('Basic dXNlcjpwYXNz');
+    expect(user).toBeNull();
+  });
+
+  it('should throw error for expired token', () => {
+    const token = jwt.sign({ id: 'user-123' }, JWT_SECRET, { expiresIn: '-1h' });
+    expect(() => extractUserFromToken(`Bearer ${token}`)).toThrow('Token expired');
+  });
+
+  it('should throw error for malformed token', () => {
+    expect(() => extractUserFromToken('Bearer malformed.token')).toThrow('Invalid token');
+  });
+
+  it('should throw error for token missing id field', () => {
+    const token = jwt.sign({ userId: 'user-123' }, JWT_SECRET);
+    expect(() => extractUserFromToken(`Bearer ${token}`)).toThrow('Invalid token payload');
+  });
+});
+```
+
+#### Mocking Strategies: useAuth Hook
+
+**File**: `frontend/components/__tests__/protected-component.test.tsx`
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { AuthProvider, useAuth } from '@/lib/auth-context';
+
+// Mock component that uses useAuth
+function ProtectedComponent() {
+  const { token } = useAuth();
+  return <div>{token ? 'Authenticated' : 'Not authenticated'}</div>;
+}
+
+describe('AuthProvider', () => {
+  it('should provide token from context', () => {
+    // AuthProvider initializes token from localStorage
+    localStorage.setItem('auth_token', 'test-token');
+    
+    render(
+      <AuthProvider>
+        <ProtectedComponent />
+      </AuthProvider>
+    );
+
+    expect(screen.getByText('Authenticated')).toBeInTheDocument();
+    
+    // Cleanup
+    localStorage.removeItem('auth_token');
+  });
+
+  it('should handle missing token', () => {
+    localStorage.clear();
+    
+    render(
+      <AuthProvider>
+        <ProtectedComponent />
+      </AuthProvider>
+    );
+
+    expect(screen.getByText('Not authenticated')).toBeInTheDocument();
+  });
+});
+```
+
+#### Mocking Strategies: Apollo Client
+
+**File**: `frontend/components/__tests__/dashboard.test.tsx`
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { MockedProvider } from '@apollo/client/testing';
+import { AuthProvider } from '@/lib/auth-context';
+import Dashboard from '@/app/page';
+import { GET_BUILDS } from '@/lib/graphql-queries';
+
+describe('Dashboard with Authentication', () => {
+  it('should display builds when authenticated', async () => {
+    const mocks = [
+      {
+        request: {
+          query: GET_BUILDS,
+          context: {
+            headers: {
+              authorization: 'Bearer test-token',
+            },
+          },
+        },
+        result: {
+          data: {
+            builds: [
+              { id: '1', name: 'Build 1', status: 'PENDING' },
+            ],
+          },
+        },
+      },
+    ];
+
+    // Set token in localStorage
+    localStorage.setItem('auth_token', 'test-token');
+
+    render(
+      <AuthProvider>
+        <MockedProvider mocks={mocks}>
+          <Dashboard />
+        </MockedProvider>
+      </AuthProvider>
+    );
+
+    // Wait for Apollo query to resolve
+    expect(await screen.findByText('Build 1')).toBeInTheDocument();
+
+    // Cleanup
+    localStorage.removeItem('auth_token');
+  });
+
+  it('should show error when unauthorized', async () => {
+    const mocks = [
+      {
+        request: {
+          query: GET_BUILDS,
+        },
+        result: {
+          errors: [{ message: 'Unauthorized' }],
+        },
+      },
+    ];
+
+    localStorage.clear();
+
+    render(
+      <AuthProvider>
+        <MockedProvider mocks={mocks}>
+          <Dashboard />
+        </MockedProvider>
+      </AuthProvider>
+    );
+
+    expect(await screen.findByText('Unauthorized')).toBeInTheDocument();
+  });
+});
+```
+
+#### Test Data Patterns
+
+**File**: `backend-graphql/src/__tests__/fixtures.ts`
+
+```typescript
+export const testUsers = {
+  valid: {
+    email: 'test@example.com',
+    password: 'TestPassword123',
+    passwordHash: '$2b$10$...', // bcrypt hash of TestPassword123
   },
-})
+  invalidPassword: {
+    email: 'test@example.com',
+    password: 'WrongPassword123',
+  },
+  notFound: {
+    email: 'nonexistent@example.com',
+    password: 'AnyPassword123',
+  },
+};
+
+export const testTokens = {
+  valid: generateToken('user-123'),
+  expired: jwt.sign({ id: 'user-123' }, JWT_SECRET, { expiresIn: '-1h' }),
+  malformed: 'not.a.jwt.token',
+  missing_id: jwt.sign({ userId: 'user-123' }, JWT_SECRET),
+};
 ```
 
-### Interview Talking Points: Authentication
+---
 
-**Question: "How do you prevent token leaks between users?"**
+## Interview Talking Points: Authentication
 
-"I apply the same Fresh Per-Request pattern used for Apollo cache isolation. Every GraphQL request has its own context that extracts and validates the JWT token from the Authorization header. This prevents token mixing between concurrent requests. The pattern is:
+### Question: "How do you prevent token leaks between users in concurrent requests?"
 
-1. Frontend: Apollo auth link retrieves token per GraphQL operation
-2. Backend: Context factory extracts token per HTTP request
-3. Each request gets isolated, fresh auth context
-4. Tokens never leak between users"
+**Answer**: "I apply a **Fresh Per-Request Pattern** for both frontend and backend. 
 
-**Question: "How is authentication integrated with Apollo?"**
+**Frontend**:
+- Apollo auth link (`setContext`) runs **per GraphQL operation**, not globally
+- Retrieves token fresh from localStorage each time
+- If user logs in/out between operations, the new token is used immediately
+- No global token cache = no stale tokens shared between requests
 
-"Apollo auth link (`@apollo/client/link/context`) intercepts every GraphQL operation and injects the Authorization header. This happens at the transport layer before the request reaches Apollo Server. The key is that it's fresh per operation—if token changes between queries, the new token is used immediately."
+**Backend**:
+- Context factory in Apollo Server runs **per HTTP request**
+- Extracts JWT from Authorization header fresh each time
+- Validates signature and payload type
+- Injects fresh user object into context
+- Each request gets isolated auth context
 
-**Question: "How do you ensure users only see their own data?"**
+Result: Even with concurrent requests from same user, tokens never leak. Multiple simultaneous GraphQL operations each get their own validated token."
 
-"At the resolver level, I verify `context.user` exists and matches the resource owner. For queries, I filter by `where: { userId: context.user.id }`. For mutations, I verify the user has permission. Even if someone guesses a build ID, they can't access it without ownership verification in the resolver."
+### Question: "How does authentication integrate with Apollo without tangling concerns?"
+
+**Answer**: "Apollo auth link is middleware between cache and HTTP transport. It doesn't know about authentication logic—it just intercepts operations and injects headers.
+
+**The flow**:
+1. Component calls `useQuery(GET_BUILDS)`
+2. Apollo checks cache—miss
+3. authLink intercepts the operation
+4. authLink calls `setContext` callback
+5. Callback retrieves token and injects `Authorization: Bearer {token}`
+6. httpLink sends request with header
+7. Apollo Server receives request
+8. Context factory extracts JWT and validates it
+9. Resolver has fresh `context.user` object
+10. Resolver returns data
+11. Apollo caches and returns to component
+
+The separation: authLink doesn't validate tokens (that's backend's job). Apollo Server doesn't know about localStorage (that's client concern). Each layer does one thing well."
+
+### Question: "How do you ensure users only see their own data?"
+
+**Answer**: "Authorization happens at the **resolver level**, not the transport layer.
+
+**For queries**:
+```typescript
+async builds(_, args, context) {
+  if (!context.user) throw new Error('Unauthorized');
+  return db.build.findMany({
+    where: { userId: context.user.id },  // ← Data isolation
+  });
+}
+```
+
+**For mutations**:
+```typescript
+async updateBuild(_, { id, status }, context) {
+  if (!context.user) throw new Error('Unauthorized');
+  const build = await db.build.findUnique({ where: { id } });
+  if (build.userId !== context.user.id) throw new Error('Unauthorized');
+  // ← Verify ownership before allowing mutation
+  return db.build.update({ where: { id }, data: { status } });
+}
+```
+
+Even if an attacker guesses a build ID and sends a query, the resolver checks ownership. **Horizontal privilege escalation prevented at the resolver level.**"
+
+### Question: "Why generic error messages for login failures?"
+
+**Answer**: "**User enumeration prevention**. If I return different errors for 'user not found' vs 'password incorrect', an attacker can probe:
+
+```
+POST /graphql { login(email: 'attacker@gmail.com', password: 'test') }
+Response: 'User not found' → email not registered
+
+POST /graphql { login(email: 'realuser@gmail.com', password: 'test') }
+Response: 'Password incorrect' → email is valid
+```
+
+Now the attacker knows which emails are real users and can focus brute-force attacks. By returning 'Invalid email or password' for both failures, both errors look identical:
+
+```
+POST /graphql { login(email: 'attacker@gmail.com', password: 'test') }
+Response: 'Invalid email or password' ← Could be either reason
+
+POST /graphql { login(email: 'realuser@gmail.com', password: 'test') }
+Response: 'Invalid email or password' ← Could be either reason
+```
+
+Attacker can't distinguish between account enumeration and password guessing. Combined with bcrypt's 1-second hash time (1M attempts ≈ 11 days), this makes brute-force impractical."
+
+### Question: "Why type-safe JWT payload validation?"
+
+**Answer**: "Prevents DoS attacks on the context factory. If someone sends a JWT with missing 'id' field:
+
+**Bad** (crashes):
+```typescript
+const decoded = jwt.verify(token, SECRET) as any;
+const user = { id: decoded.id };  // ← decoded.id is undefined
+await context.prisma.build.findMany({
+  where: { userId: user.id }  // ← Query with undefined crashes DB
+});
+```
+
+**Good** (type guard):
+```typescript
+export function isValidJWTPayload(decoded): decoded is { id: string } {
+  return (
+    typeof decoded === 'object' &&
+    decoded !== null &&
+    'id' in decoded &&
+    typeof decoded.id === 'string' &&
+    decoded.id !== ''
+  );
+}
+
+if (!isValidJWTPayload(decoded)) throw new Error('Invalid payload');
+```
+
+Type guard validates structure **before** passing to database. An attacker cannot crash the server by sending malformed JWTs. Prevents **denial of service**."
+
+### Question: "Why 24-hour token expiration instead of no expiration?"
+
+**Answer**: "Balances security and user experience.
+
+**No expiration (bad for security)**:
+- Leaked token is valid forever
+- Can't revoke access (e.g., when user changes password or device is stolen)
+- No way to force re-authentication
+
+**Very short expiration (bad for UX)**:
+- Users forced to re-login every 15 minutes
+- Annoying on mobile with spotty WiFi
+- High load on login server
+
+**24 hours (balanced approach)**:
+- Short enough that leaked tokens have limited window
+- Long enough for reasonable usage sessions
+- If token leaked, attacker has ~24 hours before it expires
+- User can also manually logout (clears localStorage)
+
+**Future improvement** (refresh tokens):
+- Access token: 15 minutes (short-lived, used for requests)
+- Refresh token: 7 days (long-lived, only used to get new access token)
+- Best of both: short exposure window + long session duration
+- Requires refresh mechanism (not yet implemented)
+
+For this project, 24-hour token is appropriate given manufacturing use case (8-hour shifts)."
+
+### Question: "How does password validation prevent weak passwords?"
+
+**Answer**: "Client-side validation for immediate feedback, server-side for security.
+
+**Client-side** (LoginForm):
+- Email: required, must contain @
+- Password: 8+ chars, must have letters AND numbers
+- Real-time validation on blur/change
+- Shows errors inline (not modal—faster feedback)
+- Disables submit if validation fails
+
+**Examples**:
+- ✅ `Password123` - 11 chars, letters + numbers
+- ❌ `abcdefgh` - 8 chars but no numbers
+- ❌ `12345678` - 8 chars but no letters
+- ❌ `Pass1` - Only 5 characters
+
+**Why letters AND numbers**:
+- Numbers only: Easy to crack (0-9 is ~10x smaller keyspace)
+- Letters only: Missing entropy source
+- Both together: Quadratically harder to crack
+
+**Server-side validation** (backend):
+- Even though frontend validates, backend should too
+- Never trust client—user could disable JavaScript or craft HTTP request
+- Redundant validation is defense-in-depth
+
+**Bcrypt hashing**:
+- Passwords never stored plaintext
+- Bcrypt is intentionally slow (1 second per check)
+- Makes brute-force infeasible (1M attempts = ~11 days per account)
+- Includes salt (prevents rainbow table attacks)"
 
 ---
 
