@@ -7,7 +7,6 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { HttpLink } from '@apollo/client/link/http';
 import { setContext } from '@apollo/client/link/context';
-import { useAuth } from './auth-context';
 
 export function makeClient(): ApolloClient {
   const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
@@ -18,7 +17,7 @@ export function makeClient(): ApolloClient {
   });
 
   const authLink = setContext((_, context) => {
-    const { token } = useAuth();
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '';
     const { headers } = context as { headers: Record<string, string> };
     return {
       headers: {
