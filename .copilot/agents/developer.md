@@ -1111,6 +1111,75 @@ When implementing features, keep real-world constraints in mind:
 - **Event-driven real-time**: SSE streaming enables live updates without polling
 - **Separation of concerns**: GraphQL handles structured data operations; Express handles auxiliary concerns (files, webhooks, events)
 
+## Parallel Execution Mode (Git Worktree)
+
+### When Enabled
+
+When multiple independent issues are being executed in parallel via git worktree:
+
+**✓ You have isolated filesystem** (no conflicts with other agents)  
+**✓ Other agents cannot affect your work**  
+**✓ You can commit and push independently**  
+**✓ Your PR can merge any time** (no blocking on other agents)
+
+### How to Proceed
+
+1. **Verify Worktree Context**
+   ```bash
+   pwd                        # Confirm correct worktree directory
+   git branch                 # Verify correct branch checked out
+   git status                 # Verify clean state
+   ```
+
+2. **Execute Your Task Independently**
+   - Don't wait for other agents to complete
+   - Don't check if other branches exist
+   - Don't try to coordinate through main branch
+   - Each worktree is completely isolated
+
+3. **Commit & Push Strategy**
+   - Make commits to feature branch (not main)
+   - Push to remote: `git push origin [branch-name]`
+   - Create PR: `gh pr create`
+   - Mark as "Ready for review"
+
+4. **Include Co-Author Trailer**
+   ```
+   git commit -m "feat: Your change description (#123)
+   
+   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+   ```
+
+### Success Metrics for Parallel Execution
+
+- ✅ Task completed within estimated time window
+- ✅ All tests passing in your scope
+- ✅ Code committed with co-author trailer
+- ✅ PR created and marked ready for review
+- ✅ No conflicts with other parallel agents
+- ✅ Ready for immediate merge
+
+### Example: Phase 2 Parallel Results
+
+**Three independent agents executing simultaneously:**
+
+| Issue | Task | Duration | Status |
+|-------|------|----------|--------|
+| #141 | Replace empty tests | 12 min | ✅ DONE |
+| #143 | Update documentation | 27 min | ✅ DONE |
+| #144 | Test isolation | 53 min | ✅ DONE |
+
+- **Sequential would have taken**: 135 minutes
+- **Parallel actually took**: ~53 minutes
+- **Time saved**: 82 minutes (61% efficiency gain)
+
+**Key insight**: All 3 PRs merged cleanly with zero conflicts because:
+- Different files modified (no overlaps)
+- Different types of work (code, docs, testing)
+- Zero blocking dependencies
+
+See `.copilot/PARALLEL-EXECUTION-GUIDE.md` for complete documentation.
+
 ## Tool Interactions with GitHub Copilot CLI
 
 **Developer ↔ Copilot CLI Tools**:
@@ -1165,6 +1234,7 @@ When using `git push --force`:
 ## Related Resources
 
 - `.github/copilot-instructions.md`: Build/test/lint commands, architecture overview, debugging strategies
+- `.copilot/PARALLEL-EXECUTION-GUIDE.md`: Multi-agent coordination using git worktree (Phase 2 best practices)
 - `DESIGN.md`: Dual-backend architecture, project structure, core patterns
 - `CLAUDE.md`: Detailed tech stack, framework integration, development tips
 - `.github/MCP_SETUP.md`: MCP server configuration for Playwright, PostgreSQL, Git, API Testing

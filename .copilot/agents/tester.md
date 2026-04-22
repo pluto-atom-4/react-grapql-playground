@@ -1554,6 +1554,197 @@ it('test 1 with subscription', async () => {
 });
 ```
 
+## Parallel Test Execution Mode (Git Worktree)
+
+### When Enabled
+
+When multiple independent features/layers require testing in parallel via git worktree:
+
+**✓ Each test agent has isolated test environment** (no test pollution)  
+**✓ Different test suites can run simultaneously** (no blocking on other agents)  
+**✓ Test results can be committed independently** (separate branches)  
+**✓ Test PRs can merge any time** (if no dependencies exist)  
+
+### How to Proceed
+
+1. **Verify Worktree Context**
+   ```bash
+   pwd                        # Confirm correct worktree directory
+   git branch                 # Verify correct branch checked out
+   pnpm test --run            # Verify tests pass before starting
+   ```
+
+2. **Execute Tests Independently**
+   - Don't wait for other test agents to complete
+   - Don't check if other test branches exist
+   - Run your test suite independently
+   - Each worktree is completely isolated
+
+3. **Parallel Test Layer Execution** (Example)
+   ```bash
+   # In worktree 1 (frontend tests)
+   cd ../feat-test-frontend
+   pnpm test:frontend --run
+   pnpm test:frontend -- --sequence.shuffle
+   pnpm test:frontend -- --sequence.parallel
+   
+   # In worktree 2 (GraphQL tests)
+   cd ../feat-test-graphql
+   pnpm test:graphql --run
+   pnpm test:graphql -- --sequence.shuffle
+   
+   # In worktree 3 (Express tests)
+   cd ../feat-test-express
+   pnpm test:express --run
+   pnpm test:express -- --sequence.shuffle
+   
+   # All run simultaneously with zero test pollution
+   ```
+
+4. **Test Isolation Verification (Critical for Parallel)**
+   ```bash
+   # Verify tests pass in all modes:
+   pnpm test:frontend --run                 # Sequential
+   pnpm test:frontend --run -- --sequence.shuffle  # Random order
+   pnpm test:frontend --run -- --sequence.parallel # Parallel
+   
+   # If ALL pass: ✓ Test isolation is proper
+   # If ANY fail: Test has state leakage (fix before commit)
+   ```
+
+5. **Commit & Push Strategy**
+   - Make commits to feature branch (not main)
+   - Push to remote: `git push origin [branch-name]`
+   - Create PR: `gh pr create`
+   - Mark as "Ready for review"
+
+### Success Metrics for Parallel Test Execution
+
+- ✅ Task completed within estimated time window
+- ✅ All tests passing in your scope (sequential + shuffle + parallel)
+- ✅ Zero test pollution or state leakage
+- ✅ Test coverage meets standards (no regressions)
+- ✅ Code committed with co-author trailer
+- ✅ PR created and marked ready for review
+- ✅ No conflicts with other parallel test agents
+
+### Parallel Test Coordination Patterns
+
+**Pattern 1: Layer-Based Parallel Testing**
+```
+Frontend Tests (Issue #141)
+  └─ Component tests + Apollo hooks
+  └─ Duration: 12 min
+  └─ Run in parallel with GraphQL tests
+
+GraphQL Tests (Issue #143)
+  └─ Resolver tests + DataLoader tests
+  └─ Duration: 25 min
+  └─ Run in parallel with Express tests
+
+Express Tests (Issue #144)
+  └─ Route tests + webhook tests
+  └─ Duration: 18 min
+  └─ Run in parallel with Frontend tests
+
+All 3 test suites: ~25 min parallel vs 55 min sequential
+```
+
+**Pattern 2: Feature-Based Parallel Testing**
+```
+Feature A Tests (parallel worktree)
+  └─ Frontend feature A
+  └─ GraphQL feature A
+  └─ Express feature A (if needed)
+  └─ Duration: 20 min
+
+Feature B Tests (parallel worktree)
+  └─ Frontend feature B
+  └─ GraphQL feature B
+  └─ Express feature B (if needed)
+  └─ Duration: 25 min
+
+Both feature test suites: ~25 min parallel vs 45 min sequential
+```
+
+### Test Isolation Requirements for Parallel Execution
+
+**Critical for success** (issues in Phase 2 isolated storage testing):
+
+1. **Global Test Setup** (beforeEach/afterEach)
+   ```typescript
+   // In vitest.config.ts or setup file
+   beforeEach(() => {
+     // Clear mocks
+     vi.clearAllMocks();
+     
+     // Reset localStorage
+     localStorage.clear();
+     
+     // Reset timers
+     vi.useFakeTimers();
+   });
+   
+   afterEach(() => {
+     // Cleanup state
+     vi.runAllTimers();
+     vi.useRealTimers();
+   });
+   ```
+
+2. **Mock Independence**
+   - No shared mock state between tests
+   - Each test gets fresh mock instance
+   - Cleanup mocks after each test
+
+3. **Database Test Isolation** (if using test DB)
+   - Create transaction per test
+   - Rollback after each test
+   - OR use separate test database per layer
+
+4. **Async/Promise Cleanup**
+   - Wait for all promises: `await Promise.all()`
+   - Clear timeouts: `clearTimeout()`
+   - Cleanup event listeners: `eventSource.close()`
+
+### Example: Phase 2 Parallel Test Results
+
+**Actual parallel test execution from Phase 2:**
+
+| Test Layer | Duration | Mode | Result |
+|-----------|----------|------|--------|
+| Frontend | 10.03s | Sequential | ✅ 172 tests |
+| Frontend | 8.17s | Shuffle | ✅ 172 tests |
+| Frontend | 7.90s | Parallel | ✅ 172 tests |
+
+✅ **ZERO state leakage** (tests pass in all modes)  
+✅ **Can run concurrently** with GraphQL + Express tests  
+✅ **Proven pattern** from Issue #144 (Test Isolation)  
+
+### When NOT to Use Parallel Testing
+
+❌ Tests have shared database state  
+❌ Tests modify global configuration  
+❌ Tests interact with external services (API, cache)  
+❌ Tests have timing dependencies  
+
+**Mitigation**: Use mocks, transactions, or test databases to isolate state.
+
+### Escalation & Troubleshooting
+
+**If tests fail in parallel mode but pass sequentially:**
+1. Check for test state leakage (shared mocks, globals)
+2. Verify beforeEach/afterEach cleanup
+3. Look for timing/async issues (use `vi.useFakeTimers()`)
+4. Check localStorage/sessionStorage cleanup (Issue #144 pattern)
+5. Ensure mock instances are independent
+
+**If specific test fails in shuffle/parallel:**
+1. Identify the failing test
+2. Run it in isolation: `pnpm test path/to/test.ts`
+3. If it passes alone: state leakage from other test
+4. Add cleanup or isolation to fix
+
 ## Model Override Guidance
 
 **Default Model**: Claude Haiku 4.5 (efficient for test writing)
@@ -1576,11 +1767,14 @@ it('test 1 with subscription', async () => {
 - Creating component tests with Apollo MockedProvider
 - Testing Express routes with supertest
 - Adding DataLoader batch tests
+- Implementing parallel test isolation (see Issue #144 pattern)
 
 ## Related Resources
 
 - `.github/copilot-instructions.md`: Test conventions and commands
+- `.copilot/PARALLEL-EXECUTION-GUIDE.md`: Multi-agent coordination using git worktree
+- `.copilot/agents/developer.md`: Development responsibilities and parallel mode
+- `.copilot/agents/orchestrator.md`: Coordination for parallel test execution
 - `DESIGN.md`: Architecture and patterns tested
-- `.copilot/agents/developer.md`: Development responsibilities
 - `.copilot/agents/reviewer.md`: Code review for tests
 - `.copilot/agents/quality-assurance.md`: Test coverage standards

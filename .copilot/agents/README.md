@@ -321,18 +321,26 @@ All agents configured with:
 
 ## File Sizes
 
-| Agent | Lines | Size | Focus |
-|-------|-------|------|-------|
-| developer.md | 1,170 | 40K | Implementation |
-| orchestrator.md | 287 | 12K | Coordination |
-| product-manager.md | 314 | 16K | Requirements |
-| reviewer.md | 377 | 12K | Code Quality |
-| quality-assurance.md | 531 | 12K | Standards |
-| tester.md | 1,586 | 44K | Testing |
+| Agent | Lines | Size | Focus | Parallel Ready |
+|-------|-------|------|-------|--------|
+| developer.md | 1,255 | 43K | Implementation | ✅ Yes (worktree mode) |
+| orchestrator.md | 655 | 22K | Coordination | ✅ Yes (all agents) |
+| product-manager.md | 314 | 16K | Requirements | — |
+| reviewer.md | 377 | 12K | Code Quality | ⚠️ Planned |
+| quality-assurance.md | 531 | 12K | Standards | — |
+| tester.md | 1,780 | 62K | Testing | ✅ Yes (worktree mode) |
 
-**Total**: ~4,265 lines of specialized guidance across 136KB
+**Total**: ~5,312 lines of specialized guidance across 167KB
 
-**Enhancement Note**: Developer and Tester agents significantly expanded (Feb-April 2026) with comprehensive guidance for authentication, real-time features, error handling, async testing, and production-ready patterns.
+**Parallel Execution Status**:
+- ✅ **Developers**: Git worktree support documented (Phase 2 proven: 3 agents, 61% efficiency)
+- ✅ **Testers**: Git worktree support documented (3 layers: frontend + graphql + express)
+- ✅ **Orchestrator**: Coordination patterns for both developer and tester parallelization
+- 📄 **Guide**: `.copilot/PARALLEL-EXECUTION-GUIDE.md` (862 lines, comprehensive)
+
+**Enhancement Note**: 
+- Developer and Tester agents expanded (Feb-April 2026) with comprehensive guidance for authentication, real-time features, error handling, async testing, and production-ready patterns
+- Parallel execution patterns added (April 22, 2026) enabling 2-3 concurrent agents per task (60%+ efficiency gain)
 
 ## Key Architectural Concepts Referenced by All Agents
 

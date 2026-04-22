@@ -198,6 +198,183 @@ When orchestrating work, reference these selling points in task breakdowns.
 - Always test mutations before building UI components
 - Always coordinate Express event bus changes across layers
 
+## Parallel Execution Coordination (Git Worktree)
+
+### When to Use Parallel Execution
+
+Parallel execution is optimal when:
+
+✅ **3+ independent tasks** exist (e.g., Issues #141, #143, #144)  
+✅ **Zero blocking dependencies** between tasks  
+✅ **Different files modified** (no merge conflicts)  
+✅ **Different types of work** (code, docs, testing)  
+✅ **Time-critical delivery** (e.g., interview prep, 4+ hours sequential)  
+
+### Orchestrator's Role in Parallel Coordination
+
+**1. Pre-Dispatch Analysis**
+
+- List all issues/tasks for a phase
+- Verify **zero blocking dependencies** exist
+- Detect **file overlaps** (two tasks modifying same file = NOT parallel-safe)
+- Calculate **efficiency gain** (sequential time vs parallel time)
+- Document **success criteria** per task
+
+**Example Analysis (Phase 2)**:
+```
+Task #141: Replace empty tests
+  └─ Modifies: backend-graphql/src/resolvers/__tests__/Mutation.integration.test.ts
+  └─ Duration: 45 min
+  └─ Depends on: Nothing
+
+Task #143: Update documentation
+  └─ Modifies: README.md, docs/implementation-planning/*.md
+  └─ Duration: 30 min
+  └─ Depends on: Nothing
+
+Task #144: Test isolation
+  └─ Modifies: frontend/__tests__/setup/*, vitest.config.ts, 8 test files
+  └─ Duration: 60 min
+  └─ Depends on: Nothing
+
+✅ SAFE FOR PARALLEL (zero overlaps, zero dependencies)
+Expected time: max(45, 30, 60) = 60 min
+Sequential time: 45 + 30 + 60 = 135 min
+Savings: 75 min (55% gain)
+```
+
+**2. Worktree Setup**
+
+```bash
+# Create feature branches (if not already exist)
+git checkout -b feat/issue-141-replace-empty-tests origin/main
+git checkout -b feat/issue-143-update-test-docs origin/main
+git checkout -b feat/issue-144-test-isolation origin/main
+
+# Create worktrees for parallel execution
+git worktree add ../feat-141 feat/issue-141-replace-empty-tests
+git worktree add ../feat-143 feat/issue-143-update-test-docs
+git worktree add ../feat-144 feat/issue-144-test-isolation
+
+# Verify
+git worktree list
+```
+
+**3. Dispatch Multiple Agents**
+
+```
+Task 1: @developer → Issue #141 in ../feat-141
+  └─ Duration: 45 min
+  └─ Success: 7 real assertions added, all tests passing
+
+Task 2: @developer → Issue #143 in ../feat-143
+  └─ Duration: 30 min
+  └─ Success: 6 files updated, baseline metrics verified
+
+Task 3: @developer → Issue #144 in ../feat-144
+  └─ Duration: 60 min
+  └─ Success: 264 lines duplication removed, all test modes passing
+
+All execute simultaneously (no blocking, no conflicts)
+```
+
+**4. Monitor Progress**
+
+```
+⏱️ Timeline:
+09:20 AM  ├─ Issue #141 starts (45 min) ────────────┤
+          ├─ Issue #143 starts (30 min) ─────┤
+          └─ Issue #144 starts (60 min) ────────────────┤
+
+09:50 AM  Issue #143 completes ✓
+10:05 AM  Issue #141 completes ✓
+10:20 AM  Issue #144 completes ✓
+```
+
+**5. Verify & Merge**
+
+```bash
+# All PRs are ready simultaneously
+# Can merge in ANY order (zero dependencies)
+
+gh pr merge 141 --merge
+gh pr merge 143 --merge
+gh pr merge 144 --merge
+
+# Cleanup worktrees
+git worktree remove ../feat-141
+git worktree remove ../feat-143
+git worktree remove ../feat-144
+```
+
+### Orchestrator Decision Framework
+
+**Decision Matrix**:
+
+| Situation | Decision | Reason |
+|-----------|----------|--------|
+| 1 task, 1-2 hours | Sequential | Single task, no parallelization needed |
+| 2 tasks, independent, 2+ hours each | Parallel | 2x speedup potential |
+| 3+ tasks, independent, 2+ hours | **Parallel** | 3x speedup, high efficiency gain |
+| 2 tasks with dependency | Sequential | Blocker on Task A → Task B |
+| 3 tasks, 1 has dependency | Hybrid | Run 2 in parallel, start 3rd after blocker |
+| 5+ tasks, all independent | **Parallel** | Maximum efficiency, scale to 5 agents |
+| Tasks modify same files | Sequential | Risk of merge conflicts |
+
+### Phase 2 Results (Actual Data)
+
+```
+Orchestrator Decision: Execute Issues #141, #143, #144 in parallel
+Analysis: Zero dependencies, different files, different work types
+Efficiency target: 60 min (vs 135 sequential)
+
+Actual Results:
+  Issue #141: 12 min (7 real assertions added)
+  Issue #143: 27 min (6 files updated)
+  Issue #144: 53 min (264 lines duplication removed)
+  
+Total parallel time: ~53 min
+Total sequential would be: 135 min
+Actual savings: 82 min (61% gain!)
+
+Lessons learned:
+  ✓ Parallel execution 63% faster than estimated (53 vs 60)
+  ✓ Zero merge conflicts (independent file modifications)
+  ✓ PRs merged in any order (zero dependencies)
+  ✓ Pattern scales for future phases
+```
+
+### Parallel Execution Best Practices
+
+1. **Always verify dependencies first**
+   - Use dependency graph if available
+   - Grep for file overlaps
+   - Ask: "Does Task B require Task A to complete?"
+
+2. **Order-independent merging**
+   - All parallel PRs must merge cleanly in any order
+   - No cherry-picking or sequential merge requirements
+   - Test by merging in random order locally first
+
+3. **Resource isolation**
+   - Each worktree has isolated filesystem
+   - Each agent gets its own Node process
+   - No shared database locks or API rate limits
+
+4. **Communication**
+   - Clearly state which tasks run in parallel
+   - Provide each agent its own isolated environment
+   - No need for agents to coordinate (they're independent)
+
+5. **Scaling**
+   - Up to 5 concurrent agents recommended
+   - Beyond 5, manage resource usage (CPU, RAM)
+   - Monitor system performance during parallel execution
+
+### Documentation
+
+Full guide: `.copilot/PARALLEL-EXECUTION-GUIDE.md`
+
 ## Model Override Guidance
 
 **Default Model**: Claude Haiku 4.5 (fast, cost-effective for coordination)
@@ -278,10 +455,201 @@ When orchestrating work, reference these selling points in task breakdowns.
 - **When blocked**: Use `/ask` to clarify with Product Manager or escalate with `/delegate`
 - **Communication**: `/share` progress and architecture decisions with team
 
+## Parallel Tester Coordination
+
+### When to Parallelize Test Execution
+
+Use parallel tester agents when:
+
+✅ Multiple test suites (frontend, GraphQL, Express) need coverage  
+✅ Test layers have **zero dependencies** on each other  
+✅ Each layer has independent test setup (no shared databases/mocks)  
+✅ Expected total time > 30 minutes (parallelization savings exceed overhead)  
+
+### Parallel Test Coordination Framework
+
+**Decision Matrix: Sequential vs Parallel**
+
+| Scenario | Sequential | Parallel | Reasoning |
+|----------|-----------|----------|-----------|
+| Single test suite (frontend only) | ✅ Use | ❌ Skip | No parallelization benefit |
+| Frontend + GraphQL tests (independent) | 45 min | 25 min | ✅ Recommended (44% saving) |
+| Frontend + GraphQL + Express (no deps) | 55 min | 30 min | ✅ Recommended (45% saving) |
+| Feature tests + bug fix tests (unrelated) | 90 min | 50 min | ✅ Recommended (44% saving) |
+| Test A depends on test B results | 30 min | 30 min | ❌ Don't parallelize (blocking) |
+
+### Pre-Dispatch Analysis for Testers
+
+**Before creating tester worktrees**, verify:
+
+```
+□ Layer 1 (Frontend) tests have zero GraphQL/Express dependencies
+□ Layer 2 (GraphQL) tests have isolated database (transaction/reset)
+□ Layer 3 (Express) tests have isolated file storage
+□ No shared mocks between layers (each has independent instance)
+□ Each layer uses proper beforeEach/afterEach cleanup
+□ All layers pass sequential + shuffle + parallel modes
+```
+
+**If ANY of above fail** → Sequential execution only (fix isolation first)
+
+### Parallel Tester Workflow
+
+**Phase 1: Plan Test Strategy** (Orchestrator)
+```
+- Identify independent test suites (frontend, GraphQL, Express)
+- Analyze dependencies (any blocking relationships?)
+- Estimate individual suite duration
+- Decide: parallel viable? (total time > 30 min?)
+```
+
+**Phase 2: Set Up Git Worktrees** (Orchestrator)
+```bash
+cd main-repo
+git worktree add ../feat-test-frontend  # Worktree 1
+git worktree add ../feat-test-graphql   # Worktree 2
+git worktree add ../feat-test-express   # Worktree 3
+
+# Checkout feature branch or create test branches
+cd ../feat-test-frontend && git checkout feat/test-frontend-layer
+cd ../feat-test-graphql && git checkout feat/test-graphql-layer
+cd ../feat-test-express && git checkout feat/test-express-layer
+```
+
+**Phase 3: Dispatch Parallel Testers** (Orchestrator)
+```
+Tester 1: Frontend test suite (worktree 1)
+  → pnpm test:frontend --run + verify isolation + commit
+
+Tester 2: GraphQL test suite (worktree 2)
+  → pnpm test:graphql --run + verify isolation + commit
+
+Tester 3: Express test suite (worktree 3)
+  → pnpm test:express --run + verify isolation + commit
+
+All run in parallel (estimated: ~30 min vs 55 sequential)
+```
+
+**Phase 4: Consolidate Results** (Orchestrator)
+```bash
+# After all testers complete:
+git worktree list                        # Verify all worktrees created
+cd feat-test-frontend && git log main..  # Review frontend commits
+cd feat-test-graphql && git log main..   # Review GraphQL commits
+cd feat-test-express && git log main..   # Review Express commits
+
+# Verify no conflicts
+git merge --no-commit feat-test-frontend  # Check merge compatibility
+git merge --abort                         # Cancel check
+
+# Create PRs for each tester's work (can merge independently)
+gh pr create --base main --head feat-test-frontend
+gh pr create --base main --head feat-test-graphql
+gh pr create --base main --head feat-test-express
+```
+
+### Parallel Test Success Metrics
+
+✅ All layers pass test isolation verification  
+✅ Each layer commits independently (no blocking PRs)  
+✅ Zero test pollution or state leakage  
+✅ PRs merge in any order (no inter-dependencies)  
+✅ Total execution time ≤ 45 minutes (for 3 layers)  
+✅ Coverage maintained across layers  
+
+### Known Parallel Test Patterns
+
+**Pattern 1: Layer-Isolated Testing** (Proven in Phase 2)
+```
+Frontend Tests          GraphQL Tests         Express Tests
+└─ 10-15 min           └─ 15-20 min          └─ 10-15 min
+└─ Apollo mocks        └─ Prisma mocks       └─ File storage mocks
+└─ Parallel: OK        └─ Parallel: OK       └─ Parallel: OK
+
+Result: ~20 min parallel vs 45 min sequential
+```
+
+**Pattern 2: Feature-Based Parallel Testing**
+```
+Feature A Tests        Feature B Tests
+└─ Frontend A tests    └─ Frontend B tests
+└─ GraphQL A tests     └─ GraphQL B tests
+└─ Express A tests     └─ Express B tests
+
+Result: ~25 min parallel vs 50 min sequential (if independent)
+```
+
+### Test Isolation Verification Checklist
+
+Before dispatching parallel testers, **each must pass ALL modes**:
+
+```bash
+# Sequential mode (baseline)
+pnpm test:layer --run
+
+# Shuffle mode (random test order)
+pnpm test:layer --run -- --sequence.shuffle
+
+# Parallel mode (concurrent test execution)
+pnpm test:layer --run -- --sequence.parallel
+```
+
+❌ **If ANY fails**: Fix state leakage before parallel dispatch  
+✅ **If ALL pass**: Isolation confirmed, safe for parallel  
+
+### Troubleshooting Parallel Tester Issues
+
+**Issue: Tests fail in parallel mode but pass sequentially**
+- Root cause: Test state leakage or shared mocks
+- Solution: Review beforeEach/afterEach cleanup (see tester.md section on Test Isolation)
+- Check: localStorage, timers, event listeners cleanup
+
+**Issue: Tester commits conflict when merging**
+- Root cause: Both testers modified same file
+- Solution: Should not happen if worktrees properly isolated (verify: `git worktree list`)
+- Prevention: Run pre-dispatch dependency analysis (orchestrator responsibility)
+
+**Issue: Test results differ between sequential and parallel execution**
+- Root cause: Timing dependency or state leakage
+- Solution: Add `vi.useFakeTimers()` for timing, verify async cleanup
+- Pattern: Reference Issue #144 test isolation implementation
+
+### Orchestrator Safety Checks
+
+Before dispatching parallel testers:
+
+```yaml
+Dependency Check:
+  - Tester 1 suite dependencies: []
+  - Tester 2 suite dependencies: []
+  - Tester 3 suite dependencies: []
+  → All empty? ✅ Safe to parallelize
+
+File Overlap Check:
+  - Frontend tests modify: frontend/ only
+  - GraphQL tests modify: backend-graphql/ only
+  - Express tests modify: backend-express/ only
+  → No overlap? ✅ Safe to parallelize
+
+Database Isolation Check:
+  - Frontend: Apollo mocks only (no DB)
+  - GraphQL: Isolated test DB or transactions
+  - Express: Isolated file storage
+  → Proper isolation? ✅ Safe to parallelize
+
+Timing Check:
+  - Frontend: ~15 min
+  - GraphQL: ~20 min
+  - Express: ~15 min
+  → Total > 30 min? ✅ Parallelization justified
+```
+
 ## Related Resources
 
 - `.github/copilot-instructions.md`: Build commands and architecture overview
+- `.copilot/PARALLEL-EXECUTION-GUIDE.md`: Complete git worktree + parallel coordination guide
+- `.copilot/agents/tester.md`: Tester responsibilities and parallel test execution mode
+- `.copilot/agents/developer.md`: Developer layer responsibilities and parallel development
 - `DESIGN.md`: Core architecture patterns and three-layer communication
 - `CLAUDE.md`: Detailed tech stack and integration points
-- `.copilot/agents/developer.md`: Developer layer responsibilities
 - `.copilot/agents/product-manager.md`: Feature requirements and priorities

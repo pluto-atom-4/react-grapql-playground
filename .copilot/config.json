@@ -3,5 +3,25 @@
   "enforcement": {
     "agent_exclusive": true,
     "rules_file": "rules.json"
+  },
+  "parallel_execution": {
+    "enabled": true,
+    "description": "Support multi-agent parallel execution using git worktree",
+    "max_concurrent_agents": 5,
+    "coordination_model": "independent-worktrees",
+    "safety_checks": [
+      "dependency-analysis",
+      "file-overlap-detection",
+      "branch-isolation-verification"
+    ],
+    "when_to_use": [
+      "Multiple issues are completely independent",
+      "No blocking dependencies exist",
+      "Different files being modified",
+      "Different types of work (code, docs, testing)",
+      "Time-critical delivery (e.g., interview prep)"
+    ],
+    "efficiency_target": "3x speedup for independent 60-minute tasks",
+    "documentation": ".copilot/PARALLEL-EXECUTION-GUIDE.md"
   }
 }
