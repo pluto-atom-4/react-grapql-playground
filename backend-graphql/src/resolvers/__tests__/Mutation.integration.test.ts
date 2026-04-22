@@ -21,8 +21,10 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
 
   it('should verify Mutation resolver imports event-bus service', async () => {
     // This test ensures the Mutation resolver has the import in place
-    // If this import exists, the test passes
-    expect(true).toBe(true);
+    const mutationModule = await import('../../resolvers/Mutation');
+    expect(mutationModule.mutationResolver).toBeDefined();
+    expect(mutationModule.mutationResolver.Mutation).toBeDefined();
+    expect(mutationModule.mutationResolver.Mutation.createBuild).toBeDefined();
   });
 
   it('should verify event payload structure', async () => {
@@ -58,8 +60,30 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
 
   it('should verify Express event listeners are registered', async () => {
     // This test verifies that the events route sets up listeners
-    // The actual listeners are registered when the module is loaded
-    expect(true).toBe(true);
+    // Since this is backend-graphql, we verify the emitEvent function is properly structured
+    // to emit events that Express listeners would receive
+    const { emitEvent } = await import('../../services/event-bus');
+    
+    // Mock fetch to verify emitEvent sends proper event structure
+    let eventPayloadSent: Record<string, unknown> | null = null;
+    global.fetch = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
+      if (options && 'body' in options) {
+        eventPayloadSent = JSON.parse(options.body as string) as Record<string, unknown>;
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    // Emit an event that Express listeners would receive
+    await emitEvent('buildCreated', { buildId: '456', name: 'Another Build' });
+
+    // Verify payload was sent with event name
+    expect(eventPayloadSent).not.toBeNull();
+    const payload = eventPayloadSent as Record<string, unknown>;
+    expect(payload.event).toBe('buildCreated');
+    expect((payload.payload as Record<string, unknown>).buildId).toBe('456');
   });
 
   it('should verify standardized event names', () => {
