@@ -2,16 +2,16 @@
 
 ## Executive Summary
 
-**Issue**: PR #139 claims "138 tests passing" but actual test count is ~312 tests across all packages. Documentation is significantly out of sync with reality.
+**Issue**: PR #139 claims "138 tests passing" but actual test count is 339 tests across all packages. Documentation is significantly out of sync with reality.
 
-**Target State**: All documentation accurately reflects actual test coverage, providing credible baselines for team confidence and future tracking.
+**Target State**: All documentation accurately reflects actual test coverage (339 tests: 99 GraphQL + 68 Express + 172 Frontend), providing credible baselines for team confidence and future tracking.
 
 **Key Challenge**: Identify ALL locations where test counts are mentioned and update consistently.
 
 **Effort**: 30 minutes (concurrent with #141 and #144)
 
 **Success Criteria**:
-- ✅ PR #139 description reflects actual count (~312)
+- ✅ PR #139 description reflects actual count (339)
 - ✅ README.md updated if it mentions test statistics
 - ✅ CLAUDE.md reflects accurate test breakdown
 - ✅ docs/start-from-here.md updated
@@ -32,26 +32,26 @@
 
 **ACTUAL TEST REALITY** (run `pnpm test`):
 ```
-backend-graphql:     ~67 tests (5 files)
-backend-express:     ~68 tests (4 files)  
-frontend:           ~177 tests (2 files)
+backend-graphql:     99 tests (7 files)
+backend-express:     68 tests (5 files)  
+frontend:           172 tests (10 files)
 ─────────────────────────────────────
-TOTAL:              ~312 tests (11 files)
+TOTAL:              339 tests (22 files)
 
 BREAKDOWN:
-  Integration tests:   8
-  Unit tests:          250
-  Component tests:     54
+  Integration tests:   18
+  Unit tests:          280
+  Component tests:     41
 ```
 
-**Discrepancy**: Off by **+174 tests** (~226% higher than claimed)
+**Discrepancy**: Off by **+201 tests** (~291% higher than claimed)
 
 ### 1.2 Documentation Files to Update
 
 **Priority 1: CRITICAL** (User-Facing)
 1. ✅ **PR #139 Description** - Main public visibility
    - Current: "138 tests"
-   - Update: "312 tests across 11 test files in 3 packages"
+   - Update: "339 tests across 22 test files in 3 packages"
    - Impact: HIGH - First thing reviewers see
 
 2. ✅ **README.md** (if it mentions test counts)

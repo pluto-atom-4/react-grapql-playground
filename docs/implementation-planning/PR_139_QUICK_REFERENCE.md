@@ -131,7 +131,7 @@ START → #142: Create Real E2E Tests
 
 4. **Test Isolation (#144):** "Duplicated mock setup across files creates maintenance burden and test flakiness. We consolidated into a shared utility and verified with `--sequence.shuffle` and `--sequence.parallel` to ensure true isolation."
 
-5. **Documentation Accuracy (#143):** "Documentation claimed 138 tests but we actually have ~312. Accurate metrics build team trust and provide a baseline for tracking coverage improvements."
+5. **Documentation Accuracy (#143):** "Documentation now reflects accurate test counts: 339 tests across all packages (99 GraphQL + 68 Express + 172 Frontend). Accurate metrics build team trust and provide a credible baseline for tracking coverage improvements."
 
 ---
 

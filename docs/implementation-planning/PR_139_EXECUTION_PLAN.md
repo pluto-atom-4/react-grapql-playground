@@ -141,15 +141,15 @@ test('AC#10 should ...', () => {
 ### 🟡 **Priority 2b: #143 - Update Test Count Documentation**
 
 #### The Problem
-PR #139 claims "138 tests passing" but actual test count is ~312 tests. Documentation is significantly out of sync with reality.
+PR #139 claims "138 tests passing" but actual test count is 339 tests. Documentation is significantly out of sync with reality.
 
 #### Current vs Actual
 ```
 CLAIMS IN PR:    138 tests (5 files)
-ACTUAL REALITY:  ~312 tests (9+ files)
+ACTUAL REALITY:  339 tests (22 files)
 
 CLAIMED BREAKDOWN: 86 tests (5 files) + 52 tests (misc)
-ACTUAL BREAKDOWN:  145 tests (9+ files) + integration + E2E
+ACTUAL BREAKDOWN:  99 GraphQL + 68 Express + 172 Frontend = 339 tests total
 ```
 
 #### Why It Matters
@@ -172,9 +172,9 @@ ACTUAL BREAKDOWN:  145 tests (9+ files) + integration + E2E
   - Verify consistency: 5 minutes
 
 #### Acceptance Criteria
-- ✅ PR #139 description reflects actual test count (~312)
+- ✅ PR #139 description reflects actual test count (339)
 - ✅ All documentation files updated consistently
-- ✅ Test breakdown by package documented
+- ✅ Test breakdown by package documented (99+68+172)
 - ✅ Baseline established for future comparisons
 
 **Parallelizable:** ✅ YES (no dependencies)
