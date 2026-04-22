@@ -63,12 +63,57 @@ import { gql } from '@apollo/client/core'
 - **GraphQL Schema**: SDL source of truth; auto-generate types with graphql-codegen
 - **Resolvers**: Thin wrappers around ORM queries; emit events to Express via event bus
 - **DataLoader**: Batch loading prevents N+1 queries in nested GraphQL resolvers
-- **Server Components**: Next.js App Router Server Components fetch initial Apollo data
+- **Server Components**: Next.js App Router Server Components fetch initial Apollo data with fresh instances per request
 - **Client Components**: React Client Components handle mutations with optimistic updates
 - **Apollo Client**: Apollo Client 4.1.7 uses `useQuery()` hooks (not `useSuspenseQuery()`); normalized cache with `update` or `refetchQueries` for mutations
+- **Fresh Per-Request**: Server-side Apollo clients must use `registerApolloClient` per request to prevent cross-user data leaks
 - **Real-time**: SSE stream from Express; frontend listens via EventSource
 - **File Uploads**: Express POST /upload handles validation, storage, event emission
 - **Webhooks**: Express receives CI/CD results or sensor data, optionally triggers Apollo mutations
+
+### Fresh Per-Request Pattern (Critical for Auth & Multi-Tenant)
+
+When fetching data server-side (Next.js Server Components), always create a **fresh Apollo Client instance per request**. Never use a singleton client export, as this leaks data across requests from different users.
+
+**✅ CORRECT** — `registerApolloClient` creates fresh instance:
+
+```typescript
+// frontend/lib/apollo-client-server.ts
+import { registerApolloClient } from '@apollo/client-integration-nextjs';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+
+const { getClient } = registerApolloClient(() => new ApolloClient({
+  ssrMode: typeof window === 'undefined',
+  link: new HttpLink({ uri: 'http://localhost:4000/graphql', credentials: 'include' }),
+  cache: new InMemoryCache(),
+}));
+
+export async function serverQuery(query: DocumentNode) {
+  const client = getClient();
+  return await client.query({ query });
+}
+
+// Usage in Server Component
+export default async function Dashboard() {
+  const { data } = await serverQuery(GET_BUILDS);
+  return <BuildsList builds={data.builds} />;
+}
+```
+
+**❌ INCORRECT** — Singleton client leaks data across requests:
+
+```typescript
+// ❌ DO NOT DO THIS
+const apolloClient = new ApolloClient({ ... });
+export const getApolloClient = () => apolloClient; // WRONG: same instance for all users
+```
+
+**Why This Matters**:
+- Request A from User A fetches their builds → Apollo cache
+- Request B from User B uses same cache → sees User A's data 🚨
+- With `registerApolloClient`: Each request gets fresh cache, no leakage ✅
+
+See `docs/design-review/FRESH_PER_REQUEST_PATTERN.md` for detailed architecture.
 
 ### Domain Model
 
@@ -252,6 +297,7 @@ pnpm format:check              # Check Prettier formatting
 pnpm format                    # Apply Prettier formatting
 
 # Database & Migrations
+
 docker-compose up -d           # Start PostgreSQL container
 pnpm migrate                   # Run pending migrations
 pnpm migrate:reset             # Reset database (dev only)
@@ -259,6 +305,41 @@ pnpm seed                      # Seed sample data (Builds, Parts, TestRuns)
 
 # GraphQL Code Generation (if applicable)
 pnpm generate                  # Generate TypeScript types from GraphQL schema
+
+### Database Migrations Workflow
+
+**When to Migrate**:
+- After pulling `main` with schema changes
+- Before starting development (once per fresh clone)
+- When creating a new feature that needs database schema
+
+**Run Migrations**:
+```bash
+# Apply all pending migrations
+pnpm migrate
+
+# If migration fails, check error and fix schema
+pnpm migrate --verbose  # Show SQL being executed
+
+# Reset database to clean state (development only)
+pnpm migrate:reset
+
+# Then reseed sample data
+pnpm seed
+```
+
+**Creating a New Migration** (when you modify the schema):
+```bash
+# After editing backend-graphql/src/db/schema.sql or Prisma schema:
+pnpm migrate dev --name add_new_field
+
+# This creates a timestamped migration file and applies it
+```
+
+**Troubleshooting**:
+- Migration hangs: Check if PostgreSQL container is running (`docker-compose ps`)
+- Migration fails: Review error, fix schema, then run `pnpm migrate` again
+- Lost migrations: Use `pnpm migrate:reset` (dev only) to replay from start
 ```
 
 ## Git Branch Setup Workflow (Pre-Commit)
@@ -435,10 +516,66 @@ Ready for git add + commit + push
 
 When to run `pnpm generate`:
 
+**Run pnpm generate when**:
 - ✅ **Modified GraphQL schema** (`backend-graphql/src/schema.graphql`)
-- ✅ **Added/modified GraphQL operations** (queries, mutations in `frontend/lib/graphql/`)
+  - Example: Added new field to `Build` type
+  - Effect: Frontend types regenerate automatically
+  
+- ✅ **Added/modified GraphQL operations** (queries/mutations in `frontend/lib/graphql/`)
+  - Example: New query `GET_BUILDS_SUMMARY`
+  - Effect: TypeScript types for that query are generated
+  
 - ✅ **Changed resolver return types** (to sync frontend types)
-- ❌ **No need to run** if only modifying non-schema backend code (middleware, utils, tests)
+  - Example: `build.parts` now returns `[Part!]!` instead of `[Part]`
+  - Effect: Frontend types update to require all parts (non-nullable)
+
+**Skip pnpm generate when**:
+- ❌ Only modifying non-schema backend code (middleware, utils, tests)
+  - Example: Added logging to a resolver
+  - No regeneration needed
+  
+- ❌ Modifying test files or configuration
+  - No regeneration needed
+
+**Decision Tree**:
+
+```
+Did I modify backend-graphql/src/schema.graphql?
+  → YES: Run pnpm generate ✅
+  
+Did I add/modify queries or mutations in frontend/lib/graphql/?
+  → YES: Run pnpm generate ✅
+  
+Did I change a resolver's return type or shape?
+  → YES: Run pnpm generate ✅
+  
+Otherwise:
+  → Skip pnpm generate ❌
+```
+
+**If pnpm generate Fails**:
+
+1. Check for GraphQL schema syntax errors
+   ```bash
+   pnpm generate --verbose  # Show detailed error
+   ```
+
+2. Common errors:
+   - Missing required fields in type definition
+   - Query operation name doesn't match variable names
+   - Enum values don't match between schema and operations
+
+3. Fix the schema, then retry
+   ```bash
+   pnpm generate
+   ```
+
+**After pnpm generate Succeeds**:
+
+- New types appear in `frontend/lib/generated/graphql.ts`
+- Check for type mismatches: `pnpm lint`
+- Update components using new types if needed
+- Run `pnpm test` to verify no regressions
 
 ### Command Shortcuts for Development
 
@@ -497,6 +634,37 @@ echo "✅ All checks passed including GraphQL codegen!"
    });
    ```
 
+   **⚠️ DataLoader Best Practices**:
+   - ✅ Create fresh DataLoader instances **per GraphQL request** (don't reuse across requests)
+   - ✅ Result array **order must match input ID order** — DataLoader checks `ids[i]` → `results[i]`
+   - ✅ Batching only happens **within a single GraphQL request** (not across multiple requests)
+   - ❌ Never export a singleton DataLoader: `export const buildLoader = new DataLoader(...)` 
+   - ❌ Don't forget to add loader to context factory in `backend-graphql/src/index.ts`
+   
+   **Common DataLoader Mistakes**:
+   
+   ```typescript
+   // ❌ WRONG: Singleton leaks data across requests
+   export const buildLoader = new DataLoader(async (ids) => { ... });
+   
+   // ✅ CORRECT: Fresh instance per request
+   const context = {
+     dataloaders: {
+       buildLoader: new DataLoader(async (ids) => { ... }),
+     }
+   };
+   ```
+   
+   **Why Order Matters**:
+   ```typescript
+   // Input: [id1, id2, id3]
+   // Output MUST be: [record1, record2, record3] (same order!)
+   // NOT:           [record3, record1, record2] (wrong order causes bugs)
+   
+   // Correct implementation:
+   return ids.map(id => results.find(r => r.id === id)); // Maintains order
+   ```
+
 4. **Test resolver** (`backend-graphql/src/resolvers/__tests__/Query.test.ts`)
    ```typescript
    import { MockedProvider } from '@apollo/client/testing';
@@ -524,6 +692,57 @@ echo "✅ All checks passed including GraphQL codegen!"
    ```typescript
    eventBus.emit('fileUploaded', { fileId, buildId, timestamp });
    ```
+
+   **Event Bus Configuration**:
+   
+   Set environment variable in `.env.local`:
+   ```bash
+   EXPRESS_EVENT_URL=http://localhost:5000/events/emit
+   # For Docker: EXPRESS_EVENT_URL=http://backend-express:5000/events/emit
+   ```
+   
+   GraphQL emits events to Express:
+   ```typescript
+   // backend-graphql/src/resolvers/Mutation.ts
+   export const Mutation = {
+     createBuild: async (_, { input }, context) => {
+       const build = await context.prisma.build.create({ data: input });
+       
+       // Emit event to Express event bus
+       await fetch(process.env.EXPRESS_EVENT_URL, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           event: 'buildCreated',
+           payload: { buildId: build.id, status: build.status, timestamp: new Date() }
+         })
+       }).catch(err => console.error('Event emit failed:', err));
+       
+       return build;
+     }
+   };
+   ```
+   
+   Express receives and broadcasts:
+   ```typescript
+   // backend-express/src/routes/events.ts
+   app.post('/events/emit', (req, res) => {
+     const { event, payload } = req.body;
+     
+     // Broadcast to all connected SSE clients
+     clients.forEach(client => {
+       client.write(`event: ${event}\n`);
+       client.write(`data: ${JSON.stringify(payload)}\n\n`);
+     });
+     
+     res.json({ received: true });
+   });
+   ```
+   
+   **Failure Handling**:
+   - If Express is down: Fetch fails but doesn't crash GraphQL (error caught)
+   - Retry is optional (current implementation doesn't retry)
+   - For critical events, consider adding retry logic with exponential backoff
 
 3. **Test endpoint** (`backend-express/src/routes/__tests__/upload.test.ts`)
    ```typescript
@@ -606,6 +825,152 @@ echo "✅ All checks passed including GraphQL codegen!"
    // Wrap with MockedProvider and test mutations
    ```
 
+## Error Handling Patterns
+
+### GraphQL Resolver Error Handling
+
+**✅ Throw GraphQL Errors for User Input Issues**:
+
+```typescript
+// backend-graphql/src/resolvers/Mutation.ts
+export const Mutation = {
+  updateBuildStatus: async (_, { id, status }, { user, prisma }) => {
+    // Require authentication
+    if (!user) throw new Error('Unauthorized');
+    
+    // Validate build exists
+    const build = await prisma.build.findUnique({ where: { id } });
+    if (!build) throw new Error('Build not found');
+    
+    // Validate status is valid
+    const validStatuses = ['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+    
+    // Perform update
+    return await prisma.build.update({
+      where: { id },
+      data: { status }
+    });
+  }
+};
+```
+
+Apollo Client automatically converts these to GraphQL errors with `errors` array in response.
+
+### Frontend Error Handling with Mutations
+
+**✅ Handle onError Callback**:
+
+```typescript
+// frontend/components/BuildCard.tsx
+'use client';
+
+import { useMutation } from '@apollo/client/react';
+import { UPDATE_BUILD_STATUS } from '@/lib/graphql/mutations';
+
+export function BuildCard({ build }) {
+  const [updateStatus, { loading, error }] = useMutation(UPDATE_BUILD_STATUS, {
+    optimisticResponse: {
+      updateBuildStatus: { ...build, status: 'COMPLETE', __typename: 'Build' }
+    },
+    onError: (err) => {
+      console.error('Update failed:', err.message);
+      setError(err.message); // Show in UI
+    }
+  });
+  
+  return (
+    <div>
+      {error && <p className="text-red-600">{error.message}</p>}
+      <button 
+        onClick={() => updateStatus({ variables: { id: build.id, status: 'COMPLETE' } })}
+        disabled={loading}
+      >
+        {loading ? 'Updating...' : 'Complete Build'}
+      </button>
+    </div>
+  );
+}
+```
+
+**Common Error Scenarios**:
+- `"Unauthorized"` → User not authenticated (redirect to login)
+- `"Build not found"` → Resource deleted or access denied
+- `"Invalid status"` → User provided invalid enum value (show options)
+- Network error → Retry or notify user
+
+### React Error Boundaries
+
+**Wrap Components to Catch Render Errors**:
+
+```typescript
+// frontend/components/error-boundary.tsx
+'use client';
+
+import React from 'react';
+
+export class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <div className="p-4 bg-red-100">Something went wrong. Please refresh.</div>;
+    }
+    
+    return this.props.children;
+  }
+}
+```
+
+### Testing Error Scenarios
+
+**Vitest + React Testing Library**:
+
+```typescript
+// frontend/components/__tests__/BuildCard.test.ts
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MockedProvider } from '@apollo/client/testing';
+import BuildCard from '@/components/BuildCard';
+import { UPDATE_BUILD_STATUS } from '@/lib/graphql/mutations';
+
+test('displays error when mutation fails', async () => {
+  const errorMocks = [
+    {
+      request: { query: UPDATE_BUILD_STATUS, variables: { id: '1', status: 'COMPLETE' } },
+      result: {
+        errors: [{ message: 'Unauthorized' }]
+      }
+    }
+  ];
+  
+  render(
+    <MockedProvider mocks={errorMocks}>
+      <BuildCard build={{ id: '1', status: 'PENDING' }} />
+    </MockedProvider>
+  );
+  
+  fireEvent.click(screen.getByText('Complete Build'));
+  
+  await waitFor(() => {
+    expect(screen.getByText('Unauthorized')).toBeInTheDocument();
+  });
+});
+```
+
+
 ## Model Override Guidance
 
 **Default Model**: Claude Haiku 4.5 (configured in `.copilot/config.json`)
@@ -615,9 +980,59 @@ echo "✅ All checks passed including GraphQL codegen!"
 - ✅ **Approved**: Claude Haiku 4.5 (default, fast)
 - 🔒 **Locked**: `gpt-5.4`, `claude-sonnet-4.6`, `claude-opus-4.6` (premium models)
 
-**To use premium models**: Developer must **explicitly request** via `/model` command with specific justification. Orchestrator or Product Manager approval may be required for cost-intensive tasks.
+### When to Request Premium Models
 
-**Cost Consideration**: Haiku is optimized for routine implementation; escalate to Orchestrator if premium reasoning is truly needed.
+**✅ Justified Use Cases** (Orchestrator approval may be required):
+
+1. **Complex Architectural Redesigns** (> 20 min Haiku time)
+   - Example: "Design fresh-per-request auth system for multi-tenant support"
+   - Reasoning: Requires deep analysis of security implications
+
+2. **Performance Deep-Dives** (data-driven optimization)
+   - Example: "Analyze N+1 query patterns in resolver graph"
+   - Reasoning: Requires comprehensive understanding of multiple resolvers
+
+3. **Multi-Layer Coordination** (5+ decisions)
+   - Example: "Coordinate real-time event flow across GraphQL→Express→Frontend"
+   - Reasoning: Requires balancing concerns across 3 layers
+
+4. **Interview Prep Synthesis** (synthesizing patterns for talking points)
+   - Example: "Summarize error handling strategy across full stack"
+   - Reasoning: Requires unified reasoning across components
+
+**❌ Not Justified** (stick with Haiku):
+
+- Adding a new resolver (Haiku can do this)
+- Fixing a linting issue (Haiku can do this)
+- Writing a test (Haiku can do this)
+- Debugging a failing component (Haiku can do this)
+
+### How to Request Premium Model
+
+**Step 1: Use /model command in Copilot CLI**:
+
+```bash
+@developer /model claude-sonnet-4.6 [detailed justification]
+```
+
+**Step 2: Provide Justification** (2-3 sentences):
+
+```bash
+@developer /model claude-sonnet-4.6 Design the fresh-per-request auth system. 
+This requires analyzing security implications across server-side Apollo client, 
+JWT middleware, and data isolation guarantees.
+```
+
+**Step 3: Orchestrator May Request Approval** (for cost-intensive tasks):
+
+- Wait for approval before proceeding
+- Escalate to Orchestrator if uncertain: `@orchestrator Should we use premium model for this?`
+
+**Cost Consideration**: 
+
+Haiku is optimized for routine implementation and costs ~90% less than Sonnet. Use it for all standard tasks. Escalate to Orchestrator if truly premium reasoning is needed and the task justifies the cost.
+
+
 
 ## Best Practices
 

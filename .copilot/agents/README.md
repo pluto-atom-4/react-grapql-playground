@@ -275,6 +275,43 @@ To use a premium model for complex analysis:
 - Multi-layer coordination challenges
 - Interview preparation synthesis
 
+## Agent Enhancements (April 2026)
+
+### Developer Agent (`developer.md`)
+**Enhancements**: +414 lines (756 → 1,170 lines, +55%)
+
+New sections:
+- ✅ **Fresh Per-Request Pattern** — Server-side Apollo cache isolation to prevent cross-request data leaks
+- ✅ **Event Bus Configuration** — 3-layer coordination (GraphQL → Express → Frontend SSE)
+- ✅ **Database Migrations Workflow** — Migration decision tree and Prisma integration
+- ✅ **pnpm generate** — When/how to run GraphQL code generation
+- ✅ **DataLoader Best Practices** — Batch loading for N+1 prevention
+- ✅ **Error Handling Patterns** — Comprehensive error handling across all layers
+- ✅ **Model Override Guidance** — Clear criteria for Haiku vs premium models
+
+**Impact**: Production-ready guidance for authentication, real-time features, and complex multi-layer patterns.
+
+### Tester Agent (`tester.md`)
+**Enhancements**: +855 lines (731 → 1,586 lines, +117%)
+
+New sections:
+- ✅ **Fresh Per-Request Apollo in Tests** — Server Component testing with cache isolation
+- ✅ **Resolver Error Testing** — 5-step error testing pattern for all error types
+- ✅ **Complete Event Bus Testing** — Full 3-layer real-time cycle testing (GraphQL → Express → Frontend)
+- ✅ **DataLoader Anti-Patterns** — 4 dangerous patterns with corrections
+- ✅ **Test Isolation & Cleanup** — beforeEach/afterEach setup with common leak scenarios
+- ✅ **Async Testing Pitfalls** — 6 async bugs and how to prevent them
+- ✅ **Model Lock Policy** — Clear guidance for Haiku vs premium models
+
+**Impact**: Comprehensive testing guidance preventing flaky tests, data leaks, and production bugs. 35+ code examples provided.
+
+### Configuration Status
+All agents configured with:
+- ✅ Proper `@agent-name` triggers (`.copilot/rules.json`)
+- ✅ Agent-exclusive enforcement (`config.json`)
+- ✅ Usage documentation (`ENFORCEMENT.md`)
+- ✅ Detailed agent guide (this file)
+
 ## Related Documentation
 
 - **`.github/copilot-instructions.md`** — Global development commands and conventions
@@ -286,14 +323,16 @@ To use a premium model for complex analysis:
 
 | Agent | Lines | Size | Focus |
 |-------|-------|------|-------|
-| developer.md | 521 | 19K | Implementation |
-| orchestrator.md | 318 | 11K | Coordination |
-| product-manager.md | 325 | 11K | Requirements |
-| reviewer.md | 390 | 11K | Code Quality |
-| quality-assurance.md | 410 | 12K | Standards |
-| tester.md | 629 | 18K | Testing |
+| developer.md | 1,170 | 40K | Implementation |
+| orchestrator.md | 287 | 12K | Coordination |
+| product-manager.md | 314 | 16K | Requirements |
+| reviewer.md | 377 | 12K | Code Quality |
+| quality-assurance.md | 531 | 12K | Standards |
+| tester.md | 1,586 | 44K | Testing |
 
-**Total**: ~2,600 lines of specialized guidance across 88KB
+**Total**: ~4,265 lines of specialized guidance across 136KB
+
+**Enhancement Note**: Developer and Tester agents significantly expanded (Feb-April 2026) with comprehensive guidance for authentication, real-time features, error handling, async testing, and production-ready patterns.
 
 ## Key Architectural Concepts Referenced by All Agents
 
@@ -308,5 +347,5 @@ To use a premium model for complex analysis:
 
 ---
 
-**Last Updated**: April 16, 2025  
-**Status**: Complete with all 6 agents
+**Last Updated**: April 22, 2026  
+**Status**: Complete with all 6 agents (Developer & Tester enhanced with comprehensive patterns)
