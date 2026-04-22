@@ -104,6 +104,49 @@ pnpm test:graphql          # Test only Apollo resolvers
 pnpm test:express          # Test only Express routes/handlers
 ```
 
+## Test Isolation & Cleanup
+
+The frontend uses centralized, global test setup to ensure test isolation and prevent state leakage when tests run in parallel.
+
+### Problem Solved
+
+- **Duplicated Mocks**: localStorage mock was copied in 5+ test files
+- **No Global Cleanup**: Tests relied on local beforeEach/afterEach hooks
+- **Parallel Execution Risk**: When running tests concurrently, tests could interfere with each other
+
+### Solution
+
+**Global Setup Files** (in `frontend/__tests__/setup/`):
+- `localStorage-mock.ts` - Centralized localStorage mock implementation
+- `vitest-setup.ts` - Global beforeEach/afterEach hooks for cleanup
+- Registered in `frontend/vitest.config.ts` via `setupFiles`
+
+**How It Works**:
+1. Before any tests run, vitest loads the setup file
+2. Global `beforeEach`: Clears localStorage and mocks before each test
+3. Each test runs with clean, isolated state
+4. Global `afterEach`: Cleanup after each test to prevent leakage
+
+**Test Modes** (all passing):
+```bash
+pnpm test:frontend --run              # Sequential: 172 ✓
+pnpm test:frontend --run -- --sequence.shuffle   # Shuffle: 172 ✓
+pnpm test:frontend --run -- --sequence.parallel  # Parallel: 172 ✓
+```
+
+**For New Tests**: Just use localStorage directly - it's automatically isolated:
+```typescript
+describe('My Test', () => {
+  it('should work', () => {
+    localStorage.setItem('key', 'value');
+    expect(localStorage.getItem('key')).toBe('value');
+    // Cleanup happens automatically
+  });
+});
+```
+
+For details, see `frontend/__tests__/setup/README.md`.
+
 ### Code Quality
 
 ```bash

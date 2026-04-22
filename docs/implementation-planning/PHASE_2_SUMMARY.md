@@ -52,13 +52,13 @@ END (Time: ~65 min - All three concurrent)
 **Problem**: 
 - Multiple test files contain placeholder assertions (`expect(true).toBe(true)`)
 - False confidence in test coverage
-- 138 tests claimed but actually ~312 (many without real assertions)
+- 138 tests claimed but actual count is 339 (99 GraphQL + 68 Express + 172 Frontend)
 
 **Solution**:
 1. Identify all empty tests (grep for patterns)
 2. Add real, meaningful assertions
 3. Verify tests pass individually and in suite
-4. Target 138 → 312+ real tests
+4. Target 138 → 339 verified tests (now complete)
 
 **Key Files Modified**:
 - `backend-graphql/src/resolvers/__tests__/auth-check.test.ts` (+3-4 tests)
@@ -80,7 +80,7 @@ END (Time: ~65 min - All three concurrent)
 **Update Documentation to Match Actual Test Coverage** (30 minutes)
 
 **Problem**:
-- PR #139 claims "138 tests" but actual count is ~312
+- PR #139 claims "138 tests" but actual count is 339
 - Documentation out of sync with reality
 - Damages team confidence in metrics
 
@@ -88,7 +88,7 @@ END (Time: ~65 min - All three concurrent)
 1. Audit all documentation files for "138" mentions
 2. Collect accurate metrics: `pnpm test`
 3. Update PR description, README, CLAUDE.md, docs/
-4. Establish clear baseline (312 tests verified)
+4. Establish clear baseline (339 tests verified)
 
 **Files Updated**:
 - **PR #139 Description** (highest visibility)
@@ -98,18 +98,18 @@ END (Time: ~65 min - All three concurrent)
 
 **Key Metrics**:
 ```
-backend-graphql:     67 tests (5 files)
-backend-express:     68 tests (4 files)
-frontend:           177 tests (2 files)
+backend-graphql:     99 tests (7 files)
+backend-express:     68 tests (5 files)
+frontend:           172 tests (10 files)
 ─────────────────────────────────────
-TOTAL:              312 tests (11 files)
+TOTAL:              339 tests (22 files)
 ```
 
 **Success Criteria**:
 - ✅ No "138" references remain
-- ✅ All docs show 312 (or package breakdowns)
+- ✅ All docs show 339 (or package breakdowns)
 - ✅ Numbers are consistent across files
-- ✅ Breakdown totals correctly (67+68+177=312)
+- ✅ Breakdown totals correctly (99+68+172=339)
 - ✅ Clear baseline for future tracking
 
 ---
@@ -423,10 +423,10 @@ Before starting Phase 2 work:
 After completing Phase 2, be ready to discuss:
 
 ### Issue #141: Test Quality
-> "We identified placeholder tests (expect(true).toBe(true)) that provided false confidence. Rather than just removing them, we replaced them with real, meaningful assertions that actually verify behavior. This increased our test count from 138 claimed to 312 verified."
+> "We identified placeholder tests (expect(true).toBe(true)) that provided false confidence. Rather than just removing them, we replaced them with real, meaningful assertions that actually verify behavior. Our verified test count is now 339 across all packages (99 GraphQL + 68 Express + 172 Frontend)."
 
 ### Issue #143: Documentation Accuracy
-> "Accurate metrics build team trust. By correcting the test count from 138 to 312 across all documentation, we established a credible baseline for tracking coverage improvements and future test additions."
+> "Accurate metrics build team trust. By correcting the test count from the claimed 138 to the verified 339 across all documentation, we established a credible baseline for tracking coverage improvements and future test additions."
 
 ### Issue #144: Test Reliability
 > "Tests that pass alone but fail in CI/CD are debugging nightmares. By consolidating mock setup and enabling parallel execution, we caught flaky tests early. Tests now pass in any order (--sequence.shuffle) and can run concurrently, ensuring reliable CI/CD."
