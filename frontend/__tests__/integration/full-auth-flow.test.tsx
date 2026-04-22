@@ -5,32 +5,10 @@
  * Covers acceptance criteria #1, #2, #3, #4, #6, #7, #9
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-});
 
 // Simple test component for auth flow
 function LoginForm() {
@@ -94,15 +72,6 @@ function LoginForm() {
 import React from 'react';
 
 describe('Integration: Full Authentication Flow', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
   describe('Complete User Journey', () => {
     it('AC#1, #4: Login form accepts email/password and stores token', async () => {
       const user = userEvent.setup();

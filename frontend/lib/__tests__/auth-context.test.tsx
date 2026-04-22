@@ -1,31 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { AuthProvider, useAuth } from '../auth-context';
 import React from 'react';
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-});
 
 // Test component that uses useAuth
 function TestComponent() {
@@ -45,15 +23,6 @@ function TestComponent() {
 }
 
 describe('Auth Context (useAuth Hook)', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
-  });
-
   describe('Token Management', () => {
     it('token stored in localStorage on login', () => {
       render(
