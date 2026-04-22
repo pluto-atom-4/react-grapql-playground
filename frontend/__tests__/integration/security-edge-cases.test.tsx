@@ -6,35 +6,11 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MockedProvider } from '@apollo/client/testing';
 import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-    length: 0,
-    key: () => null,
-  };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-});
 
 // Test query
 const PROTECTED_QUERY = gql`
@@ -64,16 +40,6 @@ function SecureApp() {
 }
 
 describe('Integration: Security & Edge Cases', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
   describe('Token Storage Security', () => {
     it('AC#1: Token never exposed in URL parameters', () => {
       // Arrange

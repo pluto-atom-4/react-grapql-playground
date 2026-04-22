@@ -6,36 +6,12 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MockedProvider } from '@apollo/client/testing';
 import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-    length: 0,
-    key: () => null,
-  };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-});
 
 // Test queries
 const GET_BUILDS_QUERY = gql`
@@ -149,15 +125,6 @@ function UserDashboard() {
 }
 
 describe('Integration: Multi-User Scenarios', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
-    vi.clearAllMocks();
-  });
-
   describe('User Data Isolation', () => {
     it('AC#7, #8: User A cannot see User B builds', async () => {
       // Arrange: Create tokens for both users

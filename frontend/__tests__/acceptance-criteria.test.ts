@@ -5,40 +5,10 @@
  * Each test explicitly maps to the requirement
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe('Issue #27 Acceptance Criteria Verification', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
-  });
-
   describe('AC#1: JWT token stored in localStorage', () => {
     it('✓ AC#1: JWT token stored in localStorage after login', () => {
       const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.sig';
