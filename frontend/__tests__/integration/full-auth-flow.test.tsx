@@ -115,8 +115,8 @@ describe('Integration: Full Authentication Flow', () => {
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
 
       // AC#4: Enter credentials
-      const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
-      const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/password/i);
       const loginBtn = screen.getByRole('button', { name: /log in/i });
 
       await user.clear(emailInput);

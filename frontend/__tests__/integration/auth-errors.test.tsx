@@ -9,9 +9,6 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MockedProvider } from '@apollo/client/testing';
-import { gql, ApolloError } from '@apollo/client';
-import { GraphQLError } from 'graphql';
 import '@testing-library/jest-dom/vitest';
 
 // Mock localStorage
@@ -38,28 +35,8 @@ Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
 });
 
-// Test mutations and queries
-const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      token
-      user {
-        id
-        email
-      }
-    }
-  }
-`;
-
-const GET_BUILDS_QUERY = gql`
-  query GetBuilds {
-    builds {
-      id
-      name
-      status
-    }
-  }
-`;
+// Note: Unused GraphQL definitions removed - test uses direct Promise simulation
+// for auth error scenarios without Apollo Client mocking.
 
 // Simple login form component
 function LoginForm() {
@@ -422,20 +399,17 @@ describe('Integration: Auth Error Handling', () => {
     });
 
     it('should not expose internal error details to user', () => {
-      // Arrange: Error with sensitive details
-      const sensitiveError = new GraphQLError('Database connection failed at 192.168.1.1:5432', {
-        extensions: {
-          code: 'DB_ERROR',
-          query: 'SELECT * FROM users WHERE email = ?',
-        },
-      });
+      // Arrange: Verify form renders without exposing sensitive data
+      // Note: Sensitive error details should never be displayed to users
+      // This test ensures the form doesn't show internal implementation details
 
       // Act: Render form
       render(<LoginForm />);
 
-      // Assert: Sensitive details are not visible in DOM
+      // Assert: Internal error details are not visible in DOM
       expect(screen.queryByText(/192.168.1.1/)).not.toBeInTheDocument();
       expect(screen.queryByText(/SELECT \* FROM/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/DB_ERROR/)).not.toBeInTheDocument();
     });
   });
 
@@ -473,8 +447,8 @@ describe('Integration: Auth Error Handling', () => {
       render(<LoginForm />);
 
       // Act
-      const emailInput = screen.getByPlaceholderText(/enter email/i) as HTMLInputElement;
-      const passwordInput = screen.getByPlaceholderText(/enter password/i) as HTMLInputElement;
+      const emailInput = screen.getByPlaceholderText(/enter email/i);
+      const passwordInput = screen.getByPlaceholderText(/enter password/i);
       const loginBtn = screen.getByRole('button', { name: /log in/i });
 
       await user.type(emailInput, 'invalid@example.com');
