@@ -24,6 +24,17 @@ const router: ExpressRouter = Router();
 const connectedClients: Set<Response> = new Set();
 
 /**
+ * OPTIONS /events - Handle CORS preflight
+ */
+router.options('/', (_req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(200);
+});
+
+/**
  * GET /events - SSE endpoint
  * Establishes Server-Sent Events connection
  */
@@ -32,7 +43,12 @@ router.get('/', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  // Set CORS headers for SSE (specific origin, not wildcard)
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Send initial connection message
   res.write(
