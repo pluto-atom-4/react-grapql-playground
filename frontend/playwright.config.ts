@@ -7,6 +7,16 @@ import { defineConfig, devices } from '@playwright/test';
 // require('dotenv').config();
 
 /**
+ * Detect display server type for Wayland compatibility
+ */
+const isWayland = process.env.XDG_SESSION_TYPE === 'wayland' || 
+                  process.env.DISPLAY?.includes('wayland');
+
+if (isWayland) {
+  console.log('🖥️  Wayland display server detected - using Wayland-safe configuration');
+}
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
@@ -37,7 +47,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Wayland-safe launch arguments
+        launchOptions: isWayland
+          ? {
+              args: [
+                '--disable-dev-shm-usage',  // Critical for Wayland headless
+                '--disable-gpu',             // GPU acceleration issues on Wayland
+                '--disable-setuid-sandbox',  // Sandbox issues in containers
+              ],
+            }
+          : undefined,
+      },
     },
 
     {

@@ -17,7 +17,9 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "e2e": "playwright test",
+    "e2e:wayland": "xvfb-run -a pnpm e2e",
     "e2e:headed": "playwright test --headed",
+    "e2e:wayland:headed": "xvfb-run -a pnpm e2e:headed",
     "e2e:debug": "playwright test --debug",
     "e2e:report": "playwright show-report",
     "clean": "rm -rf .next dist"
