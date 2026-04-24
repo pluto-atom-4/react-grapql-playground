@@ -118,10 +118,9 @@ async function checkService(
         clearTimeout(timeoutId);
 
         if (response.ok) {
-          const data = await response.json();
-
           if (type === 'graphql') {
             // Verify GraphQL response has schema
+            const data = await response.json();
             return !!data.data?.__schema?.types;
           } else {
             // For frontend and express, just check status

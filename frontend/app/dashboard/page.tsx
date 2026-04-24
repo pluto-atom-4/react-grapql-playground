@@ -4,9 +4,10 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import BuildDashboard from '@/components/build-dashboard';
+import type { ReactElement } from 'react';
 
-export default function DashboardPage() {
-  const { token } = useAuth();
+export default function DashboardPage(): ReactElement {
+  const { token, logout } = useAuth();
   const router = useRouter();
 
   // Auth guard: redirect to login if not authenticated
@@ -24,6 +25,11 @@ export default function DashboardPage() {
     );
   }
 
+  const handleLogout = (): void => {
+    logout();
+    router.push('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
@@ -33,10 +39,7 @@ export default function DashboardPage() {
           <div data-testid="user-menu" className="flex items-center gap-4">
             <button
               data-testid="logout-button"
-              onClick={() => {
-                // TODO: Implement logout
-                // For now, placeholder
-              }}
+              onClick={handleLogout}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
             >
               Logout

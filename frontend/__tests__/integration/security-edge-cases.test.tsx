@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+ 
 /**
  * Issue #121 - Integration Tests: Security Edge Cases
  * Verify security properties and prevent vulnerabilities
