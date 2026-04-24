@@ -8,9 +8,26 @@ export class BasePage {
 
   /**
    * Navigate to a URL
+   * Uses 'domcontentloaded' instead of 'networkidle' to avoid timeout
+   * on pages with polling/real-time connections
    */
-  async goto(url: string): Promise<void> {
-    await this.page.goto(url, { waitUntil: 'networkidle' });
+  async goto(url: string, options?: { timeout?: number }): Promise<void> {
+    await this.page.goto(url, {
+      waitUntil: 'domcontentloaded',  // DOM is ready, don't wait for all network requests
+      timeout: options?.timeout || 15000,  // 15 second timeout
+    });
+    
+    // Additional wait for Next.js hydration to complete
+    await this.page.waitForFunction(
+      () => {
+        // Check if Next.js has hydrated
+        return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
+      },
+      { timeout: 5000 }
+    ).catch(() => {
+      // Hydration check might fail on non-Next.js pages, that's ok
+      return true;
+    });
   }
 
   /**
@@ -35,17 +52,37 @@ export class BasePage {
   }
 
   /**
-   * Click element by test ID
+   * Click element by test ID with explicit waits
    */
   async clickByTestId(testId: string): Promise<void> {
-    await this.getByTestId(testId).click();
+    const element = this.getByTestId(testId);
+    
+    // Wait for visibility
+    await element.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // For button elements, wait for enabled state
+    await element.waitFor({ state: 'enabled', timeout: 5000 });
+    
+    // Click
+    await element.click();
   }
 
   /**
-   * Fill input by test ID
+   * Fill input by test ID with explicit waits for interactivity
    */
   async fillByTestId(testId: string, text: string): Promise<void> {
-    await this.getByTestId(testId).fill(text);
+    const element = this.getByTestId(testId);
+    
+    // Wait for visibility
+    await element.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // For input elements, wait for enabled state
+    await element.waitFor({ state: 'enabled', timeout: 5000 });
+    
+    // Focus, clear, and fill
+    await element.focus();
+    await element.clear();
+    await element.fill(text);
   }
 
   /**

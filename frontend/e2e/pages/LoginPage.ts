@@ -35,7 +35,11 @@ export class LoginPage extends BasePage {
    */
   async goto(): Promise<void> {
     await super.goto('/login');
+    
+    // Wait specifically for form elements to be visible
     await this.waitForElement('[data-testid="email-input"]', 10000);
+    await this.waitForElement('[data-testid="password-input"]', 10000);
+    await this.waitForElement('[data-testid="submit-button"]', 10000);
   }
 
   /**
