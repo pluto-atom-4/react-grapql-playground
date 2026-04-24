@@ -37,9 +37,17 @@ async function main() {
     await prisma.$queryRaw`SELECT 1`;
     console.warn('✅ Database connection verified');
 
-    // Start Apollo Server
+    // Start Apollo Server with CORS configuration
     const { url } = await startStandaloneServer(server, {
       listen: { port: PORT },
+      // Configure CORS for Apollo Server
+      // Allow credentials and specific origins for local development
+      cors: {
+        origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        credentials: true,
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+      },
       context: async ({ req }) => {
         // Extract user from JWT token, handling errors gracefully
         let user = null;
