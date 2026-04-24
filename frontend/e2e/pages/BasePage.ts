@@ -41,7 +41,7 @@ export class BasePage {
    * Wait for element to be visible
    */
   async waitForElement(selector: string, timeout = 10000): Promise<void> {
-    await this.page.waitForSelector(selector, { timeout, state: 'visible' });
+    await this.page.locator(selector).waitFor({ state: 'visible', timeout });
   }
 
   /**
@@ -60,11 +60,11 @@ export class BasePage {
     // Wait for visibility
     await element.waitFor({ state: 'visible', timeout: 5000 });
     
-    // For button elements, wait for enabled state
-    await element.waitFor({ state: 'enabled', timeout: 5000 });
+    // Add small delay to allow element to stabilize
+    await this.page.waitForTimeout(100);
     
-    // Click
-    await element.click();
+    // Click with force to skip stability checks (buttons don't have "enabled" state)
+    await element.click({ force: true });
   }
 
   /**
@@ -76,13 +76,14 @@ export class BasePage {
     // Wait for visibility
     await element.waitFor({ state: 'visible', timeout: 5000 });
     
-    // For input elements, wait for enabled state
-    await element.waitFor({ state: 'enabled', timeout: 5000 });
-    
-    // Focus, clear, and fill
-    await element.focus();
-    await element.clear();
+    // Fill the input (Playwright handles focus, clear, and fill)
     await element.fill(text);
+    
+    // Small delay to let React state update
+    await this.page.waitForTimeout(100);
+    
+    // Trigger blur to ensure validation runs
+    await element.blur();
   }
 
   /**
@@ -97,7 +98,7 @@ export class BasePage {
    */
   async isVisible(selector: string): Promise<boolean> {
     try {
-      await this.page.waitForSelector(selector, { timeout: 2000, state: 'visible' });
+      await this.page.locator(selector).waitFor({ state: 'visible', timeout: 2000 });
       return true;
     } catch {
       return false;

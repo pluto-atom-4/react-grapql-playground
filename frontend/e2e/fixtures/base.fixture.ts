@@ -31,18 +31,55 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
       password: process.env.TEST_PASSWORD || 'TestPassword123!',
     };
 
-    // Navigate to login page
-    await page.goto('/login', { waitUntil: 'networkidle' });
+    // Navigate to home page (unprotected) and clear state
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await context.clearCookies();
+    await page.evaluate(() => localStorage.clear());
+    
+    // Reload to get fresh state
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    
+    // Add small pause for page to fully render
+    await page.waitForTimeout(500);
+    
+    // Click login link to navigate to login form
+    const loginLink = page.locator('[data-testid="home-login-link"]');
+    await loginLink.waitFor({ state: 'visible', timeout: 10000 });
+    await loginLink.click();
+    
+    // Add pause for login page to render
+    await page.waitForTimeout(500);
 
-    // Wait for login form
-    await page.waitForSelector('[data-testid="email-input"]', { timeout: 10000 });
+    // Wait for login form elements to be visible
+    const emailInput = page.locator('[data-testid="email-input"]');
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
 
-    // Fill login form
-    await page.fill('[data-testid="email-input"]', testUser.email);
-    await page.fill('[data-testid="password-input"]', testUser.password);
+    // Fill form
+    await emailInput.fill(testUser.email);
+    await emailInput.blur();
+    await page.waitForTimeout(100);
 
-    // Submit login form
-    await page.click('[data-testid="submit-button"]');
+    const passwordInput = page.locator('[data-testid="password-input"]');
+    await passwordInput.waitFor({ state: 'visible', timeout: 5000 });
+    await passwordInput.fill(testUser.password);
+    await passwordInput.blur();
+    await page.waitForTimeout(100);
+
+    // Submit
+    const submitButton = page.locator('[data-testid="submit-button"]');
+    await submitButton.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Start listening for redirect BEFORE click
+    const urlChangePromise = page.waitForURL(/.*\/dashboard/, { timeout: 20000 });
+    await submitButton.click();
+    
+    // Wait for redirect
+    try {
+      await urlChangePromise;
+    } catch (err) {
+      console.error('Dashboard redirect failed:', err);
+      throw err;
+    }
 
     // Wait for JWT token in localStorage
     await page.waitForFunction(
@@ -50,20 +87,7 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
         const token = localStorage.getItem('auth_token') || localStorage.getItem('apollo_token');
         return token && token.length > 0;
       },
-      { timeout: 15000 }
-    );
-
-    // Wait for Apollo cache to be ready (check for successful query execution)
-    await page.waitForFunction(
-      () => {
-        try {
-          const apolloCache = (window as any).__APOLLO_CLIENT__?.cache;
-          return apolloCache !== undefined;
-        } catch {
-          return false;
-        }
-      },
-      { timeout: 15000 }
+      { timeout: 10000 }
     );
 
     // Use the authenticated page

@@ -31,15 +31,23 @@ export class LoginPage extends BasePage {
   readonly loadingIndicator = () => this.getByTestId('loading-indicator');
 
   /**
-   * Navigate to login page
+   * Navigate to login page via home page link (more reliable)
    */
   async goto(): Promise<void> {
-    await super.goto('/login');
+    // Navigate to home page first
+    await this.page.goto('/', { waitUntil: 'domcontentloaded' });
     
-    // Wait specifically for form elements to be visible
-    await this.waitForElement('[data-testid="email-input"]', 10000);
-    await this.waitForElement('[data-testid="password-input"]', 10000);
-    await this.waitForElement('[data-testid="submit-button"]', 10000);
+    // Add small pause for page to fully render
+    await this.page.waitForTimeout(300);
+    
+    // Click login link to navigate to login form
+    const loginLink = this.page.locator('[data-testid="home-login-link"]');
+    await loginLink.waitFor({ state: 'visible', timeout: 10000 });
+    await loginLink.click();
+    
+    // Wait for login form to be visible
+    const emailInput = this.getByTestId('email-input');
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   /**
@@ -69,7 +77,9 @@ export class LoginPage extends BasePage {
     expectedUrl = '/dashboard'
   ): Promise<void> {
     await this.login(email, password);
-    await this.page.waitForURL(`**${expectedUrl}**`, { timeout: 15000 });
+    // Use regex pattern for URL matching
+    const urlRegex = new RegExp(`.*${expectedUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    await this.page.waitForURL(urlRegex, { timeout: 15000 });
   }
 
   /**

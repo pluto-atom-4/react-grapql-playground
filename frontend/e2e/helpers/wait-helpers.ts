@@ -169,7 +169,7 @@ export async function waitForElementStable(
 export async function waitForGraphQLLoading(page: Page, timeout = 10000): Promise<void> {
   // First, wait for loading to appear
   try {
-    await page.waitForSelector('[data-testid*="loading"], .loading, .skeleton', {
+    await page.locator('[data-testid*="loading"], .loading, .skeleton').first().waitFor({
       timeout: 2000,
       state: 'visible',
     });
@@ -179,7 +179,7 @@ export async function waitForGraphQLLoading(page: Page, timeout = 10000): Promis
 
   // Then wait for loading to disappear
   try {
-    await page.waitForSelector('[data-testid*="loading"], .loading, .skeleton', {
+    await page.locator('[data-testid*="loading"], .loading, .skeleton').first().waitFor({
       timeout,
       state: 'hidden',
     });
