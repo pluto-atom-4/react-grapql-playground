@@ -31,7 +31,7 @@ export default function LoginForm() {
       const token = data?.login?.token;
       if (token) {
         login(token);
-        router.push('/');
+        router.push('/dashboard');
       }
     },
     onError: (error) => {
@@ -175,7 +175,10 @@ export default function LoginForm() {
       <h1 className="text-3xl font-bold text-center mb-8">Sign In</h1>
 
       {generalError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <div
+          className="p-4 bg-red-50 border border-red-200 rounded-md"
+          data-testid="error-message"
+        >
           <p className="text-red-700 text-sm">{generalError}</p>
         </div>
       )}
@@ -188,6 +191,7 @@ export default function LoginForm() {
           id="email"
           name="email"
           type="email"
+          data-testid="email-input"
           value={formState.email}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -212,6 +216,7 @@ export default function LoginForm() {
           id="password"
           name="password"
           type="password"
+          data-testid="password-input"
           value={formState.password}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -230,12 +235,18 @@ export default function LoginForm() {
 
       <button
         type="submit"
+        data-testid="submit-button"
         disabled={!isFormValid || loading}
         className="w-full px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
-            <span className="inline-block animate-spin">🔄</span>
+            <span
+              className="inline-block animate-spin"
+              data-testid="loading-indicator"
+            >
+              🔄
+            </span>
             <span>Signing in...</span>
           </>
         ) : (

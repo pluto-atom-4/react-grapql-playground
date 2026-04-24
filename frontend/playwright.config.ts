@@ -20,7 +20,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: ['html', 'json', 'junit', 'list'],
+  reporter: [['html'], ['json'], ['junit'], ['list']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -80,7 +80,7 @@ export default defineConfig({
   },
 
   /* Global setup - verify all services are ready */
-  globalSetup: require.resolve('./e2e/playwright.global-setup.ts'),
+  globalSetup: './e2e/playwright.global-setup.ts',
 
   /* Timeouts */
   timeout: 30000,
