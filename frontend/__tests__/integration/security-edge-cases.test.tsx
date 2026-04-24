@@ -5,40 +5,11 @@
  * Covers acceptance criteria #1, #3, #5
  */
 
-import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MockedProvider } from '@apollo/client/testing';
-import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
 
 // Test query
-const PROTECTED_QUERY = gql`
-  query GetBuilds {
-    builds {
-      id
-      name
-    }
-  }
-`;
-
 // Simple secure component
-function SecureApp() {
-  const [token, setToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    setToken(storedToken);
-  }, []);
-
-  return (
-    <div>
-      <h1>Secure App</h1>
-      {token && <p>Authenticated</p>}
-    </div>
-  );
-}
-
 describe('Integration: Security & Edge Cases', () => {
   describe('Token Storage Security', () => {
     it('AC#1: Token never exposed in URL parameters', () => {
@@ -378,7 +349,7 @@ describe('Integration: Security & Edge Cases', () => {
       );
 
       // Act: Rapidly set and get tokens
-      tokens.forEach((token, i) => {
+      tokens.forEach((token, _i) => {
         localStorage.setItem('auth_token', token);
         const retrieved = localStorage.getItem('auth_token');
 
