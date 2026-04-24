@@ -5,6 +5,7 @@ Custom fixtures for E2E tests.
 ## Available Fixtures
 
 ### `authenticatedPage`
+
 A Playwright `Page` object that is pre-authenticated with a test user.
 
 - Automatically logs in before test
@@ -13,6 +14,7 @@ A Playwright `Page` object that is pre-authenticated with a test user.
 - Clears cookies and localStorage after test
 
 **Usage**:
+
 ```typescript
 import { test } from '../fixtures';
 
@@ -23,6 +25,7 @@ test('authenticated test', async ({ authenticatedPage }) => {
 ```
 
 ### `apiClient`
+
 GraphQL API client with JWT authentication.
 
 - Automatically extracts JWT from authenticated page
@@ -30,6 +33,7 @@ GraphQL API client with JWT authentication.
 - Sets Authorization header
 
 **Usage**:
+
 ```typescript
 test('API test', async ({ apiClient }) => {
   const result = await apiClient.query(`
@@ -41,12 +45,14 @@ test('API test', async ({ apiClient }) => {
 ```
 
 ### `testUser`
+
 Test user credentials and metadata.
 
 - Provides email, password for login
 - Generates unique test ID
 
 **Usage**:
+
 ```typescript
 test('with test user', async ({ testUser }) => {
   console.log(testUser.email); // test@example.com
@@ -71,9 +77,9 @@ const myFixture = base.extend({
   myCustomFixture: async ({ authenticatedPage }, use) => {
     // Setup
     const resource = await setupResource();
-    
+
     await use(resource);
-    
+
     // Cleanup
     await cleanupResource();
   },

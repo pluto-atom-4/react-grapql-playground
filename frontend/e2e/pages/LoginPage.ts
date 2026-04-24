@@ -59,7 +59,11 @@ export class LoginPage extends BasePage {
   /**
    * Perform login and wait for redirect
    */
-  async loginAndWaitForRedirect(email: string, password: string, expectedUrl = '/dashboard'): Promise<void> {
+  async loginAndWaitForRedirect(
+    email: string,
+    password: string,
+    expectedUrl = '/dashboard'
+  ): Promise<void> {
     await this.login(email, password);
     await this.page.waitForURL(`**${expectedUrl}**`, { timeout: 15000 });
   }

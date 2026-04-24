@@ -118,9 +118,9 @@ test('query builds via API', async ({ apiClient }) => {
 ```typescript
 test('create and delete build', async ({ apiClient }) => {
   const { buildIds } = await seedTestData(apiClient);
-  
+
   // Test something
-  
+
   await cleanupTestData(apiClient, { buildIds });
 });
 ```
@@ -143,11 +143,11 @@ test.describe('Dashboard', () => {
   test('loads builds', async ({ authenticatedPage }) => {
     // Arrange
     const dashboard = new DashboardPage(authenticatedPage);
-    
+
     // Act
     await dashboard.goto();
     const builds = await dashboard.getBuilds();
-    
+
     // Assert
     expect(Array.isArray(builds)).toBeTruthy();
   });
@@ -191,6 +191,7 @@ await page.pause();
 ### View Network Requests
 
 Enable in playwright.config.ts:
+
 ```typescript
 use: {
   trace: 'on-first-retry',
@@ -207,6 +208,7 @@ console.log('Page title:', await page.title());
 ## CI/CD Integration
 
 Tests run in CI with:
+
 - Single worker (no parallelization)
 - 2 retries on failure
 - HTML and JUnit reports

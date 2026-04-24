@@ -54,9 +54,7 @@ async function globalSetup() {
     failed.forEach((f) => {
       console.error(`   - ${f.name}: ${f.error}`);
     });
-    console.error(
-      '\n📝 Make sure all services are running:\n   pnpm dev'
-    );
+    console.error('\n📝 Make sure all services are running:\n   pnpm dev');
     throw new Error('Service connectivity check failed');
   }
 
@@ -124,7 +122,7 @@ async function checkService(
 
           if (type === 'graphql') {
             // Verify GraphQL response has schema
-            return !!(data.data?.__schema?.types);
+            return !!data.data?.__schema?.types;
           } else {
             // For frontend and express, just check status
             return true;

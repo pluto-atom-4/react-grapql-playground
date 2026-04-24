@@ -122,7 +122,8 @@ test.describe('Dashboard Examples', () => {
     apiClient,
   }) => {
     // Create build via API
-    const createResult = await apiClient.mutation(`
+    const createResult = await apiClient.mutation(
+      `
       mutation CreateBuild($input: CreateBuildInput!) {
         createBuild(input: $input) {
           id
@@ -130,12 +131,14 @@ test.describe('Dashboard Examples', () => {
           status
         }
       }
-    `, {
-      input: {
-        name: `E2E Test Build ${Date.now()}`,
-        description: 'Created by E2E test example',
-      },
-    });
+    `,
+      {
+        input: {
+          name: `E2E Test Build ${Date.now()}`,
+          description: 'Created by E2E test example',
+        },
+      }
+    );
 
     const buildId = createResult.data?.createBuild?.id;
     expect(buildId).toBeDefined();
@@ -151,13 +154,16 @@ test.describe('Dashboard Examples', () => {
 
     // Cleanup
     if (buildId) {
-      await apiClient.mutation(`
+      await apiClient.mutation(
+        `
         mutation DeleteBuild($id: ID!) {
           deleteBuild(id: $id) {
             success
           }
         }
-      `, { id: buildId });
+      `,
+        { id: buildId }
+      );
     }
   });
 });

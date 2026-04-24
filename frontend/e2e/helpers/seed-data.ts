@@ -21,23 +21,26 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
 
   try {
     // Create test build
-    const createBuildResult = await apiClient.mutation(`
+    const createBuildResult = await apiClient.mutation(
+      `
       mutation CreateBuild($input: CreateBuildInput!) {
         createBuild(input: $input) {
           id
           status
         }
       }
-    `, {
-      input: {
-        name: `E2E Test Build ${Date.now()}`,
-        description: 'Created by E2E tests for verification',
-        metadata: {
-          testRun: true,
-          timestamp: new Date().toISOString(),
+    `,
+      {
+        input: {
+          name: `E2E Test Build ${Date.now()}`,
+          description: 'Created by E2E tests for verification',
+          metadata: {
+            testRun: true,
+            timestamp: new Date().toISOString(),
+          },
         },
-      },
-    });
+      }
+    );
 
     if (createBuildResult.data?.createBuild?.id) {
       const buildId = createBuildResult.data.createBuild.id;
@@ -45,20 +48,23 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
 
       // Create test parts
       for (let i = 0; i < 2; i++) {
-        const createPartResult = await apiClient.mutation(`
+        const createPartResult = await apiClient.mutation(
+          `
           mutation CreatePart($input: CreatePartInput!) {
             createPart(input: $input) {
               id
             }
           }
-        `, {
-          input: {
-            buildId,
-            name: `Test Part ${i + 1}`,
-            description: `Test part created at ${Date.now()}`,
-            quantity: Math.floor(Math.random() * 10) + 1,
-          },
-        });
+        `,
+          {
+            input: {
+              buildId,
+              name: `Test Part ${i + 1}`,
+              description: `Test part created at ${Date.now()}`,
+              quantity: Math.floor(Math.random() * 10) + 1,
+            },
+          }
+        );
 
         if (createPartResult.data?.createPart?.id) {
           testData.partIds.push(createPartResult.data.createPart.id);
@@ -66,20 +72,23 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
       }
 
       // Create test run
-      const createTestRunResult = await apiClient.mutation(`
+      const createTestRunResult = await apiClient.mutation(
+        `
         mutation CreateTestRun($input: CreateTestRunInput!) {
           createTestRun(input: $input) {
             id
           }
         }
-      `, {
-        input: {
-          buildId,
-          name: `Test Run ${Date.now()}`,
-          status: 'PENDING',
-          testType: 'UNIT',
-        },
-      });
+      `,
+        {
+          input: {
+            buildId,
+            name: `Test Run ${Date.now()}`,
+            status: 'PENDING',
+            testType: 'UNIT',
+          },
+        }
+      );
 
       if (createTestRunResult.data?.createTestRun?.id) {
         testData.testRunIds.push(createTestRunResult.data.createTestRun.id);
@@ -104,13 +113,16 @@ export async function cleanupTestData(
     // Delete test runs first (FK dependency)
     for (const testRunId of data.testRunIds) {
       try {
-        await apiClient.mutation(`
+        await apiClient.mutation(
+          `
           mutation DeleteTestRun($id: ID!) {
             deleteTestRun(id: $id) {
               success
             }
           }
-        `, { id: testRunId });
+        `,
+          { id: testRunId }
+        );
       } catch (error) {
         console.warn(`Failed to delete test run ${testRunId}:`, error);
       }
@@ -119,13 +131,16 @@ export async function cleanupTestData(
     // Delete parts (FK dependency)
     for (const partId of data.partIds) {
       try {
-        await apiClient.mutation(`
+        await apiClient.mutation(
+          `
           mutation DeletePart($id: ID!) {
             deletePart(id: $id) {
               success
             }
           }
-        `, { id: partId });
+        `,
+          { id: partId }
+        );
       } catch (error) {
         console.warn(`Failed to delete part ${partId}:`, error);
       }
@@ -134,13 +149,16 @@ export async function cleanupTestData(
     // Delete builds last (top-level entity)
     for (const buildId of data.buildIds) {
       try {
-        await apiClient.mutation(`
+        await apiClient.mutation(
+          `
           mutation DeleteBuild($id: ID!) {
             deleteBuild(id: $id) {
               success
             }
           }
-        `, { id: buildId });
+        `,
+          { id: buildId }
+        );
       } catch (error) {
         console.warn(`Failed to delete build ${buildId}:`, error);
       }
@@ -162,18 +180,21 @@ export async function seedBuildWithParts(
   const partIds: string[] = [];
 
   // Create build
-  const buildResult = await apiClient.mutation(`
+  const buildResult = await apiClient.mutation(
+    `
     mutation CreateBuild($input: CreateBuildInput!) {
       createBuild(input: $input) {
         id
       }
     }
-  `, {
-    input: {
-      name: buildName,
-      description: `Test build created at ${Date.now()}`,
-    },
-  });
+  `,
+    {
+      input: {
+        name: buildName,
+        description: `Test build created at ${Date.now()}`,
+      },
+    }
+  );
 
   const buildId = buildResult.data?.createBuild?.id;
   if (!buildId) {
@@ -182,19 +203,22 @@ export async function seedBuildWithParts(
 
   // Create parts
   for (let i = 0; i < partCount; i++) {
-    const partResult = await apiClient.mutation(`
+    const partResult = await apiClient.mutation(
+      `
       mutation CreatePart($input: CreatePartInput!) {
         createPart(input: $input) {
           id
         }
       }
-    `, {
-      input: {
-        buildId,
-        name: `Part ${i + 1}`,
-        quantity: i + 1,
-      },
-    });
+    `,
+      {
+        input: {
+          buildId,
+          name: `Part ${i + 1}`,
+          quantity: i + 1,
+        },
+      }
+    );
 
     if (partResult.data?.createPart?.id) {
       partIds.push(partResult.data.createPart.id);

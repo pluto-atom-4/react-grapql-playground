@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { describe, it, expect, vi } from 'vitest';
 import { makeClient } from '../apollo-client';
 
 describe('Apollo Client Configuration', () => {
-
   describe('Auth Link - Token Injection', () => {
     it('should inject Bearer token when token exists in localStorage', () => {
       localStorage.setItem('auth_token', 'test-jwt-token-12345');

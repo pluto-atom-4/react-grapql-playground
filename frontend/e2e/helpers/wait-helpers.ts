@@ -60,31 +60,28 @@ export async function waitForSSEEvent(
       }
     });
 
-    page.evaluate(
-      (event) => {
-        if (!window.EventSource) {
-          console.error('EventSource not supported');
-          return;
-        }
+    page.evaluate((event) => {
+      if (!window.EventSource) {
+        console.error('EventSource not supported');
+        return;
+      }
 
-        try {
-          const eventSource = new EventSource('/events');
-          const handleEvent = (e: any) => {
-            const data = JSON.parse(e.data);
-            if (data.type === event) {
-              console.log(`SSE:${event}:${JSON.stringify(data)}`);
-              eventSource.close();
-            }
-          };
+      try {
+        const eventSource = new EventSource('/events');
+        const handleEvent = (e: any) => {
+          const data = JSON.parse(e.data);
+          if (data.type === event) {
+            console.log(`SSE:${event}:${JSON.stringify(data)}`);
+            eventSource.close();
+          }
+        };
 
-          eventSource.addEventListener(event, handleEvent);
-          (window as any)._sseListeners = new Map([['_e2e_test_listener', eventSource]]);
-        } catch (error) {
-          console.error('SSE listener setup failed:', error);
-        }
-      },
-      eventName
-    );
+        eventSource.addEventListener(event, handleEvent);
+        (window as any)._sseListeners = new Map([['_e2e_test_listener', eventSource]]);
+      } catch (error) {
+        console.error('SSE listener setup failed:', error);
+      }
+    }, eventName);
   });
 }
 
@@ -237,7 +234,5 @@ export async function waitForElements(
     await page.waitForTimeout(200);
   }
 
-  throw new Error(
-    `Expected ${expectedCount} elements matching "${selector}" within ${timeout}ms`
-  );
+  throw new Error(`Expected ${expectedCount} elements matching "${selector}" within ${timeout}ms`);
 }

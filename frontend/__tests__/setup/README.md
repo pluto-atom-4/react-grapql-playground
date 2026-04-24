@@ -29,22 +29,24 @@ This directory contains global test setup and cleanup infrastructure to ensure t
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `localStorage-mock.ts` | Centralized localStorage mock implementation |
-| `vitest-setup.ts` | Global beforeEach/afterEach hooks for cleanup |
-| `README.md` | This file - documentation |
+| File                   | Purpose                                       |
+| ---------------------- | --------------------------------------------- |
+| `localStorage-mock.ts` | Centralized localStorage mock implementation  |
+| `vitest-setup.ts`      | Global beforeEach/afterEach hooks for cleanup |
+| `README.md`            | This file - documentation                     |
 
 ## How It Works
 
 ### 1. Initialization (runs once per test session)
 
 When Vitest starts, it loads `vitest.config.ts`:
+
 ```typescript
-setupFiles: ['./frontend/__tests__/setup/vitest-setup.ts']
+setupFiles: ['./frontend/__tests__/setup/vitest-setup.ts'];
 ```
 
 The setup file:
+
 1. Imports `localStorageMock` and `initializeLocalStorageMock`
 2. Calls `initializeLocalStorageMock()` to attach mock to `globalThis.localStorage`
 3. Registers global `beforeEach` and `afterEach` hooks
@@ -54,18 +56,21 @@ The setup file:
 For every test:
 
 **beforeEach**:
+
 - Clears localStorage: `localStorageMock.clear()`
 - Clears mock tracking: `vi.clearAllMocks()`
 
 **Test runs** (with clean state)
 
 **afterEach**:
+
 - Final localStorage cleanup: `localStorageMock.clear()`
 - Restores all mocks: `vi.restoreAllMocks()`
 
 ### 3. Parallel Execution
 
 Since each test has:
+
 - Isolated localStorage (cleared before and after)
 - Isolated mock state (cleared before and after)
 - No shared state
@@ -91,11 +96,11 @@ describe('My Test', () => {
   beforeEach(() => {
     localStorage.clear();
   });
-  
+
   afterEach(() => {
     localStorage.clear();
   });
-  
+
   // Tests...
 });
 ```
@@ -110,7 +115,7 @@ describe('My Test', () => {
   // ✅ No need to import localStorageMock
   // ✅ No need to define beforeEach/afterEach
   // ✅ localStorage is automatically cleared before and after each test
-  
+
   it('should use localStorage', () => {
     localStorage.setItem('key', 'value');
     expect(localStorage.getItem('key')).toBe('value');
@@ -133,6 +138,7 @@ The following test files had their duplicated localStorage mocks removed and now
 - `frontend/__tests__/integration/protected-routes.test.tsx`
 
 Each file:
+
 1. Removed the `localStorageMock` definition (6-21 lines deleted)
 2. Removed the `Object.defineProperty(globalThis, 'localStorage', ...)` (4 lines deleted)
 3. Removed local `beforeEach` localStorage.clear() calls (global handles this)
@@ -189,6 +195,7 @@ describe('New Feature', () => {
 ### "localStorage is not defined"
 
 If you get this error:
+
 - Verify `setupFiles` is set in `frontend/vitest.config.ts`
 - Verify `vitest-setup.ts` calls `initializeLocalStorageMock()`
 - Verify the path in `setupFiles` is correct (relative to vitest.config.ts)
@@ -196,6 +203,7 @@ If you get this error:
 ### "Tests failing in parallel but passing sequentially"
 
 This indicates state leakage. Check:
+
 - Are tests modifying global state outside of localStorage?
 - Are mocks not being properly restored in afterEach?
 - Are async operations not awaited?
@@ -203,6 +211,7 @@ This indicates state leakage. Check:
 ### "localStorage not cleared between tests"
 
 This shouldn't happen, but if it does:
+
 - Check that `localStorageMock.clear()` is being called in afterEach
 - Verify tests aren't using `import('...').default.localStorage` (different reference)
 - Check for typos in storage keys (e.g., `auth_token` vs `authToken`)

@@ -7,6 +7,7 @@ Page object classes for testing UI interactions.
 Base class providing common page interactions.
 
 **Methods**:
+
 - `goto(url)` - Navigate to URL
 - `getByTestId(testId)` - Get element by data-testid
 - `waitForElement(selector, timeout)` - Wait for element visibility
@@ -25,6 +26,7 @@ Base class providing common page interactions.
 Extends BasePage. Handles login page interactions.
 
 **Methods**:
+
 - `goto()` - Navigate to login page
 - `login(email, password)` - Perform login
 - `loginAndWaitForRedirect(email, password, expectedUrl)` - Login with redirect
@@ -39,6 +41,7 @@ Extends BasePage. Handles login page interactions.
 Extends BasePage. Handles dashboard interactions.
 
 **Methods**:
+
 - `goto()` - Navigate to dashboard
 - `getBuilds()` - Get list of builds
 - `clickBuild(id)` - Click on build
@@ -64,7 +67,7 @@ test('create and view build', async ({ authenticatedPage }) => {
   expect(builds.length).toBeGreaterThanOrEqual(0);
 
   await dashboard.createBuild('Test Build');
-  
+
   const updatedBuilds = await dashboard.getBuilds();
   expect(updatedBuilds.length).toBeGreaterThan(builds.length);
 });

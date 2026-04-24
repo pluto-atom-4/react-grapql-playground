@@ -170,7 +170,8 @@ describe('Integration: Security & Edge Cases', () => {
     it('should reject token with tampered signature', () => {
       // Arrange
       const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig';
-      const tamperedToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.tampered-sig';
+      const tamperedToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.tampered-sig';
 
       // Act
       localStorage.setItem('auth_token', tamperedToken);
@@ -204,7 +205,8 @@ describe('Integration: Security & Edge Cases', () => {
 
     it('AC#5: Expired token rejected even if not removed', () => {
       // Arrange: Expired token (exp claim in past)
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjQ2MzAwMDAwfQ.sig';
+      const expiredToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjQ2MzAwMDAwfQ.sig';
       localStorage.setItem('auth_token', expiredToken);
 
       // Act
@@ -370,8 +372,9 @@ describe('Integration: Security & Edge Cases', () => {
   describe('Race Conditions', () => {
     it('should handle rapid token updates without corruption', () => {
       // Arrange
-      const tokens = Array.from({ length: 50 }, (_, i) => 
-        `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItJHtpfSJ9.sig-${i}`
+      const tokens = Array.from(
+        { length: 50 },
+        (_, i) => `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItJHtpfSJ9.sig-${i}`
       );
 
       // Act: Rapidly set and get tokens
