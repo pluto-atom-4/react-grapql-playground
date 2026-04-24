@@ -5,7 +5,7 @@
  * Covers acceptance criteria #1, #2, #3, #4, #6, #7, #9
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
@@ -21,7 +21,8 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     // Simulate login
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
+    const mockToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
     await new Promise((resolve) => setTimeout(resolve, 100));
     localStorage.setItem('auth_token', mockToken);
     setToken(mockToken);
@@ -106,7 +107,10 @@ describe('Integration: Full Authentication Flow', () => {
 
     it('AC#1, #2: Token persisted after page reload', () => {
       // AC#1: Pre-populate localStorage with token
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig'
+      );
 
       render(<LoginForm />);
 
@@ -184,7 +188,10 @@ describe('Integration: Full Authentication Flow', () => {
       const user = userEvent.setup();
 
       // Pre-login
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig'
+      );
 
       render(<LoginForm />);
 

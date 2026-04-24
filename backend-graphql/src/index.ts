@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import express from 'express';
+import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
+import { expressMiddleware } from '@apollo/server/express4';
 import { prisma } from './db/client';
 import { createLoaders } from './dataloaders';
 import type { BuildContext } from './types';
@@ -37,43 +39,81 @@ async function main() {
     await prisma.$queryRaw`SELECT 1`;
     console.warn('✅ Database connection verified');
 
+    // Initialize Express app
+    const app = express();
+
+    // Configure CORS middleware BEFORE Apollo middleware
+    // This ensures CORS headers are set correctly for credentials
+    app.use(
+      cors({
+        origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        credentials: true,
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+      })
+    );
+
+    // Parse JSON bodies
+    app.use(express.json());
+
     // Start Apollo Server
-    const { url } = await startStandaloneServer(server, {
-      listen: { port: PORT },
-      context: async ({ req }) => {
-        // Extract user from JWT token, handling errors gracefully
-        let user = null;
-        try {
-          user = extractUserFromToken(req.headers.authorization);
-        } catch (error) {
-          console.error(
-            'Failed to extract user from token:',
-            error instanceof Error ? error.message : error
-          );
-          // Continue with null user; protected resolvers will reject the request
-        }
+    await server.start();
 
-        const loaders = createLoaders(prisma);
+    // Mount Apollo GraphQL middleware
+    app.use(
+      '/graphql',
+      expressMiddleware(server, {
+        context: async ({ req }) => {
+          // Extract user from JWT token, handling errors gracefully
+          let user = null;
+          try {
+            user = extractUserFromToken(req.headers.authorization as string);
+          } catch (error) {
+            console.error(
+              'Failed to extract user from token:',
+              error instanceof Error ? error.message : error
+            );
+            // Continue with null user; protected resolvers will reject the request
+          }
 
-        return {
-          user,
-          prisma,
-          buildPartLoader: loaders.buildPartLoader,
-          buildTestRunLoader: loaders.buildTestRunLoader,
-        };
-      },
+          const loaders = createLoaders(prisma);
+
+          return {
+            user,
+            prisma,
+            buildPartLoader: loaders.buildPartLoader,
+            buildTestRunLoader: loaders.buildTestRunLoader,
+          };
+        },
+      })
+    );
+
+    // Health check endpoint
+    app.get('/health', (_req, res) => {
+      res.json({ status: 'ok', service: 'graphql', port: PORT });
     });
 
-    console.warn(`
+    // Start listening
+    const listener = app.listen(PORT, () => {
+      console.warn(`
 ╔════════════════════════════════════════╗
 ║   🚀 Apollo GraphQL Server Running    ║
 ╠════════════════════════════════════════╣
-║ Server: ${url}
-║ GraphQL: ${url}
+║ Server: http://localhost:${PORT}
+║ GraphQL: http://localhost:${PORT}/graphql
 ║ Port: ${PORT}
 ║ Database: ${process.env.DATABASE_URL?.split('@')[1] || 'postgresql://...'}
 ╚════════════════════════════════════════╝
-    `);
+      `);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, shutting down gracefully');
+      listener.close();
+      await server.stop();
+      await prisma.$disconnect();
+    });
   } catch (err) {
     console.error('❌ Failed to start server:', err);
     process.exit(1);

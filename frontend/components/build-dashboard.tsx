@@ -87,15 +87,22 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
     <>
       <div className="dashboard-header">
         <h1>Build Dashboard</h1>
-        <button onClick={handleCreateBuild} disabled={isCreating} className="btn btn-primary">
+        <button
+          onClick={handleCreateBuild}
+          disabled={isCreating}
+          data-testid="create-build-button"
+          className="btn btn-primary"
+        >
           {isCreating ? 'Creating...' : 'Create Build'}
         </button>
       </div>
 
       {builds.length === 0 ? (
-        <p className="empty-state">No builds yet. Create one to get started!</p>
+        <p className="empty-state" data-testid="empty-state">
+          No builds yet. Create one to get started!
+        </p>
       ) : (
-        <table className="builds-table">
+        <table className="builds-table" data-testid="builds-list">
           <thead>
             <tr>
               <th>Name</th>
@@ -106,10 +113,17 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
           </thead>
           <tbody>
             {builds.map((build: BuildItem) => (
-              <tr key={build.id} className={`status-${build.status.toLowerCase()}`}>
-                <td>{build.name}</td>
+              <tr
+                key={build.id}
+                className={`status-${build.status.toLowerCase()}`}
+                data-testid={`build-${build.id}`}
+              >
+                <td data-testid="build-name">{build.name}</td>
                 <td>
-                  <span className={`badge status-${build.status.toLowerCase()}`}>
+                  <span
+                    className={`badge status-${build.status.toLowerCase()}`}
+                    data-testid="build-status"
+                  >
                     {build.status}
                   </span>
                 </td>

@@ -11,7 +11,8 @@ import '@testing-library/jest-dom/vitest';
 describe('Issue #27 Acceptance Criteria Verification', () => {
   describe('AC#1: JWT token stored in localStorage', () => {
     it('✓ AC#1: JWT token stored in localStorage after login', () => {
-      const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.sig';
+      const jwtToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.sig';
 
       // AC#1: Store token in localStorage
       localStorage.setItem('auth_token', jwtToken);
@@ -38,7 +39,10 @@ describe('Issue #27 Acceptance Criteria Verification', () => {
       expect(localStorage.getItem('auth_token')).toBeNull();
 
       // After login: token stored
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig'
+      );
       expect(localStorage.getItem('auth_token')).toBeTruthy();
 
       // After logout: token removed
@@ -59,7 +63,10 @@ describe('Issue #27 Acceptance Criteria Verification', () => {
 
     it('✓ AC#2: logout() function clears token', () => {
       // Setup
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig'
+      );
 
       // Logout function
       const logout = () => {
@@ -162,7 +169,10 @@ describe('Issue #27 Acceptance Criteria Verification', () => {
 
     it('✓ AC#6: Expired token rejected', () => {
       // Token with exp < now
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjAwMDAwMDAwfQ.sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjAwMDAwMDAwfQ.sig'
+      );
 
       // Token format is valid, but backend checks exp claim
       const token = localStorage.getItem('auth_token');
@@ -191,7 +201,10 @@ describe('Issue #27 Acceptance Criteria Verification', () => {
       // → Backend returns 401, frontend redirects to login
 
       // Scenario 2: With token
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig'
+      );
       expect(localStorage.getItem('auth_token')).toBeTruthy();
       // → Backend validates, executes query
     });
@@ -199,7 +212,10 @@ describe('Issue #27 Acceptance Criteria Verification', () => {
 
   describe('AC#9: Logout clears token and redirects', () => {
     it('✓ AC#9: logout() clears token from storage', () => {
-      localStorage.setItem('auth_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig');
+      localStorage.setItem(
+        'auth_token',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig'
+      );
       expect(localStorage.getItem('auth_token')).toBeTruthy();
 
       // logout() removes token

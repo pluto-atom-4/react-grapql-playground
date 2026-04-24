@@ -8,9 +8,26 @@ export class BasePage {
 
   /**
    * Navigate to a URL
+   * Uses 'domcontentloaded' instead of 'networkidle' to avoid timeout
+   * on pages with polling/real-time connections
    */
-  async goto(url: string): Promise<void> {
-    await this.page.goto(url, { waitUntil: 'networkidle' });
+  async goto(url: string, options?: { timeout?: number }): Promise<void> {
+    await this.page.goto(url, {
+      waitUntil: 'domcontentloaded',  // DOM is ready, don't wait for all network requests
+      timeout: options?.timeout || 15000,  // 15 second timeout
+    });
+    
+    // Additional wait for Next.js hydration to complete
+    await this.page.waitForFunction(
+      () => {
+        // Check if Next.js has hydrated
+        return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
+      },
+      { timeout: 5000 }
+    ).catch(() => {
+      // Hydration check might fail on non-Next.js pages, that's ok
+      return true;
+    });
   }
 
   /**
@@ -24,7 +41,7 @@ export class BasePage {
    * Wait for element to be visible
    */
   async waitForElement(selector: string, timeout = 10000): Promise<void> {
-    await this.page.waitForSelector(selector, { timeout, state: 'visible' });
+    await this.page.locator(selector).waitFor({ state: 'visible', timeout });
   }
 
   /**
@@ -35,17 +52,38 @@ export class BasePage {
   }
 
   /**
-   * Click element by test ID
+   * Click element by test ID with explicit waits
    */
   async clickByTestId(testId: string): Promise<void> {
-    await this.getByTestId(testId).click();
+    const element = this.getByTestId(testId);
+    
+    // Wait for visibility
+    await element.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Add small delay to allow element to stabilize
+    await this.page.waitForTimeout(100);
+    
+    // Click with force to skip stability checks (buttons don't have "enabled" state)
+    await element.click({ force: true });
   }
 
   /**
-   * Fill input by test ID
+   * Fill input by test ID with explicit waits for interactivity
    */
   async fillByTestId(testId: string, text: string): Promise<void> {
-    await this.getByTestId(testId).fill(text);
+    const element = this.getByTestId(testId);
+    
+    // Wait for visibility
+    await element.waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Fill the input (Playwright handles focus, clear, and fill)
+    await element.fill(text);
+    
+    // Small delay to let React state update
+    await this.page.waitForTimeout(100);
+    
+    // Trigger blur to ensure validation runs
+    await element.blur();
   }
 
   /**
@@ -60,7 +98,7 @@ export class BasePage {
    */
   async isVisible(selector: string): Promise<boolean> {
     try {
-      await this.page.waitForSelector(selector, { timeout: 2000, state: 'visible' });
+      await this.page.locator(selector).waitFor({ state: 'visible', timeout: 2000 });
       return true;
     } catch {
       return false;

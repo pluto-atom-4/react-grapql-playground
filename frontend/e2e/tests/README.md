@@ -55,10 +55,10 @@ import { DashboardPage, LoginPage, BasePage } from '../pages';
 test('dashboard workflow', async ({ authenticatedPage }) => {
   const dashboard = new DashboardPage(authenticatedPage);
   await dashboard.goto();
-  
+
   const builds = await dashboard.getBuilds();
   expect(builds.length).toBeGreaterThan(0);
-  
+
   await dashboard.createBuild('My Build');
 });
 ```
@@ -71,7 +71,7 @@ import { seedTestData, cleanupTestData } from '../helpers';
 test('with seeded data', async ({ apiClient, authenticatedPage }) => {
   // Create test data
   const data = await seedTestData(apiClient);
-  
+
   try {
     // Use the data in your test
     const dashboard = new DashboardPage(authenticatedPage);
@@ -134,6 +134,7 @@ tests/
 - Test name: `test('should [action] when [condition]', ...)`
 
 Example:
+
 ```typescript
 test.describe('Build Creation', () => {
   test('should create build with valid input', async (...) => {});
@@ -216,7 +217,7 @@ Always cleanup created resources:
 ```typescript
 test('my test', async ({ apiClient }) => {
   const data = await seedTestData(apiClient);
-  
+
   try {
     // Test code
   } finally {
@@ -267,6 +268,7 @@ pnpm e2e:debug
 ```
 
 Add in test code to pause:
+
 ```typescript
 await page.pause();
 ```
@@ -312,7 +314,7 @@ test('login and access protected page', async ({ authenticatedPage }) => {
 test('submit form with validation', async ({ authenticatedPage }) => {
   const dashboard = new DashboardPage(authenticatedPage);
   await dashboard.goto();
-  
+
   await dashboard.createBuild('Test Build');
   await expect(dashboard.buildCard('test-build')).toBeVisible();
 });
@@ -327,7 +329,7 @@ test('show error on failed mutation', async ({ apiClient }) => {
       createBuild(input: {}) { id }
     }
   `);
-  
+
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toContain('validation');
 });
@@ -340,13 +342,13 @@ test('updates on status change', async ({ authenticatedPage, apiClient }) => {
   // Create build
   const buildResult = await apiClient.mutation(`mutation { ... }`);
   const buildId = buildResult.data.createBuild.id;
-  
+
   // Subscribe to updates
   const eventPromise = waitForSSEEvent(authenticatedPage, 'buildStatusChanged', 5000);
-  
+
   // Trigger update
   await apiClient.mutation(`mutation { updateBuild(id: "...", status: "COMPLETE") }`);
-  
+
   // Wait for event
   const event = await eventPromise;
   expect(event.buildId).toBe(buildId);
@@ -389,6 +391,7 @@ test.only('only run this test', async (...) => {
 ## Continuous Integration
 
 In CI environments (set `CI=true`):
+
 - Tests run with 1 worker (sequential)
 - Tests retry up to 2 times on failure
 - Full traces are captured

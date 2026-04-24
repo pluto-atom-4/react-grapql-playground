@@ -82,7 +82,8 @@ describe('Integration: Protected Routes', () => {
 
     it('AC#5: Dashboard allows access when authenticated', () => {
       // Arrange
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
+      const validToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
       localStorage.setItem('auth_token', validToken);
 
       // Act
@@ -116,7 +117,8 @@ describe('Integration: Protected Routes', () => {
 
     it('AC#8: Protected query succeeds with valid token', async () => {
       // Arrange
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
+      const validToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
 
       localStorage.setItem('auth_token', validToken);
 
@@ -139,7 +141,8 @@ describe('Integration: Protected Routes', () => {
 
     it('should handle expired token gracefully', () => {
       // Arrange: Expired JWT (exp in past)
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzMDAwMDB9.expired-sig';
+      const expiredToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzMDAwMDB9.expired-sig';
       localStorage.setItem('auth_token', expiredToken);
 
       // Act & Assert: Expired token stored but backend would reject
@@ -149,7 +152,8 @@ describe('Integration: Protected Routes', () => {
 
     it('AC#8: Protected mutation requires valid JWT', async () => {
       // Arrange
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
+      const validToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiaWF0IjoxNjQ2MzAwMDAwLCJleHAiOjE2NDYzODY0MDB9.test-sig';
 
       localStorage.setItem('auth_token', validToken);
 

@@ -7,7 +7,7 @@ async function main(): Promise<void> {
   console.log('Starting seed...');
 
   // Create test user
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
 
   const user = await prisma.user.upsert({
     where: { email: 'test@example.com' },

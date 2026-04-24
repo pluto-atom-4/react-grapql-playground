@@ -10,7 +10,15 @@ const app = express();
 const PORT = process.env.EXPRESS_PORT || 5000;
 
 // Middleware
-app.use(cors());
+// Configure CORS to allow credentials from localhost
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json());
 
 // Static files for uploads

@@ -159,10 +159,7 @@ export class ExpressClient {
   /**
    * Send webhook event
    */
-  async sendWebhook(
-    path: string,
-    payload: Record<string, any>
-  ): Promise<Record<string, any>> {
+  async sendWebhook(path: string, payload: Record<string, any>): Promise<Record<string, any>> {
     try {
       const response = await fetch(`${this.baseURL}${path}`, {
         method: 'POST',
@@ -184,7 +181,10 @@ export class ExpressClient {
   /**
    * Get Server-Sent Events stream
    */
-  async streamEvents(onMessage: (data: any) => void, onError?: (error: Error) => void): Promise<void> {
+  async streamEvents(
+    onMessage: (data: any) => void,
+    onError?: (error: Error) => void
+  ): Promise<void> {
     try {
       const response = await fetch(`${this.baseURL}/events`, {
         method: 'GET',

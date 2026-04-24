@@ -7,6 +7,16 @@ import { defineConfig, devices } from '@playwright/test';
 // require('dotenv').config();
 
 /**
+ * Detect display server type for Wayland compatibility
+ */
+const isWayland = process.env.XDG_SESSION_TYPE === 'wayland' || 
+                  process.env.DISPLAY?.includes('wayland');
+
+if (isWayland) {
+  console.log('🖥️  Wayland display server detected - using Wayland-safe configuration');
+}
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
@@ -20,7 +30,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: ['html', 'json', 'junit', 'list'],
+  reporter: [['html'], ['json'], ['junit'], ['list']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -37,7 +47,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Wayland-safe launch arguments
+        launchOptions: isWayland
+          ? {
+              args: [
+                '--disable-dev-shm-usage',  // Critical for Wayland headless
+                '--disable-gpu',             // GPU acceleration issues on Wayland
+                '--disable-setuid-sandbox',  // Sandbox issues in containers
+              ],
+            }
+          : undefined,
+      },
     },
 
     {
@@ -80,7 +102,7 @@ export default defineConfig({
   },
 
   /* Global setup - verify all services are ready */
-  globalSetup: require.resolve('./e2e/playwright.global-setup.ts'),
+  globalSetup: './e2e/playwright.global-setup.ts',
 
   /* Timeouts */
   timeout: 30000,

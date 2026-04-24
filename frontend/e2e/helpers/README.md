@@ -19,13 +19,16 @@ const result = await client.query(`
 `);
 
 // Mutation
-const created = await client.mutation(`
+const created = await client.mutation(
+  `
   mutation CreateBuild($input: CreateBuildInput!) {
     createBuild(input: $input) {
       id status
     }
   }
-`, { input: { name: 'Test' } });
+`,
+  { input: { name: 'Test' } }
+);
 
 // Set/clear token
 client.setToken(newToken);

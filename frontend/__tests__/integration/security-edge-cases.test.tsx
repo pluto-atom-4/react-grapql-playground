@@ -1,44 +1,15 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+ 
 /**
  * Issue #121 - Integration Tests: Security Edge Cases
  * Verify security properties and prevent vulnerabilities
  * Covers acceptance criteria #1, #3, #5
  */
 
-import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MockedProvider } from '@apollo/client/testing';
-import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
 
 // Test query
-const PROTECTED_QUERY = gql`
-  query GetBuilds {
-    builds {
-      id
-      name
-    }
-  }
-`;
-
 // Simple secure component
-function SecureApp() {
-  const [token, setToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    setToken(storedToken);
-  }, []);
-
-  return (
-    <div>
-      <h1>Secure App</h1>
-      {token && <p>Authenticated</p>}
-    </div>
-  );
-}
-
 describe('Integration: Security & Edge Cases', () => {
   describe('Token Storage Security', () => {
     it('AC#1: Token never exposed in URL parameters', () => {
@@ -170,7 +141,8 @@ describe('Integration: Security & Edge Cases', () => {
     it('should reject token with tampered signature', () => {
       // Arrange
       const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.sig';
-      const tamperedToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.tampered-sig';
+      const tamperedToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIn0.tampered-sig';
 
       // Act
       localStorage.setItem('auth_token', tamperedToken);
@@ -204,7 +176,8 @@ describe('Integration: Security & Edge Cases', () => {
 
     it('AC#5: Expired token rejected even if not removed', () => {
       // Arrange: Expired token (exp claim in past)
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjQ2MzAwMDAwfQ.sig';
+      const expiredToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItMTIzIiwiZXhwIjoxNjQ2MzAwMDAwfQ.sig';
       localStorage.setItem('auth_token', expiredToken);
 
       // Act
@@ -370,12 +343,13 @@ describe('Integration: Security & Edge Cases', () => {
   describe('Race Conditions', () => {
     it('should handle rapid token updates without corruption', () => {
       // Arrange
-      const tokens = Array.from({ length: 50 }, (_, i) => 
-        `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItJHtpfSJ9.sig-${i}`
+      const tokens = Array.from(
+        { length: 50 },
+        (_, i) => `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzZXItJHtpfSJ9.sig-${i}`
       );
 
       // Act: Rapidly set and get tokens
-      tokens.forEach((token, i) => {
+      tokens.forEach((token, _i) => {
         localStorage.setItem('auth_token', token);
         const retrieved = localStorage.getItem('auth_token');
 
