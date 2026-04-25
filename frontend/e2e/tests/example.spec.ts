@@ -37,7 +37,7 @@ test.describe('Dashboard Examples', () => {
     expect(result.data).toBeDefined();
     expect(Array.isArray(result.data?.builds)).toBeTruthy();
 
-    if (result.data?.builds?.length > 0) {
+    if (Array.isArray(result.data?.builds) && result.data?.builds?.length > 0) {
       const build = result.data.builds[0];
       expect(build).toHaveProperty('id');
       expect(build).toHaveProperty('status');
