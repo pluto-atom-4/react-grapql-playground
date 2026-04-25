@@ -155,7 +155,6 @@ test.describe('Authentication - Login/Logout Flows', () => {
   // --------------------------------------------------------------------------
   test('TC-AUTH-004: Auth token persists across page navigation', async ({ authenticatedPage }) => {
     // authenticatedPage fixture automatically logs in and navigates to dashboard
-    const dashboard = new DashboardPage(authenticatedPage);
 
     // Get initial token
     const token1 = await authenticatedPage.evaluate(() => localStorage.getItem('auth_token'));
@@ -232,7 +231,6 @@ test.describe('Authentication - Login/Logout Flows', () => {
   // TC-AUTH-006: Token Expiration Handling
   // --------------------------------------------------------------------------
   test('TC-AUTH-006: Expired token triggers re-authentication', async ({ authenticatedPage }) => {
-    const dashboard = new DashboardPage(authenticatedPage);
     // Fixture already navigated to dashboard - don't call goto() again
 
     // Verify initially logged in
