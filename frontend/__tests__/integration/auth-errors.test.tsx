@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* globals setTimeout */
 /**
  * Issue #121 - Integration Tests: Auth Error Handling
  * Tests error handling and recovery scenarios
@@ -6,7 +7,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
@@ -42,6 +43,7 @@ function LoginForm() {
 
     try {
       // Simulate API call
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const response = await new Promise((resolve, reject) => {
         setTimeout(() => {
           if (email === 'invalid@example.com' || password === 'wrongpassword') {
@@ -55,16 +57,20 @@ function LoginForm() {
             reject(new Error('Unexpected error'));
           }
         }, 100);
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any;
 
-      const data = response as any;
-      localStorage.setItem('auth_token', data.token);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+      localStorage.setItem('auth_token', response.token);
       setEmail('');
       setPassword('');
       setError(null);
     } catch (err) {
-      const message = (err as any).message || 'Unknown error';
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      const message = (err as any)?.message || 'Unknown error';
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       setError(message);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
       setShowRetry(message.includes('Network'));
     } finally {
       setIsLoading(false);
@@ -73,7 +79,8 @@ function LoginForm() {
 
   const handleRetry = () => {
     setShowRetry(false);
-    handleLogin(new Event('submit') as any);
+    const event = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
+    void handleLogin(event);
   };
 
   return (
@@ -84,7 +91,7 @@ function LoginForm() {
           {error}
         </div>
       )}
-      <form onSubmit={handleLogin}>
+      <form onSubmit={(e) => { void handleLogin(e); }}>
         <label>
           Email
           <input
@@ -108,7 +115,7 @@ function LoginForm() {
         </button>
       </form>
       {showRetry && (
-        <button onClick={handleRetry} type="button">
+        <button onClick={() => { void handleRetry(); }} type="button">
           Retry
         </button>
       )}

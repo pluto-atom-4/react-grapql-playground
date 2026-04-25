@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* globals atob, btoa, setTimeout */
 /**
  * Issue #121 - Integration Tests: Multi-User Scenarios
  * Verify user isolation and data boundaries
@@ -6,46 +7,9 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MockedProvider } from '@apollo/client/testing';
-import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
-
-// Test queries
-const GET_BUILDS_QUERY = gql`
-  query GetBuilds {
-    builds {
-      id
-      name
-      status
-      userId
-    }
-  }
-`;
-
-const GET_USER_QUERY = gql`
-  query GetUser {
-    me {
-      id
-      email
-      builds {
-        id
-      }
-    }
-  }
-`;
-
-const CREATE_BUILD_MUTATION = gql`
-  mutation CreateBuild($name: String!) {
-    createBuild(name: $name) {
-      id
-      name
-      userId
-    }
-  }
-`;
 
 // Mock user data
 const USERS = {
@@ -61,42 +25,47 @@ const USERS = {
   },
 };
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 // Component that fetches user-scoped data
 function UserDashboard() {
   const [userId, setUserId] = React.useState<string | null>(null);
-  const [builds, setBuilds] = React.useState<any[]>([]);
+  const [builds, setBuilds] = React.useState<unknown[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 0);
       return;
     }
 
     // Decode token to get user ID
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const decoded = JSON.parse(atob(parts[1]));
-        setUserId(decoded.id);
+    setTimeout(() => {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const decoded = JSON.parse(atob(parts[1]));
+          setUserId(decoded.id);
 
-        // Load builds for this user
-        const user = USERS[decoded.id as keyof typeof USERS];
-        if (user) {
-          const userBuilds = user.builds.map((id) => ({
-            id,
-            name: `Build ${id}`,
-            userId: decoded.id,
-          }));
-          setBuilds(userBuilds);
+          // Load builds for this user
+          const user = USERS[decoded.id as keyof typeof USERS];
+          if (user) {
+            const userBuilds = user.builds.map((id) => ({
+              id,
+              name: `Build ${id}`,
+              userId: decoded.id,
+            }));
+            setBuilds(userBuilds);
+          }
         }
+      } catch {
+        // Token parsing failed
       }
-    } catch (err) {
-      // Token parsing failed
-    }
 
-    setLoading(false);
+      setLoading(false);
+    }, 0);
   }, []);
 
   if (loading) return <div>Loading...</div>;
@@ -113,8 +82,8 @@ function UserDashboard() {
         ) : (
           <ul>
             {builds.map((build) => (
-              <li key={build.id}>
-                {build.name} (Owner: {build.userId})
+              <li key={(build as any).id}>
+                {(build as any).name} (Owner: {(build as any).userId})
               </li>
             ))}
           </ul>
@@ -125,8 +94,9 @@ function UserDashboard() {
 }
 
 describe('Integration: Multi-User Scenarios', () => {
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
   describe('User Data Isolation', () => {
-    it('AC#7, #8: User A cannot see User B builds', async () => {
+    it('AC#7, #8: User A cannot see User B builds', () => {
       // Arrange: Create tokens for both users
       const userAPayload = {
         id: 'user-a',
@@ -210,7 +180,7 @@ describe('Integration: Multi-User Scenarios', () => {
       expect(localStorage.getItem('auth_token')).not.toContain('user-a');
     });
 
-    it('AC#7: User ID in token matches returned user data', () => {
+    it('AC#7: User ID in token matches returned user data', async () => {
       // Arrange: Token for user-a
       const userId = 'user-a';
       const tokenPayload = {
@@ -232,7 +202,9 @@ describe('Integration: Multi-User Scenarios', () => {
       render(<UserDashboard />);
 
       // Assert: Dashboard shows user content
-      expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+      });
     });
   });
 
@@ -251,7 +223,7 @@ describe('Integration: Multi-User Scenarios', () => {
       expect(decoded.id).toBe('user-a');
     });
 
-    it('should filter builds by authenticated user', async () => {
+    it('should filter builds by authenticated user', () => {
       // Arrange: Two users with different builds
       const userAToken = `eyJ0eXAiOiJKV1QifQ.${btoa(JSON.stringify({ id: 'user-a' }))}.sig-a`;
 
@@ -288,7 +260,7 @@ describe('Integration: Multi-User Scenarios', () => {
   });
 
   describe('Concurrent User Sessions', () => {
-    it('AC#2: Concurrent logins by different users do not interfere', async () => {
+    it('AC#2: Concurrent logins by different users do not interfere', () => {
       // Arrange: Simulate two browser tabs with different users
       const userAToken = `eyJ0eXAiOiJKV1QifQ.${btoa(JSON.stringify({ id: 'user-a' }))}.sig-a`;
       const userBToken = `eyJ0eXAiOiJKV1QifQ.${btoa(JSON.stringify({ id: 'user-b' }))}.sig-b`;
