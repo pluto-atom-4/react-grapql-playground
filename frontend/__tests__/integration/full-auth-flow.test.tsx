@@ -34,11 +34,6 @@ function LoginForm() {
     setToken(null);
   };
 
-  React.useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    setToken(storedToken);
-  }, []);
-
   if (token) {
     return (
       <div>
