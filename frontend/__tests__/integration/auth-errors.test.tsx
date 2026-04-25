@@ -43,7 +43,7 @@ function LoginForm() {
 
     try {
       // Simulate API call
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const response = await new Promise((resolve, reject) => {
         setTimeout(() => {
           if (email === 'invalid@example.com' || password === 'wrongpassword') {
@@ -60,14 +60,15 @@ function LoginForm() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
       localStorage.setItem('auth_token', response.token);
       setEmail('');
       setPassword('');
       setError(null);
     } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
-      const message: string = (err as any)?.message || 'Unknown error';
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      const message = (err as any)?.message || 'Unknown error';
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       setError(message);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
       setShowRetry(message.includes('Network'));
@@ -79,7 +80,6 @@ function LoginForm() {
   const handleRetry = () => {
     setShowRetry(false);
     const event = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     void handleLogin(event);
   };
 
