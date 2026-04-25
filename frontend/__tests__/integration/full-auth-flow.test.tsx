@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* globals setTimeout */
 /**
  * Issue #121 - Integration Tests: Full Auth Flow
  * Tests complete login → dashboard → logout flow
@@ -48,7 +49,7 @@ function LoginForm() {
   return (
     <div>
       <h1>Welcome</h1>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={(e) => { void handleLogin(e); }}>
         <label>
           Email
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
