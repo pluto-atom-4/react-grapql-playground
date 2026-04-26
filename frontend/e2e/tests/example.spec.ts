@@ -9,7 +9,7 @@
  * Tests must complete all page interactions BEFORE test function returns.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, no-console */
 import { test, expect } from '../fixtures';
 import { LoginPage } from '../pages';
 
@@ -179,7 +179,7 @@ test.describe('API Tests (Using apiClient fixture)', () => {
 
     // Verify mutation succeeded
     expect(result.data).toBeDefined();
-    const build = result.data?.createBuild as any;
+    const build = result.data?.createBuild;
     expect(build).toBeDefined();
     expect(build.id).toBeDefined();
     expect(build.name).toBe(buildName);
@@ -229,6 +229,7 @@ test.describe('User Management', () => {
    * - testUser fixture supplies email, password, id
    * - Credentials are defined and non-empty
    */
+  // eslint-disable-next-line @typescript-eslint/require-await
   test('User Test 1: Test user fixture provides credentials', async ({ testUser }) => {
     expect(testUser).toBeDefined();
     expect(testUser.email).toBeDefined();

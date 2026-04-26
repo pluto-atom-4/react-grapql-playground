@@ -11,16 +11,6 @@ export interface TestUser {
 }
 
 /**
- * Fixture extensions for Playwright tests
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type Fixtures = {
-  authenticatedPage: Page;
-  apiClient: GraphQLClient;
-  testUser: TestUser;
-};
-
-/**
  * Authenticated page fixture - logs in user and waits for Apollo cache ready
  */
 const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
@@ -91,7 +81,7 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     );
 
     // Use the authenticated page
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+     
     // eslint-disable-next-line no-console
     console.log('[fixture] About to run test with authenticated page');
     
@@ -106,7 +96,7 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
       }
     } catch (err) {
       // Page might already be closed, that's ok
-      // eslint-disable-next-line no-console
+       
       console.warn('[fixture] Cleanup error (page may be closed):', err instanceof Error ? err.message : err);
     }
   },
@@ -131,7 +121,7 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
       }
     } catch (error) {
       // Fallback for Firefox sandbox: try getting from context storage
-      // eslint-disable-next-line no-console
+       
       console.warn('[apiClient] page.evaluate() failed, trying context.cookies():', error instanceof Error ? error.message : error);
       try {
         const cookies = await authenticatedPage.context().cookies();
@@ -141,18 +131,18 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
           // eslint-disable-next-line no-console
           console.log('[apiClient] Token extracted from cookies');
         } else {
-          // eslint-disable-next-line no-console
+           
           console.warn('[apiClient] No auth_token cookie found');
         }
       } catch (cookieErr) {
         // If both methods fail, continue without token (tests may still work for public queries)
-        // eslint-disable-next-line no-console
+         
         console.warn('[apiClient] Could not extract auth token from page or cookies:', cookieErr instanceof Error ? cookieErr.message : cookieErr);
       }
     }
 
     if (!token) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[apiClient] WARNING: No auth token found, API requests will be unauthorized');
     }
 

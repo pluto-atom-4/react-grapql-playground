@@ -51,7 +51,7 @@ export class DashboardPage extends BasePage {
       // eslint-disable-next-line no-console
       console.log('[DashboardPage] Navigation complete, page URL:', this.page.url());
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[DashboardPage] Navigation error:', err instanceof Error ? err.message : err);
       throw err;
     }
@@ -188,7 +188,7 @@ export class DashboardPage extends BasePage {
         } catch {
           // navbar not found either
         }
-        // eslint-disable-next-line no-console
+         
         console.error('[isDashboardReady] Dashboard not ready - no builds-list, empty-state, or navbar found');
         return false;
       }

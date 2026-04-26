@@ -113,7 +113,7 @@ export class BasePage {
       await this.page.waitForLoadState('networkidle', { timeout });
     } catch (error) {
       // Network idle timeout is not critical - allow tests to continue
-      // eslint-disable-next-line no-console
+       
       console.warn('[waitForNetworkIdle] Timeout (continuing):', error instanceof Error ? error.message : error);
     }
   }
