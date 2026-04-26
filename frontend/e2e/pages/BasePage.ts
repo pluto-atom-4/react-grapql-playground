@@ -21,6 +21,7 @@ export class BasePage {
     await this.page.waitForFunction(
       () => {
         // Check if Next.js has hydrated
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
         return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
       },
       { timeout: 5000 }
@@ -33,6 +34,7 @@ export class BasePage {
   /**
    * Get element by test ID
    */
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   getByTestId(testId: string) {
     return this.page.locator(`[data-testid="${testId}"]`);
   }
@@ -90,7 +92,8 @@ export class BasePage {
    * Get text of element by test ID
    */
   async getTextByTestId(testId: string): Promise<string> {
-    return this.getByTestId(testId).textContent() || '';
+    const text = await this.getByTestId(testId).textContent();
+    return text || '';
   }
 
   /**

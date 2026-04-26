@@ -96,7 +96,7 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
  * Clean up test data created during E2E tests via GraphQL mutations
  */
 export function cleanupTestData(
-  apiClient: GraphQLClient,
+  _apiClient: GraphQLClient,
   data: SeededTestData
 ): void {
   try {
