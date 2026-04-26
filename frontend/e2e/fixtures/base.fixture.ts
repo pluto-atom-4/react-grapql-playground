@@ -93,21 +93,12 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     // Use the authenticated page
     // eslint-disable-next-line react-hooks/rules-of-hooks
     // eslint-disable-next-line no-console
-    console.log('[fixture] About to run test with authenticated page, page.isClosed():', page.isClosed?.());
+    console.log('[fixture] About to run test with authenticated page');
     
-    try {
-      await use(page);
-      // eslint-disable-next-line no-console
-      console.log('[fixture] Test completed, page.isClosed():', page.isClosed?.());
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[fixture] Error during test:', err instanceof Error ? err.message : err);
-      // eslint-disable-next-line no-console
-      console.log('[fixture] page.isClosed():', page.isClosed?.());
-      throw err;
-    }
-
+    await use(page);
+    
     // Cleanup - clear localStorage after test
+    // Note: Do NOT close the page here - Playwright manages page lifecycle
     try {
       if (!page.isClosed()) {
         await context.clearCookies();
@@ -116,7 +107,7 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     } catch (err) {
       // Page might already be closed, that's ok
       // eslint-disable-next-line no-console
-      console.warn('Cleanup error (page may be closed):', err instanceof Error ? err.message : err);
+      console.warn('[fixture] Cleanup error (page may be closed):', err instanceof Error ? err.message : err);
     }
   },
 });
@@ -125,13 +116,13 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
  * GraphQL API client fixture - provides authenticated GraphQL client
  */
 const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLClient }>({
-  apiClient: async ({ page }, use) => {
-    // Extract JWT token from localStorage
+  apiClient: async ({ authenticatedPage }, use) => {
+    // Extract JWT token from localStorage (authenticatedPage has already logged in)
     let token = '';
     
     try {
       // Try using page.evaluate() (works in most cases)
-      token = await page.evaluate(() => {
+      token = await authenticatedPage.evaluate(() => {
         return localStorage.getItem('auth_token') || localStorage.getItem('apollo_token') || '';
       });
       if (token) {
@@ -143,7 +134,7 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
       // eslint-disable-next-line no-console
       console.warn('[apiClient] page.evaluate() failed, trying context.cookies():', error instanceof Error ? error.message : error);
       try {
-        const cookies = await page.context().cookies();
+        const cookies = await authenticatedPage.context().cookies();
         const authCookie = cookies.find(c => c.name === 'auth_token');
         if (authCookie) {
           token = authCookie.value;
