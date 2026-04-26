@@ -3,21 +3,20 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
-import { gql } from '@apollo/client/core';
 import React, { useState } from 'react';
 
 // Intentionally unused: kept for reference
-const _LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      token
-      user {
-        id
-        email
-      }
-    }
-  }
-`;
+// const _LOGIN_MUTATION = gql`
+//   mutation Login($email: String!, $password: String!) {
+//     login(email: $email, password: $password) {
+//       token
+//       user {
+//         id
+//         email
+//       }
+//     }
+//   }
+// `;
 
 /**
  * Mock LoginForm Component
@@ -267,7 +266,6 @@ describe('LoginForm Component', () => {
     });
 
     it('email validation: empty email rejected', async () => {
-      const _user = userEvent.setup();
       render(<MockLoginForm />);
 
       const emailInput = screen.getByPlaceholderText('you@example.com');
@@ -303,7 +301,6 @@ describe('LoginForm Component', () => {
     });
 
     it('password validation: empty password rejected', async () => {
-      const _user = userEvent.setup();
       render(<MockLoginForm />);
 
       const passwordInput = screen.getByPlaceholderText('••••••••');
@@ -356,7 +353,6 @@ describe('LoginForm Component', () => {
     });
 
     it('real-time validation: errors show on blur', async () => {
-      const _user = userEvent.setup();
       render(<MockLoginForm />);
 
       const emailInput = screen.getByPlaceholderText('you@example.com');
@@ -403,7 +399,7 @@ describe('LoginForm Component', () => {
       await user.type(passwordInput, 'ValidPassword123');
 
       // Mock fetch to not respond immediately
-      globalThis.fetch = vi.fn(() => new Promise(() => {}));
+      globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
 
       await user.click(submitButton);
 
@@ -423,7 +419,7 @@ describe('LoginForm Component', () => {
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'ValidPassword123');
 
-      globalThis.fetch = vi.fn(() => new Promise(() => {}));
+      globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
 
       await user.click(submitButton);
 
@@ -453,7 +449,6 @@ describe('LoginForm Component', () => {
     });
 
     it('error messages display inline below fields', async () => {
-      const _user = userEvent.setup();
       render(<MockLoginForm />);
 
       const emailInput = screen.getByPlaceholderText('you@example.com');
@@ -496,7 +491,7 @@ describe('LoginForm Component', () => {
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'ValidPassword123');
 
-      globalThis.fetch = vi.fn(() => new Promise(() => {}));
+      globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
 
       await user.click(submitButton);
 

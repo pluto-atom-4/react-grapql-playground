@@ -237,18 +237,19 @@ test.describe('Authentication - Login/Logout Flows', () => {
     const initialToken = await authenticatedPage.evaluate(() => localStorage.getItem('auth_token'));
     expect(initialToken).toBeTruthy();
 
-    // Simulate token expiration by clearing it
+    // Simulate token expiration by clearing it - use storage event to trigger React update
     await authenticatedPage.evaluate(() => {
       localStorage.removeItem('auth_token');
+      // Dispatch storage event to notify React components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'auth_token',
+        newValue: null,
+        oldValue: localStorage.getItem('auth_token'),
+      }));
     });
 
-    // Verify token cleared
-    const clearedToken = await authenticatedPage.evaluate(() => localStorage.getItem('auth_token'));
-    expect(clearedToken).toBeFalsy();
-
-    // Try to access dashboard - should redirect to login
-    await authenticatedPage.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await authenticatedPage.waitForTimeout(1000);
+    // Wait for redirect to login page (polling with retries)
+    await authenticatedPage.waitForURL(/.*\/login/, { timeout: 5000 });
 
     // Should be on login page
     expect(authenticatedPage.url()).toContain('/login');

@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { AuthProvider, useAuth } from '../auth-context';
-import React from 'react';
 
 // Test component that uses useAuth
 function TestComponent() {
@@ -336,11 +335,11 @@ describe('Auth Context (useAuth Hook)', () => {
       });
 
       // Simulate receiving new token (e.g., token refresh)
-      const _provider = render(
-        <AuthProvider>
-          <TestComponent />
-        </AuthProvider>
-      ).container;
+      // const _provider = render(
+      //   <AuthProvider>
+      //     <TestComponent />
+      //   </AuthProvider>
+      // ).container;
 
       // In real scenario, would call login with new token
       expect(localStorage.getItem('auth_token')).toBe('test-token-123');

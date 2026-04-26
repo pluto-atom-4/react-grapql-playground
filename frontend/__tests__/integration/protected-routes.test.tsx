@@ -9,19 +9,18 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { gql } from '@apollo/client';
 import '@testing-library/jest-dom/vitest';
 
 // Test queries - kept for reference in test scenarios
-const _PROTECTED_QUERY = gql`
-  query GetBuilds {
-    builds {
-      id
-      name
-      status
-    }
-  }
-`;
+// const _PROTECTED_QUERY = gql`
+//   query GetBuilds {
+//     builds {
+//       id
+//       name
+//       status
+//     }
+//   }
+// `;
 
 // Simple component to test protected queries
 function ProtectedComponent() {

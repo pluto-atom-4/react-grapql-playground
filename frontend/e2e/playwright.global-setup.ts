@@ -1,4 +1,3 @@
-import { chromium } from '@playwright/test';
 
 /**
  * Global setup for Playwright tests
@@ -29,7 +28,7 @@ async function globalSetup() {
 
   for (const service of serviceChecks) {
     try {
-      const status = await checkService(service.url, service.check);
+      const status = await checkService(service.url, service.check as 'frontend' | 'graphql' | 'express');
       if (status) {
         console.log(`✅ ${service.name} is running`);
         results.push({ name: service.name, status: 'success' });
