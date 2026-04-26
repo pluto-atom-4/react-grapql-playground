@@ -1,34 +1,33 @@
+/* globals setTimeout */
 'use client';
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, ReactNode, useRef } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children }: ProtectedRouteProps): ReactNode {
   const { token } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    const runEffect = () => {
-      if (hasRedirected.current) return;
-      hasRedirected.current = true;
+    if (token === null) {
+      // Token is null - redirect to login
+      void router.push('/login');
+      return;
+    }
 
-      if (!token) {
-        void router.push('/login');
-      } else {
+    if (token) {
+      // Token exists - allow access (defer setState to next tick to avoid cascading renders)
+      setTimeout(() => {
         setIsLoading(false);
-      }
-    };
-    runEffect();
-    // Only run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      }, 0);
+    }
+  }, [token, router]);
 
   if (isLoading || !token) {
     return (

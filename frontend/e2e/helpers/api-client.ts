@@ -68,6 +68,13 @@ export class GraphQLClient {
     };
 
     try {
+      // Log for debugging
+      const hasToken = !!this.token;
+      console.log(`[GraphQLClient] Executing GraphQL request with auth: ${hasToken ? 'YES' : 'NO'}`);
+      if (!hasToken) {
+        console.warn('[GraphQLClient] WARNING: No token provided, request will be unauthorized');
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: this.headers,
@@ -86,8 +93,9 @@ export class GraphQLClient {
 
       return result;
     } catch (error) {
-      console.error('GraphQL request failed:', {
+      console.error('[GraphQLClient] Request failed:', {
         url,
+        hasAuth: !!this.token,
         variables,
         error,
       });

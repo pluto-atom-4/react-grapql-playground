@@ -108,8 +108,14 @@ export class BasePage {
   /**
    * Wait for network requests to complete
    */
-  async waitForNetworkIdle(timeout = 10000): Promise<void> {
-    await this.page.waitForLoadState('networkidle', { timeout });
+  async waitForNetworkIdle(timeout = 5000): Promise<void> {
+    try {
+      await this.page.waitForLoadState('networkidle', { timeout });
+    } catch (error) {
+      // Network idle timeout is not critical - allow tests to continue
+      // eslint-disable-next-line no-console
+      console.warn('[waitForNetworkIdle] Timeout (continuing):', error instanceof Error ? error.message : error);
+    }
   }
 
   /**

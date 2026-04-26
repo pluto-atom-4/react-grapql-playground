@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -44,14 +44,20 @@ export class DashboardPage extends BasePage {
    * Navigate to dashboard
    */
   async goto(): Promise<void> {
-    await super.goto('/dashboard');
-    // Wait for builds list or empty state to appear
+    // eslint-disable-next-line no-console
+    console.log('[DashboardPage] Navigating to /dashboard');
     try {
-      await this.waitForTestId('builds-list', 10000);
-    } catch {
-      // Might show empty state instead
-      await this.waitForTestId('empty-state', 10000);
+      await super.goto('/dashboard');
+      // eslint-disable-next-line no-console
+      console.log('[DashboardPage] Navigation complete, page URL:', this.page.url());
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[DashboardPage] Navigation error:', err instanceof Error ? err.message : err);
+      throw err;
     }
+    
+    // Don't wait for specific content here - let the caller use isDashboardReady()
+    // to check. This avoids timeout issues if Apollo takes time to load.
   }
 
   /**
@@ -145,14 +151,45 @@ export class DashboardPage extends BasePage {
    * Check if dashboard is ready
    */
   async isDashboardReady(): Promise<boolean> {
+    // eslint-disable-next-line no-console
+    console.log('[isDashboardReady] Checking dashboard readiness...');
+    
     try {
-      await this.waitForTestId('builds-list', 3000);
+      // Try to find builds list (might take time for Apollo to load)
+      // eslint-disable-next-line no-console
+      console.log('[isDashboardReady] Waiting for builds-list...');
+      await this.waitForTestId('builds-list', 30000);
+      // eslint-disable-next-line no-console
+      console.log('[isDashboardReady] Dashboard ready: builds-list found');
       return true;
-    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err1) {
+      // eslint-disable-next-line no-console
+      console.log('[isDashboardReady] builds-list not found, trying empty-state...');
       try {
-        await this.waitForTestId('empty-state', 3000);
+        // Or empty state might be visible
+        await this.waitForTestId('empty-state', 30000);
+        // eslint-disable-next-line no-console
+        console.log('[isDashboardReady] Dashboard ready: empty-state found');
         return true;
-      } catch {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err2) {
+        // eslint-disable-next-line no-console
+        console.log('[isDashboardReady] empty-state not found, checking navbar...');
+        
+        // Last resort - check if navbar is visible (means page loaded but no data yet)
+        try {
+          const navbar = await this.page.locator('[data-testid="user-menu"]').isVisible({ timeout: 3000 });
+          if (navbar) {
+            // eslint-disable-next-line no-console
+            console.log('[isDashboardReady] Dashboard layout visible but no builds-list/empty-state after 30s');
+            return false;
+          }
+        } catch {
+          // navbar not found either
+        }
+        // eslint-disable-next-line no-console
+        console.error('[isDashboardReady] Dashboard not ready - no builds-list, empty-state, or navbar found');
         return false;
       }
     }

@@ -91,11 +91,33 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     );
 
     // Use the authenticated page
-    await use(page);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // eslint-disable-next-line no-console
+    console.log('[fixture] About to run test with authenticated page, page.isClosed():', page.isClosed?.());
+    
+    try {
+      await use(page);
+      // eslint-disable-next-line no-console
+      console.log('[fixture] Test completed, page.isClosed():', page.isClosed?.());
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[fixture] Error during test:', err instanceof Error ? err.message : err);
+      // eslint-disable-next-line no-console
+      console.log('[fixture] page.isClosed():', page.isClosed?.());
+      throw err;
+    }
 
     // Cleanup - clear localStorage after test
-    await context.clearCookies();
-    await page.evaluate(() => localStorage.clear());
+    try {
+      if (!page.isClosed()) {
+        await context.clearCookies();
+        await page.evaluate(() => localStorage.clear());
+      }
+    } catch (err) {
+      // Page might already be closed, that's ok
+      // eslint-disable-next-line no-console
+      console.warn('Cleanup error (page may be closed):', err instanceof Error ? err.message : err);
+    }
   },
 });
 
@@ -105,13 +127,48 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
 const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLClient }>({
   apiClient: async ({ page }, use) => {
     // Extract JWT token from localStorage
-    const token = await page.evaluate(() => {
-      return localStorage.getItem('auth_token') || localStorage.getItem('apollo_token') || '';
-    });
+    let token = '';
+    
+    try {
+      // Try using page.evaluate() (works in most cases)
+      token = await page.evaluate(() => {
+        return localStorage.getItem('auth_token') || localStorage.getItem('apollo_token') || '';
+      });
+      if (token) {
+        // eslint-disable-next-line no-console
+        console.log('[apiClient] Token extracted via page.evaluate()');
+      }
+    } catch (error) {
+      // Fallback for Firefox sandbox: try getting from context storage
+      // eslint-disable-next-line no-console
+      console.warn('[apiClient] page.evaluate() failed, trying context.cookies():', error instanceof Error ? error.message : error);
+      try {
+        const cookies = await page.context().cookies();
+        const authCookie = cookies.find(c => c.name === 'auth_token');
+        if (authCookie) {
+          token = authCookie.value;
+          // eslint-disable-next-line no-console
+          console.log('[apiClient] Token extracted from cookies');
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn('[apiClient] No auth_token cookie found');
+        }
+      } catch (cookieErr) {
+        // If both methods fail, continue without token (tests may still work for public queries)
+        // eslint-disable-next-line no-console
+        console.warn('[apiClient] Could not extract auth token from page or cookies:', cookieErr instanceof Error ? cookieErr.message : cookieErr);
+      }
+    }
+
+    if (!token) {
+      // eslint-disable-next-line no-console
+      console.warn('[apiClient] WARNING: No auth token found, API requests will be unauthorized');
+    }
 
     const baseURL = process.env.GRAPHQL_URL || 'http://localhost:4000';
     const client = new GraphQLClient(baseURL, token);
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(client);
 
     // Cleanup
@@ -123,6 +180,7 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
  * Test user fixture - provides test credentials
  */
 const testUserFixture = apiClientFixture.extend<{ testUser: TestUser }>({
+  // eslint-disable-next-line no-empty-pattern
   testUser: async ({}, use) => {
     const testUser: TestUser = {
       email: process.env.TEST_EMAIL || 'test@example.com',
@@ -130,6 +188,7 @@ const testUserFixture = apiClientFixture.extend<{ testUser: TestUser }>({
       id: `test-user-${Date.now()}`,
     };
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(testUser);
 
     // Cleanup happens in apiClient fixture

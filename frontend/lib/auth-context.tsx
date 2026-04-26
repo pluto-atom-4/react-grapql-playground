@@ -58,6 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
     }
   }, []);
 
+  // Listen for storage changes (from other tabs/windows)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent): void => {
+      if (e.key === AUTH_TOKEN_KEY) {
+        setToken(e.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return (): void => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const login = (newToken: string): void => {
     setToken(newToken);
     if (typeof window !== 'undefined') {
