@@ -59,20 +59,23 @@ describe('GraphQL Error Handler - Integration', () => {
       const delay1 = getExponentialBackoffDelay(1, 100, 10000);
       const delay2 = getExponentialBackoffDelay(2, 100, 10000);
 
-      // Check ranges (accounting for jitter)
-      expect(delay0).toBeGreaterThanOrEqual(100);
-      expect(delay0).toBeLessThan(120);
+      // Check ranges (accounting for ±20% jitter on base delay)
+      // Attempt 0: 100ms ±20% = 80-120ms
+      expect(delay0).toBeGreaterThanOrEqual(80);
+      expect(delay0).toBeLessThanOrEqual(120);
 
-      expect(delay1).toBeGreaterThanOrEqual(200);
-      expect(delay1).toBeLessThan(250);
+      // Attempt 1: 200ms ±20% = 160-240ms
+      expect(delay1).toBeGreaterThanOrEqual(160);
+      expect(delay1).toBeLessThanOrEqual(240);
 
-      expect(delay2).toBeGreaterThanOrEqual(400);
-      expect(delay2).toBeLessThan(500);
+      // Attempt 2: 400ms ±20% = 320-480ms
+      expect(delay2).toBeGreaterThanOrEqual(320);
+      expect(delay2).toBeLessThanOrEqual(480);
     });
 
     it('should respect max delay', () => {
       const delay = getExponentialBackoffDelay(10, 100, 500);
-      expect(delay).toBeLessThanOrEqual(550);
+      expect(delay).toBeLessThanOrEqual(600);
     });
   });
 

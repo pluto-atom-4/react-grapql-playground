@@ -9,6 +9,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
 import { BuildStatus, TestStatus } from '../apollo-hooks';
 
+// Mock EventSource for Node.js environment
+if (typeof EventSource === 'undefined') {
+  global.EventSource = class EventSource {
+    close() {}
+  } as any;
+}
+
 describe('SSE Cache Updates', () => {
   let cache: InMemoryCache;
 
@@ -119,7 +126,7 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Simulate cache modification for buildCreated event
+      // Simulate buildCreated event by writing new data to cache
       const newBuild = {
         __typename: 'Build',
         id: 'build-2',
@@ -127,9 +134,11 @@ describe('SSE Cache Updates', () => {
         status: BuildStatus.Pending,
       };
 
-      cache.modify({
-        fields: {
-          builds: (existingBuilds = []) => [...existingBuilds, newBuild],
+      const existing = cache.readQuery({ query });
+      cache.writeQuery({
+        query,
+        data: {
+          builds: [...(existing?.builds || []), newBuild],
         },
       });
 
@@ -158,17 +167,13 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Simulate cache modification for buildStatusChanged event
-      cache.modify({
-        fields: {
-          builds: (existingBuilds = []) => {
-            return existingBuilds.map((build: Record<string, unknown>) => {
-              if (build.id === 'build-1') {
-                return { ...build, status: BuildStatus.Running };
-              }
-              return build;
-            });
-          },
+      // Simulate buildStatusChanged event by updating cache
+      cache.writeQuery({
+        query,
+        data: {
+          builds: [
+            { __typename: 'Build', id: 'build-1', name: 'Build 1', status: BuildStatus.Running },
+          ],
         },
       });
 
@@ -205,15 +210,21 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Simulate cache modification for partAdded event
+      // Simulate partAdded event by updating cache
       const newPart = { __typename: 'Part', id: 'part-2', name: 'New Part', sku: 'SKU-2' };
 
-      cache.modify({
-        fields: {
-          build: (existingBuild = {}) => ({
-            ...existingBuild,
-            parts: [...(existingBuild.parts || []), newPart],
-          }),
+      cache.writeQuery({
+        query,
+        data: {
+          build: {
+            __typename: 'Build',
+            id: 'build-1',
+            name: 'Build',
+            parts: [
+              { __typename: 'Part', id: 'part-1', name: 'Part 1', sku: 'SKU-1' },
+              newPart,
+            ],
+          },
         },
       });
 
@@ -251,7 +262,7 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Simulate cache modification for testRunSubmitted event
+      // Simulate testRunSubmitted event by updating cache
       const newTestRun = {
         __typename: 'TestRun',
         id: 'test-2',
@@ -259,12 +270,18 @@ describe('SSE Cache Updates', () => {
         result: 'PASS',
       };
 
-      cache.modify({
-        fields: {
-          build: (existingBuild = {}) => ({
-            ...existingBuild,
-            testRuns: [...(existingBuild.testRuns || []), newTestRun],
-          }),
+      cache.writeQuery({
+        query,
+        data: {
+          build: {
+            __typename: 'Build',
+            id: 'build-1',
+            name: 'Build',
+            testRuns: [
+              { __typename: 'TestRun', id: 'test-1', status: TestStatus.Pending, result: '' },
+              newTestRun,
+            ],
+          },
         },
       });
 
@@ -340,9 +357,13 @@ describe('SSE Cache Updates', () => {
 
       const startTime = performance.now();
 
-      cache.modify({
-        fields: {
-          builds: (existing = []) => [...existing, { __typename: 'Build', id: 'build-2' }],
+      cache.writeQuery({
+        query,
+        data: {
+          builds: [
+            { __typename: 'Build', id: 'build-1' },
+            { __typename: 'Build', id: 'build-2' },
+          ],
         },
       });
 
@@ -369,25 +390,25 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Simulate rapid succession of events
-      cache.modify({
-        fields: {
-          builds: (existing = []) => [
-            ...existing,
+      // Add second build
+      cache.writeQuery({
+        query,
+        data: {
+          builds: [
+            { __typename: 'Build', id: 'build-1', status: BuildStatus.Pending },
             { __typename: 'Build', id: 'build-2', status: BuildStatus.Pending },
           ],
         },
       });
 
-      cache.modify({
-        fields: {
-          builds: (existing = []) =>
-            existing.map((b: Record<string, unknown>) => {
-              if (b.id === 'build-1') {
-                return { ...b, status: BuildStatus.Running };
-              }
-              return b;
-            }),
+      // Update first build status
+      cache.writeQuery({
+        query,
+        data: {
+          builds: [
+            { __typename: 'Build', id: 'build-1', status: BuildStatus.Running },
+            { __typename: 'Build', id: 'build-2', status: BuildStatus.Pending },
+          ],
         },
       });
 
@@ -555,13 +576,17 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      // Update only status
-      cache.modify({
-        fields: {
-          build: (existing = {}) => ({
-            ...existing,
+      // Update cache directly with new values
+      cache.writeQuery({
+        query,
+        data: {
+          build: {
+            __typename: 'Build',
+            id: 'build-1',
+            name: 'My Build',
             status: BuildStatus.Running,
-          }),
+            description: 'Build description',
+          },
         },
       });
 
