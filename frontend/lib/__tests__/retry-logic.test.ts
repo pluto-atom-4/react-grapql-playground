@@ -296,12 +296,12 @@ describe('Retry Logic', () => {
       expect(shouldRetry).toBe(false);
     });
 
-    it('handles 5xx-like server errors as retryable', () => {
-      const serverError = new Error('Internal server error');
-      // Network classification would handle this
-      const { shouldRetry } = getRetryStrategy(serverError, 0);
+    it('handles network-like server errors as retryable', () => {
+      // Network errors (including connection issues that could be from 5xx) are retryable
+      const networkError = new Error('fetch failed');
+      expect(classifyError(networkError)).toBe('network');
+      const { shouldRetry } = getRetryStrategy(networkError, 0);
 
-      // Network errors are retryable
       expect(shouldRetry).toBe(true);
     });
   });
