@@ -12,6 +12,7 @@ import {
 } from './graphql-queries';
 import { BuildStatus, TestStatus, type Build, type Part, type TestRun } from './generated/graphql';
 import { extractErrorMessage } from './graphql-error-handler';
+import { generateTempId } from './id-utils';
 
 // Re-export enums for backward compatibility
 export { BuildStatus, TestStatus };
@@ -93,6 +94,17 @@ export function useCreateBuild(): {
   const [createBuild, { loading, error: apolloError }] = useMutation<{ createBuild: Build }>(
     CREATE_BUILD_MUTATION,
     {
+      optimisticResponse: {
+        createBuild: {
+          __typename: 'Build',
+          id: generateTempId(),
+          name: '',
+          status: BuildStatus.Pending,
+          description: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      },
       refetchQueries: [{ query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } }],
       onError: (error) => {
         // Error is already captured in apolloError state
@@ -127,6 +139,17 @@ export function useUpdateBuildStatus(): {
   const [updateStatus, { loading, error: apolloError }] = useMutation<{
     updateBuildStatus: Build;
   }>(UPDATE_BUILD_STATUS_MUTATION, {
+    optimisticResponse: {
+      updateBuildStatus: {
+        __typename: 'Build',
+        id: '',
+        name: '',
+        status: BuildStatus.Pending,
+        description: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    },
     refetchQueries: [
       { query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } },
       // Note: BUILD_DETAIL_QUERY will be refetched separately when needed
@@ -141,6 +164,17 @@ export function useUpdateBuildStatus(): {
       try {
         const result = await updateStatus({
           variables: { id, status },
+          optimisticResponse: {
+            updateBuildStatus: {
+              __typename: 'Build',
+              id,
+              name: '',
+              status,
+              description: '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          },
         });
         return result.data?.updateBuildStatus;
       } catch (err) {
@@ -167,6 +201,17 @@ export function useAddPart(): {
   const [addPart, { loading, error: apolloError }] = useMutation<{ addPart: Part }>(
     ADD_PART_MUTATION,
     {
+      optimisticResponse: {
+        addPart: {
+          __typename: 'Part',
+          id: generateTempId(),
+          buildId: '',
+          name: '',
+          sku: '',
+          quantity: 1,
+          createdAt: new Date().toISOString(),
+        },
+      },
       refetchQueries: [
         // Note: BUILD_DETAIL_QUERY will refetch with specific buildId when component has it
       ],
@@ -186,6 +231,17 @@ export function useAddPart(): {
       try {
         const result = await addPart({
           variables: { buildId, name, sku, quantity },
+          optimisticResponse: {
+            addPart: {
+              __typename: 'Part',
+              id: generateTempId(),
+              buildId,
+              name,
+              sku,
+              quantity,
+              createdAt: new Date().toISOString(),
+            },
+          },
         });
         return result.data?.addPart;
       } catch (err) {
@@ -212,6 +268,18 @@ export function useSubmitTestRun(): {
   const [submitTestRun, { loading, error: apolloError }] = useMutation<{
     submitTestRun: TestRun;
   }>(SUBMIT_TEST_RUN_MUTATION, {
+    optimisticResponse: {
+      submitTestRun: {
+        __typename: 'TestRun',
+        id: generateTempId(),
+        buildId: '',
+        status: TestStatus.Pending,
+        result: '',
+        fileUrl: '',
+        submittedAt: new Date().toISOString(),
+        completedAt: null,
+      },
+    },
     refetchQueries: [
       // Note: BUILD_DETAIL_QUERY will refetch with specific buildId when component has it
     ],
@@ -230,6 +298,18 @@ export function useSubmitTestRun(): {
       try {
         const response = await submitTestRun({
           variables: { buildId, status, result: testResult, fileUrl },
+          optimisticResponse: {
+            submitTestRun: {
+              __typename: 'TestRun',
+              id: generateTempId(),
+              buildId,
+              status,
+              result: testResult || '',
+              fileUrl: fileUrl || '',
+              submittedAt: new Date().toISOString(),
+              completedAt: null,
+            },
+          },
         });
         return response.data?.submitTestRun;
       } catch (err) {

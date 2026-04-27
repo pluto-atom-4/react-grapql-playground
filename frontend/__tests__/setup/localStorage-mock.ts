@@ -8,18 +8,18 @@ export const localStorageMock = (() => {
   let store: Record<string, string> = {};
 
   return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
+    getItem: (key: string): string | null => store[key] ?? null,
+    setItem: (key: string, value: string): void => {
       store[key] = value.toString();
     },
-    removeItem: (key: string) => {
+    removeItem: (key: string): void => {
       delete store[key];
     },
-    clear: () => {
+    clear: (): void => {
       store = {};
     },
     length: 0,
-    key: () => null,
+    key: (): null => null,
   };
 })();
 
@@ -27,7 +27,7 @@ export const localStorageMock = (() => {
  * Initialize localStorage mock on globalThis
  * Called from vitest-setup.ts to ensure mock is available before tests run
  */
-export function initializeLocalStorageMock() {
+export function initializeLocalStorageMock(): void {
   Object.defineProperty(globalThis, 'localStorage', {
     value: localStorageMock,
     writable: true,

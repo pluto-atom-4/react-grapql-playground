@@ -78,6 +78,7 @@ async function checkService(
       console.log(`   Checking ${url} (attempt ${attempt}/${maxRetries})...`);
 
       const controller = new AbortController();
+      // eslint-disable-next-line no-undef
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
@@ -116,12 +117,13 @@ async function checkService(
           });
         }
 
+        // eslint-disable-next-line no-undef
         clearTimeout(timeoutId);
 
         if (response.ok) {
           if (type === 'graphql') {
             // Verify GraphQL response has schema
-            const data = await response.json();
+            const data = await response.json() as { data?: { __schema?: { types?: Array<unknown> } } };
             return !!data.data?.__schema?.types;
           } else {
             // For frontend and express, just check status
@@ -131,6 +133,7 @@ async function checkService(
           throw new Error(`HTTP ${response.status}`);
         }
       } catch (error) {
+        // eslint-disable-next-line no-undef
         clearTimeout(timeoutId);
         throw error;
       }
@@ -139,6 +142,7 @@ async function checkService(
 
       if (attempt < maxRetries) {
         console.log(`   ⏳ Retry in ${retryDelay}ms... (${errorMessage})`);
+        // eslint-disable-next-line no-undef
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       } else {
         throw new Error(`Service unavailable after ${maxRetries} attempts: ${errorMessage}`);

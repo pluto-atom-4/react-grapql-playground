@@ -2,10 +2,10 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { JSX, useEffect } from "react";
 import LoginForm from '@/components/login-form';
 
-export default function LoginPage() {
+export default function LoginPage(): JSX.Element {
   const { token } = useAuth();
   const router = useRouter();
 

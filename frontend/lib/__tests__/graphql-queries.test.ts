@@ -289,7 +289,8 @@ describe('GraphQL Query and Mutation Documents', () => {
       const parsed = parse(source);
 
       // Check that all queries have variables defined
-      const hasDefinitions = parsed.definitions.some(def => {
+      const hasDefinitions = parsed.definitions.some((def) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
         if (def.kind === 'OperationDefinition') {
           return def.variableDefinitions && def.variableDefinitions.length > 0;
         }

@@ -1,5 +1,15 @@
 import { Page } from '@playwright/test';
 
+interface Window {
+  __APOLLO_CLIENT__?: {
+    cache: {
+      extract: () => Record<string, unknown>;
+    };
+  };
+  _sseListeners?: Map<string, EventSource>;
+  EventSource?: typeof EventSource;
+}
+
 /**
  * Wait for GraphQL query to complete and data to render
  */
@@ -9,11 +19,11 @@ export async function waitForGraphQL(page: Page, _query: string, timeout = 10000
   while (Date.now() - startTime < timeout) {
     try {
       // Check if Apollo Client has cached the query
-      const hasQuery = await page.evaluate(() => {
+      const hasQuery = await page.evaluate((): boolean => {
         try {
-          const cache = (window as any).__APOLLO_CLIENT__?.cache;
+          const cache = (window as unknown as Window).__APOLLO_CLIENT__?.cache;
           // Simple check if query has been executed (Apollo cache has data)
-          return cache?.extract && JSON.stringify(cache.extract()).length > 2;
+          return !!(cache?.extract && JSON.stringify(cache.extract()).length > 2);
         } catch {
           return false;
         }
@@ -39,45 +49,47 @@ export async function waitForSSEEvent(
   page: Page,
   eventName: string,
   timeout = 10000
-): Promise<any> {
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const timeoutHandle = setTimeout(() => {
-      page.evaluate(() => {
-        (window as any)._sseListeners?.delete?.('_e2e_test_listener');
+    const timeoutHandle = globalThis.setTimeout(() => {
+      void page.evaluate(() => {
+        (window as unknown as Window)._sseListeners?.delete?.('_e2e_test_listener');
       });
       reject(new Error(`SSE event "${eventName}" not received within ${timeout}ms`));
     }, timeout);
 
     page.on('console', (msg) => {
       if (msg.type() === 'log' && msg.text().includes(`SSE:${eventName}:`)) {
-        clearTimeout(timeoutHandle);
+        globalThis.clearTimeout(timeoutHandle);
         try {
-          const data = JSON.parse(msg.text().replace(`SSE:${eventName}:`, ''));
+          const data = JSON.parse(msg.text().replace(`SSE:${eventName}:`, '')) as unknown;
           resolve(data);
         } catch (error) {
-          reject(error);
+          reject(error as Error);
         }
       }
     });
 
-    page.evaluate((event) => {
-      if (!window.EventSource) {
+    void page.evaluate((event: string) => {
+      if (!(window as unknown as Window).EventSource) {
         console.error('EventSource not supported');
         return;
       }
 
       try {
         const eventSource = new EventSource('/events');
-        const handleEvent = (e: any) => {
-          const data = JSON.parse(e.data);
+        const handleEvent = (e: Event): void => {
+          const messageEvent = e as MessageEvent<string>;
+          const data = JSON.parse(messageEvent.data) as { type?: string };
           if (data.type === event) {
+            // eslint-disable-next-line no-console
             console.log(`SSE:${event}:${JSON.stringify(data)}`);
             eventSource.close();
           }
         };
 
         eventSource.addEventListener(event, handleEvent);
-        (window as any)._sseListeners = new Map([['_e2e_test_listener', eventSource]]);
+        (window as unknown as Window)._sseListeners = new Map([['_e2e_test_listener', eventSource]]);
       } catch (error) {
         console.error('SSE listener setup failed:', error);
       }
@@ -95,7 +107,7 @@ export async function waitForNetworkIdle(page: Page, timeout = 5000): Promise<vo
     // Network idle timeout is not critical - allow tests to continue
     console.warn(
       '[waitForNetworkIdle] Timeout (continuing):',
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : String(error)
     );
   }
 }
@@ -108,9 +120,9 @@ export async function waitForApolloCacheReady(page: Page, timeout = 5000): Promi
 
   while (Date.now() - startTime < timeout) {
     try {
-      const isReady = await page.evaluate(() => {
+      const isReady = await page.evaluate((): boolean => {
         try {
-          const client = (window as any).__APOLLO_CLIENT__;
+          const client = (window as unknown as Window).__APOLLO_CLIENT__;
           const cache = client?.cache;
           const data = cache?.extract?.();
 
@@ -213,15 +225,16 @@ export async function waitForResponse(
   page: Page,
   urlPattern: string | RegExp,
   timeout = 10000
-): Promise<any> {
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const timeoutHandle = setTimeout(() => {
-      reject(new Error(`Response matching "${urlPattern}" not received within ${timeout}ms`));
+    const timeoutHandle = globalThis.setTimeout(() => {
+      reject(new Error(`Response matching "${typeof urlPattern === 'string' ? urlPattern : urlPattern.source}" not received within ${timeout}ms`));
     }, timeout);
 
-    const handler = (response: any) => {
-      if (response.url().match(urlPattern)) {
-        clearTimeout(timeoutHandle);
+    const handler = (response: unknown): void => {
+      const resp = response as { url: () => string };
+      if (resp.url().match(urlPattern)) {
+        globalThis.clearTimeout(timeoutHandle);
         page.removeListener('response', handler);
         resolve(response);
       }

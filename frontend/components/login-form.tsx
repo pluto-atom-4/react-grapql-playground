@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent, JSX } from "react";
 import { useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -16,7 +16,7 @@ interface FormState {
   password: string;
 }
 
-export default function LoginForm() {
+export default function LoginForm(): JSX.Element {
   const [formState, setFormState] = useState<FormState>({ email: '', password: '' });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function LoginForm() {
   const [loginMutation, { loading }] = useMutation<{
     login: { token: string; user: { id: string; email: string } };
   }>(LOGIN_MUTATION, {
-    onCompleted: (data) => {
+    onCompleted: (data): void => {
       const token = data?.login?.token;
       if (token) {
         login(token);
@@ -139,7 +139,7 @@ export default function LoginForm() {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async () => {
+    (async (): Promise<void> => {
       try {
         // Create timeout promise that rejects after 30 seconds
         const controller = new AbortController();

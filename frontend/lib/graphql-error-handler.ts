@@ -153,28 +153,31 @@ export function isRetryableError(error: unknown): boolean {
 
 /**
  * Calculates exponential backoff delay with jitter.
- * Formula: min(baseDelay * 2^attempt + random(0, jitterPercent% of baseDelay), maxDelay)
+ * Formula: min(baseDelay * 2^attempt + random(-jitterPercent% to +jitterPercent% of baseDelay), maxDelay)
  *
  * @param attempt - The attempt number (0-indexed)
  * @param baseDelay - Base delay in milliseconds (default: 100)
- * @param maxDelay - Maximum delay cap in milliseconds (default: 30000)
- * @param jitterPercent - Jitter percentage (default: 10%)
+ * @param maxDelay - Maximum delay cap in milliseconds (default: 10000 for 10s)
+ * @param jitterPercent - Jitter percentage ±range (default: 20% for ±20%)
  * @returns Delay in milliseconds
  *
  * @example
- * const delay = getExponentialBackoffDelay(0); // ~100-110ms
- * const delay = getExponentialBackoffDelay(1); // ~200-220ms
- * const delay = getExponentialBackoffDelay(2); // ~400-440ms
+ * const delay = getExponentialBackoffDelay(0); // ~80-120ms (100ms ±20%)
+ * const delay = getExponentialBackoffDelay(1); // ~160-240ms (200ms ±20%)
+ * const delay = getExponentialBackoffDelay(2); // ~320-480ms (400ms ±20%)
+ * const delay = getExponentialBackoffDelay(3); // ~6400-9600ms (capped at 10s)
  */
 export function getExponentialBackoffDelay(
   attempt: number,
   baseDelay: number = 100,
-  maxDelay: number = 30000,
-  jitterPercent: number = 10
+  maxDelay: number = 10000,
+  jitterPercent: number = 20
 ): number {
   const exponentialDelay = baseDelay * Math.pow(2, attempt);
-  const jitter = (Math.random() * baseDelay * jitterPercent) / 100;
-  return Math.min(exponentialDelay + jitter, maxDelay);
+  // Jitter: ±jitterPercent (e.g., ±20% means -20% to +20%)
+  const jitterAmount = (exponentialDelay * jitterPercent) / 100;
+  const jitter = (Math.random() - 0.5) * 2 * jitterAmount;
+  return Math.min(Math.max(exponentialDelay + jitter, 0), maxDelay);
 }
 
 /**
@@ -220,3 +223,65 @@ export function extractErrorDetails(error: unknown): ErrorDetails {
     graphqlErrors,
   };
 }
+
+/**
+ * Retry configuration for mutations
+ */
+export interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  jitterPercent: number;
+}
+
+/**
+ * Default retry configuration matching spec: 100ms initial, 10s max, ±20% jitter, max 3 retries
+ */
+export const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 100,
+  maxDelay: 10000,
+  jitterPercent: 20,
+};
+
+/**
+ * Determines if error should trigger a retry and calculates delay
+ *
+ * @param error - The error that occurred
+ * @param attempt - Current attempt number (0-indexed)
+ * @param config - Retry configuration (uses defaults if not provided)
+ * @returns Object with shouldRetry boolean and delayMs for retry timing
+ *
+ * @example
+ * const { shouldRetry, delayMs } = getRetryStrategy(error, 0);
+ * if (shouldRetry && delayMs < 10000) {
+ *   // Retry after delay
+ * }
+ */
+export function getRetryStrategy(
+  error: unknown,
+  attempt: number,
+  config: Partial<RetryConfig> = {}
+): { shouldRetry: boolean; delayMs: number } {
+  const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
+
+  // Don't retry if max attempts exceeded
+  if (attempt >= finalConfig.maxRetries) {
+    return { shouldRetry: false, delayMs: 0 };
+  }
+
+  // Only retry if error is retryable
+  if (!isRetryableError(error)) {
+    return { shouldRetry: false, delayMs: 0 };
+  }
+
+  const delayMs = getExponentialBackoffDelay(
+    attempt,
+    finalConfig.baseDelay,
+    finalConfig.maxDelay,
+    finalConfig.jitterPercent
+  );
+
+  return { shouldRetry: true, delayMs };
+}
+
