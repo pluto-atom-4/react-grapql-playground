@@ -247,8 +247,6 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
     };
 
     const attempt0 = calculateBackoff(0);
-    const attempt1 = calculateBackoff(1);
-    const attempt2 = calculateBackoff(2);
 
     // Without jitter
     expect(100 * Math.pow(2, 0)).toBe(100);
