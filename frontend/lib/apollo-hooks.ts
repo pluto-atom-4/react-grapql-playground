@@ -11,6 +11,7 @@ import {
   SUBMIT_TEST_RUN_MUTATION,
 } from './graphql-queries';
 import { BuildStatus, TestStatus, type Build, type Part, type TestRun } from './generated/graphql';
+import { extractErrorMessage } from './graphql-error-handler';
 
 // Re-export enums for backward compatibility
 export { BuildStatus, TestStatus };
@@ -87,24 +88,33 @@ export function useTestRuns(buildId: string): {
 export function useCreateBuild(): {
   createBuild: (name: string, description?: string) => Promise<Build | undefined>;
   loading: boolean;
-  error: unknown;
+  error: string | null;
 } {
-  const [createBuild, { loading, error }] = useMutation<{ createBuild: Build }>(
+  const [createBuild, { loading, error: apolloError }] = useMutation<{ createBuild: Build }>(
     CREATE_BUILD_MUTATION,
     {
       refetchQueries: [{ query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } }],
+      onError: (error) => {
+        // Error is already captured in apolloError state
+        console.error('Create build failed:', extractErrorMessage(error));
+      },
     }
   );
 
   return {
     createBuild: async (name: string, description?: string): Promise<Build | undefined> => {
-      const result = await createBuild({
-        variables: { name, description },
-      });
-      return result.data?.createBuild;
+      try {
+        const result = await createBuild({
+          variables: { name, description },
+        });
+        return result.data?.createBuild;
+      } catch (err) {
+        const message = extractErrorMessage(err);
+        throw new Error(message);
+      }
     },
     loading,
-    error,
+    error: apolloError ? extractErrorMessage(apolloError) : null,
   };
 }
 
@@ -112,21 +122,34 @@ export function useCreateBuild(): {
 export function useUpdateBuildStatus(): {
   updateStatus: (id: string, status: BuildStatus) => Promise<Build | undefined>;
   loading: boolean;
-  error: unknown;
+  error: string | null;
 } {
-  const [updateStatus, { loading, error }] = useMutation<{ updateBuildStatus: Build }>(
-    UPDATE_BUILD_STATUS_MUTATION
-  );
+  const [updateStatus, { loading, error: apolloError }] = useMutation<{
+    updateBuildStatus: Build;
+  }>(UPDATE_BUILD_STATUS_MUTATION, {
+    refetchQueries: [
+      { query: BUILDS_QUERY, variables: { limit: 10, offset: 0 } },
+      // Note: BUILD_DETAIL_QUERY will be refetched separately when needed
+    ],
+    onError: (error) => {
+      console.error('Update build status failed:', extractErrorMessage(error));
+    },
+  });
 
   return {
     updateStatus: async (id: string, status: BuildStatus): Promise<Build | undefined> => {
-      const result = await updateStatus({
-        variables: { id, status },
-      });
-      return result.data?.updateBuildStatus;
+      try {
+        const result = await updateStatus({
+          variables: { id, status },
+        });
+        return result.data?.updateBuildStatus;
+      } catch (err) {
+        const message = extractErrorMessage(err);
+        throw new Error(message);
+      }
     },
     loading,
-    error,
+    error: apolloError ? extractErrorMessage(apolloError) : null,
   };
 }
 
@@ -139,9 +162,19 @@ export function useAddPart(): {
     quantity: number
   ) => Promise<Part | undefined>;
   loading: boolean;
-  error: unknown;
+  error: string | null;
 } {
-  const [addPart, { loading, error }] = useMutation<{ addPart: Part }>(ADD_PART_MUTATION);
+  const [addPart, { loading, error: apolloError }] = useMutation<{ addPart: Part }>(
+    ADD_PART_MUTATION,
+    {
+      refetchQueries: [
+        // Note: BUILD_DETAIL_QUERY will refetch with specific buildId when component has it
+      ],
+      onError: (error) => {
+        console.error('Add part failed:', extractErrorMessage(error));
+      },
+    }
+  );
 
   return {
     addPart: async (
@@ -150,13 +183,18 @@ export function useAddPart(): {
       sku: string,
       quantity: number
     ): Promise<Part | undefined> => {
-      const result = await addPart({
-        variables: { buildId, name, sku, quantity },
-      });
-      return result.data?.addPart;
+      try {
+        const result = await addPart({
+          variables: { buildId, name, sku, quantity },
+        });
+        return result.data?.addPart;
+      } catch (err) {
+        const message = extractErrorMessage(err);
+        throw new Error(message);
+      }
     },
     loading,
-    error,
+    error: apolloError ? extractErrorMessage(apolloError) : null,
   };
 }
 
@@ -169,11 +207,18 @@ export function useSubmitTestRun(): {
     fileUrl?: string
   ) => Promise<TestRun | undefined>;
   loading: boolean;
-  error: unknown;
+  error: string | null;
 } {
-  const [submitTestRun, { loading, error }] = useMutation<{ submitTestRun: TestRun }>(
-    SUBMIT_TEST_RUN_MUTATION
-  );
+  const [submitTestRun, { loading, error: apolloError }] = useMutation<{
+    submitTestRun: TestRun;
+  }>(SUBMIT_TEST_RUN_MUTATION, {
+    refetchQueries: [
+      // Note: BUILD_DETAIL_QUERY will refetch with specific buildId when component has it
+    ],
+    onError: (error) => {
+      console.error('Submit test run failed:', extractErrorMessage(error));
+    },
+  });
 
   return {
     submitTestRun: async (
@@ -182,12 +227,17 @@ export function useSubmitTestRun(): {
       testResult?: string,
       fileUrl?: string
     ): Promise<TestRun | undefined> => {
-      const response = await submitTestRun({
-        variables: { buildId, status, result: testResult, fileUrl },
-      });
-      return response.data?.submitTestRun;
+      try {
+        const response = await submitTestRun({
+          variables: { buildId, status, result: testResult, fileUrl },
+        });
+        return response.data?.submitTestRun;
+      } catch (err) {
+        const message = extractErrorMessage(err);
+        throw new Error(message);
+      }
     },
     loading,
-    error,
+    error: apolloError ? extractErrorMessage(apolloError) : null,
   };
 }
