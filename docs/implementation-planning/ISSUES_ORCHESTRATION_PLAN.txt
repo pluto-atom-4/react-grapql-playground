@@ -1,0 +1,184 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║         GITHUB ISSUES ORCHESTRATION - QUICK REFERENCE                        ║
+║              Repository: pluto-atom-4/react-grapql-playground                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📊 OVERVIEW
+─────────────────────────────────────────────────────────────────────────────
+Total Issues (#6-#98):           101 issues
+├─ OPEN:                         20 issues ⚠️
+└─ CLOSED:                       81 issues ✅
+
+🔴 CRITICAL PATH (MUST START IMMEDIATELY)
+─────────────────────────────────────────────────────────────────────────────
+#6  Frontend ↔ Apollo GraphQL + Real-Time SSE       [4-5 days] LARGE
+#7  Cross-Layer Event Bus (GraphQL↔Express↔Front)  [4-5 days] LARGE
+    └─ BLOCKS: All other frontend/backend work
+    └─ TOTAL: 8-10 days before Phase 2 can start
+
+
+📋 IMPLEMENTATION PHASES (6 PHASES, 56 DAYS TOTAL)
+─────────────────────────────────────────────────────────────────────────────
+
+PHASE 1: FOUNDATION (8-10 days) ⚠️ CRITICAL
+  #6   Frontend ↔ Apollo GraphQL + SSE              [4-5d]
+  #7   Event Bus Architecture                       [4-5d]
+
+PHASE 2: ERROR HANDLING (5-7 days)
+  #28  Global Error Handling & Boundaries           [2d]
+  #29  CORS & SSE Error Handling                    [1-2d]
+  #30  Optimistic Updates                           [2-3d]
+  #31  Enhanced Error UI                            [1-2d]
+  #32  Timeouts & Retry Logic                       [2d]
+
+PHASE 3: UX FEATURES (5-7 days)
+  #33  FileUploader Component                       [1-2d]
+  #34  Pagination UI                                [1-2d]
+  #35  Loading Skeletons                            [1-2d]
+  #39  Replace Custom CSS with Tailwind             [1-2d]
+  #40  Accessibility Improvements                   [2-3d]
+
+PHASE 4: TESTING (5-7 days)
+  #36  GraphQL Code Generation Tests                [1-2d]
+  #37  Integration Tests (Vitest + RTL)             [2-3d]
+  #38  SSE Edge Cases                               [1-2d]
+
+PHASE 5: DEVOPS & E2E (7-10 days)
+  #8   E2E Tests with Playwright                    [3-4d]
+  #9   GitHub Actions CI/CD (6-Phase)               [3-4d]
+  #98  └─ CI/CD: Enforce docs/ markdown files       [0.5-1d]
+
+PHASE 6: DOCUMENTATION (5-7 days)
+  #10  API Reference & Deployment Guides            [2-3d]
+  #11  Interview Prep: Talking Points               [1-2d]
+
+
+🎯 ALL OPEN ISSUES BY PRIORITY & STATUS
+─────────────────────────────────────────────────────────────────────────────
+
+PRIORITY   | # | Title                                          | Scope   | Phase
+─────────────────────────────────────────────────────────────────────────────
+🔴 CRITICAL| 6 | Frontend ↔ Apollo GraphQL + SSE               | LARGE   | 1
+🔴 CRITICAL| 7 | Cross-Layer Event Bus                          | LARGE   | 1
+🟠 HIGH    | 8 | E2E Tests with Playwright                      | LARGE   | 5
+🟠 HIGH    | 9 | GitHub Actions CI/CD Pipeline                  | LARGE   | 5
+🟠 HIGH    | 28| Global Error Handling & Boundaries             | MEDIUM  | 2
+🟠 HIGH    | 29| CORS & SSE Error Handling                      | MEDIUM  | 2
+🟠 HIGH    | 30| Optimistic Updates                             | LARGE   | 2
+🟠 HIGH    | 32| Timeouts & Retry Logic                         | MEDIUM  | 2
+🟡 MEDIUM  | 10| API Reference & Deployment Guides              | LARGE   | 6
+🟡 MEDIUM  | 11| Interview Prep: Talking Points                 | MEDIUM  | 6
+🟡 MEDIUM  | 31| Enhanced Error UI (Replace alert())            | MEDIUM  | 2
+🟡 MEDIUM  | 33| FileUploader Component                         | MEDIUM  | 3
+🟡 MEDIUM  | 34| Pagination UI                                  | MEDIUM  | 3
+🟡 MEDIUM  | 35| Loading Skeletons                              | MEDIUM  | 3
+🟡 MEDIUM  | 36| GraphQL Code Generation Tests                  | MEDIUM  | 4
+🟡 MEDIUM  | 37| Integration Tests (Vitest + RTL)               | LARGE   | 4
+🟡 MEDIUM  | 38| SSE Edge Cases                                 | MEDIUM  | 4
+🟡 MEDIUM  | 40| Accessibility Improvements                     | LARGE   | 3
+🟡 MEDIUM  | 98| CI/CD: Enforce markdown in docs/               | SMALL   | 5
+🟢 LOW     | 39| Replace Custom CSS with Tailwind               | SMALL   | 3
+
+
+⚠️ RISK ASSESSMENT
+─────────────────────────────────────────────────────────────────────────────
+
+RISK                                    | IMPACT  | MITIGATION
+────────────────────────────────────────────────────────────────────────────
+#6 & #7 block all other work            | CRITICAL| Allocate best developers
+SSE connection instability              | HIGH    | Implement heartbeat (#38)
+Race conditions in event bus            | HIGH    | Mutex/queue, tests (#37)
+N+1 queries in GraphQL                  | HIGH    | DataLoader verification (#36)
+Memory leaks in SSE listeners           | MEDIUM  | Proper cleanup, tests
+CORS issues between services            | MEDIUM  | Early testing (#29)
+
+
+📅 SUGGESTED WEEKLY SCHEDULE
+─────────────────────────────────────────────────────────────────────────────
+
+WEEK 1 (Foundation - CRITICAL)
+├─ Days 1-4:   Work on #6 (Apollo GraphQL Integration)
+├─ Days 5-8:   Work on #7 (Event Bus Architecture)
+└─ Parallel:   Setup testing infrastructure
+
+WEEK 2 (Error Handling - Begin)
+├─ Days 9-10:  #29 - CORS & SSE Error Handling
+├─ Days 11-12: #28 - Global Error Boundaries
+└─ Days 13-14: Start #30 - Optimistic Updates
+
+WEEK 3 (Error Handling - Continue + Start UX)
+├─ Days 15-17: Complete #30 - Optimistic Updates
+├─ Days 18-19: #32 - Timeouts & Retry Logic
+├─ Days 20-21: #31 - Enhanced Error UI
+└─ Parallel:   Start #33 - FileUploader
+
+WEEK 4 (UX Features + Testing Setup)
+├─ Days 22-23: Complete #33 - FileUploader
+├─ Days 24-25: #34 - Pagination UI
+├─ Days 26-27: #35 - Loading Skeletons
+├─ Day 28:     #39 - Tailwind CSS
+└─ Parallel:   Start #36, #37 - Integration Tests
+
+WEEK 5 (Testing + A11y)
+├─ Days 29-30: #36 - GraphQL Code Generation Tests
+├─ Days 31-33: #37 - Integration Tests (complete)
+├─ Days 34-35: Start #40 - Accessibility
+└─ Parallel:   #38 - SSE Edge Cases
+
+WEEK 6 (E2E Tests)
+├─ Days 36-37: Complete #40 - Accessibility
+├─ Days 38-39: #38 - SSE Edge Cases (complete)
+└─ Days 40-42: Start #8 - E2E Tests
+
+WEEK 7 (CI/CD)
+├─ Days 43-45: Complete #8 - E2E Tests
+├─ Days 46-48: #9 - CI/CD Pipeline
+├─ Day 49:     #98 - Doc Validation
+└─ Parallel:   Start #10 - Documentation
+
+WEEK 8 (Documentation + Final)
+├─ Days 50-52: #10 - API Reference & Deployment
+├─ Days 53-54: #11 - Interview Prep
+└─ Days 55-56: Final reviews & deployment prep
+
+
+✅ SUCCESS CRITERIA
+─────────────────────────────────────────────────────────────────────────────
+
+□ All 20 open issues resolved
+□ Zero N+1 queries (verified)
+□ <100ms SSE latency
+□ >80% test coverage
+□ CI/CD pipeline <15 min
+□ WCAG AA accessibility compliance
+□ Complete API documentation
+□ Interview talking points documented
+
+
+📝 DEPENDENCY CHAIN
+─────────────────────────────────────────────────────────────────────────────
+
+                        ┌──── #6, #7 ────┐
+                        │  (FOUNDATION)  │
+                        └────┬───────┬───┘
+                    ┌────────┴──┐    └──────────┐
+                    ▼           ▼              ▼
+            Phase 2 (Error)  Phase 3 (UX)  Phase 4 (Test)
+            #28,29,30,       #33,34,35,    #36,37,38
+            31,32            39,40
+                    │           │              │
+                    └────┬───────┴──────────┬──┘
+                         ▼                  ▼
+                    Phase 5 (E2E + DEVOPS)
+                    #8, #9, #98
+                         │
+                         ▼
+                    Phase 6 (Docs)
+                    #10, #11
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Report Generated: 2026-04-18
+Total Estimated Duration: 56 days (8 weeks) at 7 days/week
+Recommended Team Size: 3-4 developers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
