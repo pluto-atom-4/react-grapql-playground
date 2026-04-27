@@ -51,11 +51,10 @@ export class DashboardPage extends BasePage {
       // eslint-disable-next-line no-console
       console.log('[DashboardPage] Navigation complete, page URL:', this.page.url());
     } catch (err) {
-       
       console.error('[DashboardPage] Navigation error:', err instanceof Error ? err.message : err);
       throw err;
     }
-    
+
     // Don't wait for specific content here - let the caller use isDashboardReady()
     // to check. This avoids timeout issues if Apollo takes time to load.
   }
@@ -153,7 +152,7 @@ export class DashboardPage extends BasePage {
   async isDashboardReady(): Promise<boolean> {
     // eslint-disable-next-line no-console
     console.log('[isDashboardReady] Checking dashboard readiness...');
-    
+
     try {
       // Try to find builds list (might take time for Apollo to load)
       // eslint-disable-next-line no-console
@@ -176,20 +175,26 @@ export class DashboardPage extends BasePage {
       } catch (err2) {
         // eslint-disable-next-line no-console
         console.log('[isDashboardReady] empty-state not found, checking navbar...');
-        
+
         // Last resort - check if navbar is visible (means page loaded but no data yet)
         try {
-          const navbar = await this.page.locator('[data-testid="user-menu"]').isVisible({ timeout: 3000 });
+          const navbar = await this.page
+            .locator('[data-testid="user-menu"]')
+            .isVisible({ timeout: 3000 });
           if (navbar) {
             // eslint-disable-next-line no-console
-            console.log('[isDashboardReady] Dashboard layout visible but no builds-list/empty-state after 30s');
+            console.log(
+              '[isDashboardReady] Dashboard layout visible but no builds-list/empty-state after 30s'
+            );
             return false;
           }
         } catch {
           // navbar not found either
         }
-         
-        console.error('[isDashboardReady] Dashboard not ready - no builds-list, empty-state, or navbar found');
+
+        console.error(
+          '[isDashboardReady] Dashboard not ready - no builds-list, empty-state, or navbar found'
+        );
         return false;
       }
     }

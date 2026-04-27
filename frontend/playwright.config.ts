@@ -9,8 +9,8 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Detect display server type for Wayland compatibility
  */
-const isWayland = process.env.XDG_SESSION_TYPE === 'wayland' || 
-                  process.env.DISPLAY?.includes('wayland');
+const isWayland =
+  process.env.XDG_SESSION_TYPE === 'wayland' || process.env.DISPLAY?.includes('wayland');
 
 if (isWayland) {
   console.log('🖥️  Wayland display server detected - using Wayland-safe configuration');
@@ -53,9 +53,9 @@ export default defineConfig({
         launchOptions: isWayland
           ? {
               args: [
-                '--disable-dev-shm-usage',  // Critical for Wayland headless
-                '--disable-gpu',             // GPU acceleration issues on Wayland
-                '--disable-setuid-sandbox',  // Sandbox issues in containers
+                '--disable-dev-shm-usage', // Critical for Wayland headless
+                '--disable-gpu', // GPU acceleration issues on Wayland
+                '--disable-setuid-sandbox', // Sandbox issues in containers
               ],
             }
           : undefined,

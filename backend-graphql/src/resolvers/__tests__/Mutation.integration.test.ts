@@ -63,7 +63,7 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
     // Since this is backend-graphql, we verify the emitEvent function is properly structured
     // to emit events that Express listeners would receive
     const { emitEvent } = await import('../../services/event-bus');
-    
+
     // Mock fetch to verify emitEvent sends proper event structure
     let eventPayloadSent: Record<string, unknown> | null = null;
     global.fetch = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
@@ -81,7 +81,7 @@ describe('Event Bus Integration: GraphQL → Express → SSE', () => {
 
     // Verify payload was sent with event name
     expect(eventPayloadSent).not.toBeNull();
-    const payload = eventPayloadSent as Record<string, unknown>;
+    const payload = eventPayloadSent as unknown as Record<string, unknown>;
     expect(payload.event).toBe('buildCreated');
     expect((payload.payload as Record<string, unknown>).buildId).toBe('456');
   });

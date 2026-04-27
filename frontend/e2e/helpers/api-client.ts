@@ -70,7 +70,9 @@ export class GraphQLClient {
     try {
       // Log for debugging
       const hasToken = !!this.token;
-      console.log(`[GraphQLClient] Executing GraphQL request with auth: ${hasToken ? 'YES' : 'NO'}`);
+      console.log(
+        `[GraphQLClient] Executing GraphQL request with auth: ${hasToken ? 'YES' : 'NO'}`
+      );
       if (!hasToken) {
         console.warn('[GraphQLClient] WARNING: No token provided, request will be unauthorized');
       }

@@ -48,13 +48,14 @@ async goto(url: string): Promise<void> {
     waitUntil: 'domcontentloaded',  // DOM ready, not all requests
     timeout: 15000,
   });
-  
+
   // Then wait for specific elements we need
   await this.page.waitForSelector('[data-testid="email-input"]');
 }
 ```
 
 **What it waits for:**
+
 - ✓ HTML parsed
 - ✓ DOM ready
 - ✓ Initial CSS/JS loaded
@@ -62,6 +63,7 @@ async goto(url: string): Promise<void> {
 - ✗ Polling queries (don't wait)
 
 **Why this works:**
+
 - Page is interactive and usable
 - No need to wait for background tasks
 - Faster test execution
@@ -70,12 +72,13 @@ async goto(url: string): Promise<void> {
 
 ```typescript
 await this.page.goto(url, {
-  waitUntil: 'load',  // All resources loaded (but not background tasks)
+  waitUntil: 'load', // All resources loaded (but not background tasks)
   timeout: 15000,
 });
 ```
 
 **What it waits for:**
+
 - ✓ HTML, CSS, JS loaded
 - ✓ All images/fonts loaded
 - ✓ Page `load` event fired
@@ -93,9 +96,9 @@ for (let attempt = 1; attempt <= maxRetries; attempt++) {
   try {
     await this.page.goto(url, {
       waitUntil: 'domcontentloaded',
-      timeout: 10000,  // Shorter timeout
+      timeout: 10000, // Shorter timeout
     });
-    return;  // Success
+    return; // Success
   } catch (error) {
     lastError = error as Error;
     if (attempt < maxRetries) {
@@ -105,7 +108,7 @@ for (let attempt = 1; attempt <= maxRetries; attempt++) {
   }
 }
 
-throw lastError;  // Failed after retries
+throw lastError; // Failed after retries
 ```
 
 ### Solution 4: Wait for Specific Elements Instead
@@ -115,8 +118,8 @@ throw lastError;  // Failed after retries
 await this.page.goto(url, { timeout: 10000 });
 
 // Wait for the specific elements/data we need
-await this.page.waitForSelector('[data-testid="email-input"]', { 
-  timeout: 5000 
+await this.page.waitForSelector('[data-testid="email-input"]', {
+  timeout: 5000,
 });
 
 // Or wait for Apollo cache to have data
@@ -136,7 +139,7 @@ async goto(url: string, options?: { timeout?: number }): Promise<void> {
     waitUntil: 'domcontentloaded',  // DOM ready, don't wait for all network
     timeout: options?.timeout || 15000,
   });
-  
+
   // Wait for Next.js hydration
   await this.page.waitForFunction(
     () => {
@@ -148,6 +151,7 @@ async goto(url: string, options?: { timeout?: number }): Promise<void> {
 ```
 
 **Benefits:**
+
 - Waits for DOM ready (page is interactive)
 - Doesn't wait for background polling
 - 15 second timeout (reasonable for real apps)
@@ -155,16 +159,17 @@ async goto(url: string, options?: { timeout?: number }): Promise<void> {
 
 ## Comparison: Load Strategies
 
-| Strategy | Waits For | Speed | Reliability | Use Case |
-|----------|-----------|-------|-------------|----------|
-| `networkidle` | All requests done | Slowest | Breaks with polling | Simple static sites |
-| `load` | Resources loaded | Fast | Good | Standard web apps |
-| `domcontentloaded` | DOM ready | Fastest | Excellent | Full-stack apps with background tasks |
-| Custom waits | Specific elements | Fastest | Best | When you know what to wait for |
+| Strategy           | Waits For         | Speed   | Reliability         | Use Case                              |
+| ------------------ | ----------------- | ------- | ------------------- | ------------------------------------- |
+| `networkidle`      | All requests done | Slowest | Breaks with polling | Simple static sites                   |
+| `load`             | Resources loaded  | Fast    | Good                | Standard web apps                     |
+| `domcontentloaded` | DOM ready         | Fastest | Excellent           | Full-stack apps with background tasks |
+| Custom waits       | Specific elements | Fastest | Best                | When you know what to wait for        |
 
 ## When Services Are Not Running
 
 **Symptom:**
+
 ```
 page.goto: Test timeout of 30000ms exceeded.
 navigating to "http://localhost:3000/login"
@@ -173,6 +178,7 @@ navigating to "http://localhost:3000/login"
 **Root Cause:** Frontend loads but can't connect to backend, request hangs
 
 **Fix:**
+
 ```bash
 # Terminal 1: Start all services
 pnpm dev
@@ -184,6 +190,7 @@ pnpm e2e
 ```
 
 **Check services:**
+
 ```bash
 # Quick check
 curl http://localhost:3000              # Should respond with HTML
@@ -200,11 +207,11 @@ curl http://localhost:5000/health       # Should respond with OK
 ```typescript
 test('measure load time with domcontentloaded', async ({ page }) => {
   const start = Date.now();
-  
+
   await page.goto('http://localhost:3000/login', {
     waitUntil: 'domcontentloaded',
   });
-  
+
   const duration = Date.now() - start;
   console.log(`Load time: ${duration}ms`);
   // Typical: 1-3 seconds
@@ -212,11 +219,11 @@ test('measure load time with domcontentloaded', async ({ page }) => {
 
 test('measure load time with networkidle', async ({ page }) => {
   const start = Date.now();
-  
+
   try {
     await page.goto('http://localhost:3000/login', {
       waitUntil: 'networkidle',
-      timeout: 5000,  // Short timeout to see failure quickly
+      timeout: 5000, // Short timeout to see failure quickly
     });
   } catch (e) {
     console.log('networkidle timed out (expected)');
@@ -247,21 +254,24 @@ All requests complete → 'networkidle' fires (may never happen) ✗
 ## Best Practices
 
 1. **Use `domcontentloaded` for interactive testing** (most reliable)
+
    ```typescript
    await page.goto(url, { waitUntil: 'domcontentloaded' });
    ```
 
 2. **Always wait for specific elements after goto**
+
    ```typescript
    await page.goto(url, { waitUntil: 'domcontentloaded' });
    await page.waitForSelector('[data-testid="login-form"]');
    ```
 
 3. **Set reasonable timeouts** (avoid 30000+ ms)
+
    ```typescript
-   await page.goto(url, { 
+   await page.goto(url, {
      waitUntil: 'domcontentloaded',
-     timeout: 15000,  // 15 seconds max
+     timeout: 15000, // 15 seconds max
    });
    ```
 
@@ -279,11 +289,11 @@ All requests complete → 'networkidle' fires (may never happen) ✗
 
 ✅ `goto()` now uses `domcontentloaded` with 15 second timeout  
 ✅ `fillByTestId()` waits for enabled state before filling  
-✅ `clickByTestId()` waits for enabled state before clicking  
+✅ `clickByTestId()` waits for enabled state before clicking
 
 ### LoginPage.ts Changes
 
-✅ `goto()` waits for all form elements visible  
+✅ `goto()` waits for all form elements visible
 
 ## Quick Checklist
 
@@ -301,9 +311,9 @@ Enable debugging:
 ```typescript
 test('debug goto timeout', async ({ page }) => {
   // Log network activity
-  page.on('request', request => console.log('→', request.url()));
-  page.on('response', response => console.log('←', response.status(), response.url()));
-  
+  page.on('request', (request) => console.log('→', request.url()));
+  page.on('response', (response) => console.log('←', response.status(), response.url()));
+
   try {
     await page.goto('http://localhost:3000/login', {
       waitUntil: 'domcontentloaded',
@@ -311,7 +321,7 @@ test('debug goto timeout', async ({ page }) => {
     });
   } catch (error) {
     console.log('Timeout error:', error.message);
-    
+
     // Check what loaded
     const content = await page.content();
     console.log('Page content length:', content.length);
@@ -320,6 +330,7 @@ test('debug goto timeout', async ({ page }) => {
 ```
 
 Then run with headed mode to see network:
+
 ```bash
 pnpm e2e:headed
 ```

@@ -36,6 +36,7 @@ Express Server (5000) - Files, webhooks, real-time
 ### Issue 1: Missing System Libraries (Debian/Linux)
 
 **Symptom:**
+
 ```
 Host system is missing dependencies to run browsers.
 Missing libraries:
@@ -83,6 +84,7 @@ sudo apt-get install -y \
 ```
 
 After installing, verify:
+
 ```bash
 pnpm exec playwright install
 ```
@@ -143,6 +145,7 @@ docker run -it -v $(pwd):/workspace --net host my-test-env pnpm e2e
 ### Issue 2: Wayland Display Server Compatibility
 
 **Symptom:**
+
 ```
 Tests fail or hang with Chromium on Wayland (KDE Plasma)
 ```
@@ -174,6 +177,7 @@ pnpm e2e --project=firefox
 ### Issue 3: Services Not Running
 
 **Symptom:**
+
 ```
 Error: Service connectivity check failed
 Frontend is not available: Failed to fetch http://localhost:3000
@@ -213,6 +217,7 @@ curl http://localhost:5000/health
 ### Issue 4: Port Already in Use
 
 **Symptom:**
+
 ```
 Error: listen EADDRINUSE: address already in use :::3000
 ```
@@ -237,6 +242,7 @@ pnpm dev
 ### Issue 5: Database Connection Errors
 
 **Symptom:**
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
@@ -264,6 +270,7 @@ pnpm seed
 ### Issue 6: Tests Timeout
 
 **Symptom:**
+
 ```
 Timeout: 30000ms exceeded during test execution
 ```
@@ -287,7 +294,7 @@ pnpm e2e auth.spec.ts
 
 ```typescript
 export default defineConfig({
-  timeout: 60000,  // Increase from 30000
+  timeout: 60000, // Increase from 30000
   navigationTimeout: 15000,
   // ...
 });
@@ -298,6 +305,7 @@ export default defineConfig({
 ### Issue 7: "Could not connect to Wayland display"
 
 **Symptom:**
+
 ```
 Could not connect to Wayland display
 Error: Failed to initialize Wayland display
@@ -544,24 +552,24 @@ on: [push, pull_request]
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - run: pnpm install
       - run: pnpm exec playwright install
       - run: pnpm build
-      
+
       # Install system dependencies
       - run: sudo apt-get update && sudo apt-get install -y libmanette-0.2-0 xvfb
-      
+
       # Run E2E tests with Xvfb
       - run: xvfb-run -a pnpm e2e
-      
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -600,14 +608,14 @@ await page.waitForLoadState('networkidle');
 
 ## Troubleshooting Matrix
 
-| Issue | Check | Solution |
-|-------|-------|----------|
-| Missing libraries | `ldd ~/.cache/ms-playwright/*/chrome-linux/chrome` | Ask sysadmin to install dependencies |
-| Wayland hanging | `echo $XDG_SESSION_TYPE` | Use Xvfb or Firefox |
-| Port in use | `lsof -i :3000` | Kill stale process |
-| DB not available | `psql ...` | Start Docker: `docker-compose up -d` |
-| Tests timeout | Check slow network | Increase timeout, reduce workers |
-| Flaky assertions | Look at trace | Use explicit waits & better selectors |
+| Issue             | Check                                              | Solution                              |
+| ----------------- | -------------------------------------------------- | ------------------------------------- |
+| Missing libraries | `ldd ~/.cache/ms-playwright/*/chrome-linux/chrome` | Ask sysadmin to install dependencies  |
+| Wayland hanging   | `echo $XDG_SESSION_TYPE`                           | Use Xvfb or Firefox                   |
+| Port in use       | `lsof -i :3000`                                    | Kill stale process                    |
+| DB not available  | `psql ...`                                         | Start Docker: `docker-compose up -d`  |
+| Tests timeout     | Check slow network                                 | Increase timeout, reduce workers      |
+| Flaky assertions  | Look at trace                                      | Use explicit waits & better selectors |
 
 ## Additional Resources
 

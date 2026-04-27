@@ -13,22 +13,24 @@ export class BasePage {
    */
   async goto(url: string, options?: { timeout?: number }): Promise<void> {
     await this.page.goto(url, {
-      waitUntil: 'domcontentloaded',  // DOM is ready, don't wait for all network requests
-      timeout: options?.timeout || 15000,  // 15 second timeout
+      waitUntil: 'domcontentloaded', // DOM is ready, don't wait for all network requests
+      timeout: options?.timeout || 15000, // 15 second timeout
     });
-    
+
     // Additional wait for Next.js hydration to complete
-    await this.page.waitForFunction(
-      () => {
-        // Check if Next.js has hydrated
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-        return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
-      },
-      { timeout: 5000 }
-    ).catch(() => {
-      // Hydration check might fail on non-Next.js pages, that's ok
-      return true;
-    });
+    await this.page
+      .waitForFunction(
+        () => {
+          // Check if Next.js has hydrated
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+          return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
+        },
+        { timeout: 5000 }
+      )
+      .catch(() => {
+        // Hydration check might fail on non-Next.js pages, that's ok
+        return true;
+      });
   }
 
   /**
@@ -58,13 +60,13 @@ export class BasePage {
    */
   async clickByTestId(testId: string): Promise<void> {
     const element = this.getByTestId(testId);
-    
+
     // Wait for visibility
     await element.waitFor({ state: 'visible', timeout: 5000 });
-    
+
     // Add small delay to allow element to stabilize
     await this.page.waitForTimeout(100);
-    
+
     // Click with force to skip stability checks (buttons don't have "enabled" state)
     await element.click({ force: true });
   }
@@ -74,16 +76,16 @@ export class BasePage {
    */
   async fillByTestId(testId: string, text: string): Promise<void> {
     const element = this.getByTestId(testId);
-    
+
     // Wait for visibility
     await element.waitFor({ state: 'visible', timeout: 5000 });
-    
+
     // Fill the input (Playwright handles focus, clear, and fill)
     await element.fill(text);
-    
+
     // Small delay to let React state update
     await this.page.waitForTimeout(100);
-    
+
     // Trigger blur to ensure validation runs
     await element.blur();
   }
@@ -116,8 +118,11 @@ export class BasePage {
       await this.page.waitForLoadState('networkidle', { timeout });
     } catch (error) {
       // Network idle timeout is not critical - allow tests to continue
-       
-      console.warn('[waitForNetworkIdle] Timeout (continuing):', error instanceof Error ? error.message : error);
+
+      console.warn(
+        '[waitForNetworkIdle] Timeout (continuing):',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 

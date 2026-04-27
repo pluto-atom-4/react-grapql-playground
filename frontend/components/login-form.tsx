@@ -175,10 +175,7 @@ export default function LoginForm() {
       <h1 className="text-3xl font-bold text-center mb-8">Sign In</h1>
 
       {generalError && (
-        <div
-          className="p-4 bg-red-50 border border-red-200 rounded-md"
-          data-testid="error-message"
-        >
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md" data-testid="error-message">
           <p className="text-red-700 text-sm">{generalError}</p>
         </div>
       )}
@@ -241,10 +238,7 @@ export default function LoginForm() {
       >
         {loading ? (
           <>
-            <span
-              className="inline-block animate-spin"
-              data-testid="loading-indicator"
-            >
+            <span className="inline-block animate-spin" data-testid="loading-indicator">
               🔄
             </span>
             <span>Signing in...</span>
