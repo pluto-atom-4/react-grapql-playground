@@ -11,8 +11,8 @@
  * - All required fields are included
  */
 
-import { gql } from '@apollo/client/core';
-import { parse, validate, buildSchema } from 'graphql';
+import { describe, it, expect } from 'vitest';
+import { parse } from 'graphql';
 import {
   BUILD_FRAGMENT,
   PART_FRAGMENT,
