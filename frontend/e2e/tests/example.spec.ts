@@ -9,7 +9,7 @@
  * Tests must complete all page interactions BEFORE test function returns.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, no-console */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, no-console */
 import { test, expect } from '../fixtures';
 import { LoginPage } from '../pages';
 
@@ -193,13 +193,21 @@ test.describe('API Tests (Using apiClient fixture)', () => {
 
     // Verify mutation succeeded
     expect(result.data).toBeDefined();
-    const build = result.data?.createBuild;
+     
+    const build = (result.data as { createBuild?: { id?: string; name?: string; status?: string } })
+      ?.createBuild;
     expect(build).toBeDefined();
-    expect(build.id).toBeDefined();
-    expect(build.name).toBe(buildName);
-    expect(build.status).toBeDefined();
+    if (build) {
+       
+      expect(build.id).toBeDefined();
+       
+      expect(build.name).toBe(buildName);
+       
+      expect(build.status).toBeDefined();
+    }
 
-    console.log(`✓ Created build: ${build.name}`);
+     
+    console.log(`✓ Created build: ${build?.name}`);
   });
 
   /**
