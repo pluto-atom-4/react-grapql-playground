@@ -54,6 +54,7 @@ export const TEST_RUN_FRAGMENT = gql`
     fileUrl
     completedAt
     createdAt
+    updatedAt
   }
 `;
 
