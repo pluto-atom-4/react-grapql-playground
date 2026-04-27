@@ -4,16 +4,17 @@
  * Tests for real-time server-sent event parsing and Apollo cache modifications.
  * Verifies cache updates trigger reactive re-renders and handle out-of-order events.
  */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { InMemoryCache, gql } from '@apollo/client';
 import { BuildStatus, TestStatus } from '../apollo-hooks';
 
 // Mock EventSource for Node.js environment
 if (typeof EventSource === 'undefined') {
-  global.EventSource = class EventSource {
-    close() {}
-  } as any;
+  (globalThis as Record<string, unknown>).EventSource = class {
+    close(): void {}
+  };
 }
 
 describe('SSE Cache Updates', () => {
@@ -98,7 +99,7 @@ describe('SSE Cache Updates', () => {
 
     it('handles malformed event payload gracefully', () => {
       const malformedPayload = 'invalid json {]';
-      
+
       // In real implementation, this would be caught by parseSSEEvent
       expect(() => {
         JSON.parse(malformedPayload);
@@ -122,7 +123,9 @@ describe('SSE Cache Updates', () => {
       cache.writeQuery({
         query,
         data: {
-          builds: [{ __typename: 'Build', id: 'build-1', name: 'Existing', status: BuildStatus.Pending }],
+          builds: [
+            { __typename: 'Build', id: 'build-1', name: 'Existing', status: BuildStatus.Pending },
+          ],
         },
       });
 
@@ -135,10 +138,12 @@ describe('SSE Cache Updates', () => {
       };
 
       const existing = cache.readQuery({ query });
+      const existingBuilds =
+        (existing as { builds?: Array<Record<string, unknown>> })?.builds || [];
       cache.writeQuery({
         query,
         data: {
-          builds: [...(existing?.builds || []), newBuild],
+          builds: [...existingBuilds, newBuild],
         },
       });
 
@@ -220,10 +225,7 @@ describe('SSE Cache Updates', () => {
             __typename: 'Build',
             id: 'build-1',
             name: 'Build',
-            parts: [
-              { __typename: 'Part', id: 'part-1', name: 'Part 1', sku: 'SKU-1' },
-              newPart,
-            ],
+            parts: [{ __typename: 'Part', id: 'part-1', name: 'Part 1', sku: 'SKU-1' }, newPart],
           },
         },
       });
@@ -257,7 +259,9 @@ describe('SSE Cache Updates', () => {
             __typename: 'Build',
             id: 'build-1',
             name: 'Build',
-            testRuns: [{ __typename: 'TestRun', id: 'test-1', status: TestStatus.Pending, result: '' }],
+            testRuns: [
+              { __typename: 'TestRun', id: 'test-1', status: TestStatus.Pending, result: '' },
+            ],
           },
         },
       });
@@ -355,7 +359,7 @@ describe('SSE Cache Updates', () => {
         data: { builds: [{ __typename: 'Build', id: 'build-1' }] },
       });
 
-      const startTime = performance.now();
+      const startTime = globalThis.performance.now();
 
       cache.writeQuery({
         query,
@@ -367,7 +371,7 @@ describe('SSE Cache Updates', () => {
         },
       });
 
-      const endTime = performance.now();
+      const endTime = globalThis.performance.now();
       const duration = endTime - startTime;
 
       expect(duration).toBeLessThan(100); // Should be fast
@@ -421,7 +425,9 @@ describe('SSE Cache Updates', () => {
 
   describe('Memory Management', () => {
     it('EventSource is properly closed on unmount', () => {
-      const eventSource = new EventSource('http://localhost:5000/events', { withCredentials: true });
+      const eventSource = new EventSource('http://localhost:5000/events', {
+        withCredentials: true,
+      });
       const closeSpy = vi.spyOn(eventSource, 'close');
 
       // Simulate cleanup
@@ -472,19 +478,18 @@ describe('SSE Cache Updates', () => {
     it('reconnection strategy handles disconnects', () => {
       // Simulate reconnection logic
       let connectionAttempts = 0;
-      let lastConnectionTime = 0;
+      let _lastConnectionTime = 0;
 
-      const reconnect = () => {
+      const reconnect = (): void => {
         connectionAttempts += 1;
-        lastConnectionTime = Date.now();
+        _lastConnectionTime = Date.now();
       };
 
       // Initial connection
       reconnect();
-      const firstConnectionTime = lastConnectionTime;
 
       // Simulate disconnect and reconnect
-      setTimeout(reconnect, 1000);
+      globalThis.setTimeout(reconnect, 1000);
 
       expect(connectionAttempts).toBeGreaterThan(0);
     });
@@ -492,7 +497,12 @@ describe('SSE Cache Updates', () => {
 
   describe('Event Type Coverage', () => {
     it('handles all supported event types', () => {
-      const supportedEvents = ['buildCreated', 'buildStatusChanged', 'partAdded', 'testRunSubmitted'];
+      const supportedEvents = [
+        'buildCreated',
+        'buildStatusChanged',
+        'partAdded',
+        'testRunSubmitted',
+      ];
 
       supportedEvents.forEach((eventType) => {
         expect(typeof eventType).toBe('string');
@@ -530,11 +540,10 @@ describe('SSE Cache Updates', () => {
         data: { builds: [] },
       });
 
-      // Single atomic operation
       cache.modify({
         fields: {
-          builds: (existing = []) => [
-            ...existing,
+          builds: (existing = [] as Array<Record<string, unknown>>) => [
+            ...(existing as Array<Record<string, unknown>>),
             {
               __typename: 'Build',
               id: 'build-1',

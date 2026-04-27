@@ -32,12 +32,20 @@ interface EventPayload {
 function parseSSEEvent(data: string): EventPayload | null {
   try {
     const parsed = JSON.parse(data) as Record<string, unknown>;
+    const event = parsed.event;
+    const buildId = parsed.buildId;
+    const partId = parsed.partId;
+    const testRunId = parsed.testRunId;
+
     return {
-      event: String(parsed.event || ''),
-      buildId: parsed.buildId ? String(parsed.buildId) : undefined,
-      partId: parsed.partId ? String(parsed.partId) : undefined,
-      testRunId: parsed.testRunId ? String(parsed.testRunId) : undefined,
-      payload: parsed.payload as Record<string, unknown> | undefined,
+      event: typeof event === 'string' ? event : '',
+      buildId: typeof buildId === 'string' ? buildId : undefined,
+      partId: typeof partId === 'string' ? partId : undefined,
+      testRunId: typeof testRunId === 'string' ? testRunId : undefined,
+      payload:
+        typeof parsed.payload === 'object' && parsed.payload !== null
+          ? (parsed.payload as Record<string, unknown>)
+          : undefined,
       timestamp: typeof parsed.timestamp === 'number' ? parsed.timestamp : Date.now(),
     };
   } catch {
@@ -60,7 +68,8 @@ export function useSSEEvents(): void {
       /**
        * Handle buildCreated event: Add new build to cache
        */
-      eventSource.addEventListener('buildCreated', (event): void => {
+      eventSource.addEventListener('buildCreated', (_event: Event): void => {
+        const event = _event as MessageEvent<string>;
         const eventData = parseSSEEvent(event.data);
         if (!eventData || !eventData.buildId) return;
 
@@ -68,31 +77,35 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        client.cache.modify({
-          fields: {
-            builds: (existingBuilds = [], { readField }) => {
-              // Check if build already exists
-              const buildExists = existingBuilds.some(
-                (build: Record<string, unknown>) => readField('id', build) === eventData.buildId
-              );
-              if (buildExists) return existingBuilds;
+         client.cache.modify({
+           fields: {
+             builds(value: unknown, details: any) {
+               const { readField } = details;
+               const existingBuilds = Array.isArray(value) ? [...value] : [];
 
-              // Add new build to cache
-              const newBuild = {
-                __typename: 'Build',
-                id: eventData.buildId,
-                ...(eventData.payload || {}),
-              };
-              return [...existingBuilds, newBuild];
-            },
-          },
-        });
+               // Check if build already exists
+               const buildExists = existingBuilds.some(
+                 (build) => readField('id', build) === eventData.buildId
+               );
+               if (buildExists) return existingBuilds;
+
+               // Add new build to cache
+               const newBuild = {
+                 __typename: 'Build',
+                 id: eventData.buildId,
+                 ...((eventData.payload as Record<string, unknown>) ?? {}),
+               };
+               return [...existingBuilds, newBuild];
+             },
+           },
+         });
       });
 
       /**
        * Handle buildStatusChanged event: Update build status in cache
        */
-      eventSource.addEventListener('buildStatusChanged', (event): void => {
+      eventSource.addEventListener('buildStatusChanged', (_event: Event): void => {
+        const event = _event as MessageEvent<string>;
         const eventData = parseSSEEvent(event.data);
         if (!eventData || !eventData.buildId) return;
 
@@ -100,28 +113,32 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        client.cache.modify({
-          fields: {
-            builds: (existingBuilds = [], { readField }) => {
-              return existingBuilds.map((build: Record<string, unknown>) => {
-                if (readField('id', build) === eventData.buildId) {
-                  return {
-                    ...build,
-                    status: eventData.payload?.status,
-                    updatedAt: eventData.payload?.updatedAt || new Date().toISOString(),
-                  };
-                }
-                return build;
-              });
-            },
-          },
-        });
+         client.cache.modify({
+           fields: {
+             builds(value: unknown, details: any) {
+               const { readField } = details;
+               const existingBuilds = Array.isArray(value) ? [...value] : [];
+
+               return existingBuilds.map((build) => {
+                 if (readField('id', build) === eventData.buildId) {
+                   return {
+                     ...build,
+                     status: eventData.payload?.status,
+                     updatedAt: eventData.payload?.updatedAt ?? new Date().toISOString(),
+                   };
+                 }
+                 return build;
+               });
+             },
+           },
+         });
       });
 
       /**
        * Handle partAdded event: Add new part to build's parts list
        */
-      eventSource.addEventListener('partAdded', (event): void => {
+      eventSource.addEventListener('partAdded', (_event: Event): void => {
+        const event = _event as MessageEvent<string>;
         const eventData = parseSSEEvent(event.data);
         if (!eventData || !eventData.buildId || !eventData.partId) return;
 
@@ -129,45 +146,55 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        // Try to update build detail cache
-        try {
-          client.cache.modify({
-            fields: {
-              build: (existingBuild = {}, { readField }) => {
-                if (readField('id', existingBuild) !== eventData.buildId) {
-                  return existingBuild;
-                }
+         // Try to update build detail cache
+         try {
+           client.cache.modify({
+             fields: {
+               build(value: unknown, details: any) {
+                 const { readField } = details;
+                 const existingBuild = value || {};
 
-                const existingParts = readField('parts', existingBuild) || [];
-                const partExists = existingParts.some(
-                  (part: Record<string, unknown>) => readField('id', part) === eventData.partId
-                );
+                 if (readField('id', existingBuild) !== eventData.buildId) {
+                   return existingBuild;
+                 }
 
-                if (partExists) return existingBuild;
+                 const existingParts = readField('parts', existingBuild);
+                 const partsArray = (Array.isArray(existingParts) ? existingParts : []) as Array<
+                   Record<string, unknown>
+                 >;
+                 const partExists = partsArray.some(
+                   (part) => readField('id', part) === eventData.partId
+                 );
 
-                const newPart = {
-                  __typename: 'Part',
-                  id: eventData.partId,
-                  buildId: eventData.buildId,
-                  ...(eventData.payload || {}),
-                };
+                 if (partExists) return existingBuild;
 
-                return {
-                  ...existingBuild,
-                  parts: [...existingParts, newPart],
-                };
-              },
-            },
-          });
-        } catch {
-          // Build not in cache yet, will be fetched on demand
-        }
+                 const newPart = {
+                   __typename: 'Part',
+                   id: eventData.partId,
+                   buildId: eventData.buildId,
+                   ...((eventData.payload as Record<string, unknown>) ?? {}),
+                 };
+
+                 return {
+                   ...(existingBuild as Record<string, unknown>),
+                   parts: [...partsArray, newPart],
+                 };
+               },
+             },
+           });
+         } catch (error) {
+           console.error(
+             `[SSE] Failed to update build cache for partAdded event (buildId: ${eventData.buildId}, partId: ${eventData.partId})`,
+             error
+           );
+         }
       });
 
       /**
        * Handle testRunSubmitted event: Add new test run to build's test runs
        */
-      eventSource.addEventListener('testRunSubmitted', (event): void => {
+      eventSource.addEventListener('testRunSubmitted', (_event: Event): void => {
+        const event = _event as MessageEvent<string>;
         const eventData = parseSSEEvent(event.data);
         if (!eventData || !eventData.buildId || !eventData.testRunId) return;
 
@@ -175,39 +202,49 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        // Try to update build detail cache
-        try {
-          client.cache.modify({
-            fields: {
-              build: (existingBuild = {}, { readField }) => {
-                if (readField('id', existingBuild) !== eventData.buildId) {
-                  return existingBuild;
-                }
+         // Try to update build detail cache
+         try {
+           client.cache.modify({
+             fields: {
+               build(value: unknown, details: any) {
+                 const { readField } = details;
+                 const existingBuild = value || {};
 
-                const existingTestRuns = readField('testRuns', existingBuild) || [];
-                const testRunExists = existingTestRuns.some(
-                  (tr: Record<string, unknown>) => readField('id', tr) === eventData.testRunId
-                );
+                 if (readField('id', existingBuild) !== eventData.buildId) {
+                   return existingBuild;
+                 }
 
-                if (testRunExists) return existingBuild;
+                 const existingTestRuns = readField('testRuns', existingBuild);
+                 const testRunsArray = (
+                   Array.isArray(existingTestRuns) ? existingTestRuns : []
+                 ) as Array<Record<string, unknown>>;
 
-                const newTestRun = {
-                  __typename: 'TestRun',
-                  id: eventData.testRunId,
-                  buildId: eventData.buildId,
-                  ...(eventData.payload || {}),
-                };
+                 const testRunExists = testRunsArray.some(
+                   (tr) => readField('id', tr) === eventData.testRunId
+                 );
 
-                return {
-                  ...existingBuild,
-                  testRuns: [...existingTestRuns, newTestRun],
-                };
-              },
-            },
-          });
-        } catch {
-          // Build not in cache yet, will be fetched on demand
-        }
+                 if (testRunExists) return existingBuild;
+
+                 const newTestRun = {
+                   __typename: 'TestRun',
+                   id: eventData.testRunId,
+                   buildId: eventData.buildId,
+                   ...((eventData.payload as Record<string, unknown>) ?? {}),
+                 };
+
+                 return {
+                   ...(existingBuild as Record<string, unknown>),
+                   testRuns: [...testRunsArray, newTestRun],
+                 };
+               },
+             },
+           });
+         } catch (error) {
+           console.error(
+             `[SSE] Failed to update build cache for testRunSubmitted event (buildId: ${eventData.buildId}, testRunId: ${eventData.testRunId})`,
+             error
+           );
+         }
       });
 
       /**
