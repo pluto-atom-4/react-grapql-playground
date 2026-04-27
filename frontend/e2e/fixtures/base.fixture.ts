@@ -73,9 +73,9 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
 
     // Wait for JWT token in localStorage
     await page.waitForFunction(
-      () => {
+      (): boolean => {
         const token = localStorage.getItem('auth_token') || localStorage.getItem('apollo_token');
-        return token && token.length > 0;
+        return !!(token && token.length > 0);
       },
       { timeout: 10000 }
     );
@@ -85,6 +85,7 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     // eslint-disable-next-line no-console
     console.log('[fixture] About to run test with authenticated page');
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
 
     // Cleanup - clear localStorage after test
