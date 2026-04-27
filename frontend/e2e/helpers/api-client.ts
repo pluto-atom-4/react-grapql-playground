@@ -1,6 +1,10 @@
 /**
  * GraphQL API Client for E2E tests
  */
+interface GraphQLError {
+  message: string;
+}
+
 export class GraphQLClient {
   private baseURL: string;
   private token: string | undefined;
@@ -36,30 +40,30 @@ export class GraphQLClient {
   /**
    * Execute GraphQL query
    */
-  async query<T = any>(
+  async query<T>(
     query: string,
-    variables?: Record<string, any>
-  ): Promise<{ data?: T; errors?: any[] }> {
-    return this.execute(query, variables);
+    variables?: Record<string, unknown>
+  ): Promise<{ data?: T; errors?: GraphQLError[] }> {
+    return this.execute<T>(query, variables);
   }
 
   /**
    * Execute GraphQL mutation
    */
-  async mutation<T = any>(
+  async mutation<T>(
     mutation: string,
-    variables?: Record<string, any>
-  ): Promise<{ data?: T; errors?: any[] }> {
-    return this.execute(mutation, variables);
+    variables?: Record<string, unknown>
+  ): Promise<{ data?: T; errors?: GraphQLError[] }> {
+    return this.execute<T>(mutation, variables);
   }
 
   /**
    * Execute GraphQL request
    */
-  private async execute(
+  private async execute<T>(
     document: string,
-    variables?: Record<string, any>
-  ): Promise<{ data?: any; errors?: any[] }> {
+    variables?: Record<string, unknown>
+  ): Promise<{ data?: T; errors?: GraphQLError[] }> {
     const url = `${this.baseURL}/graphql`;
 
     const body = {
@@ -87,10 +91,10 @@ export class GraphQLClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as { data?: T; errors?: GraphQLError[] };
 
       if (result.errors) {
-        throw new Error(`GraphQL Error: ${result.errors.map((e: any) => e.message).join(', ')}`);
+        throw new Error(`GraphQL Error: ${result.errors.map((e: GraphQLError) => e.message).join(', ')}`);
       }
 
       return result;
@@ -123,9 +127,15 @@ export class ExpressClient {
   /**
    * Upload file to Express server
    */
-  async uploadFile(path: string, fileData: Buffer, fileName: string): Promise<{ fileId: string }> {
+  async uploadFile(path: string, fileData: Uint8Array, fileName: string): Promise<{ fileId: string }> {
     const formData = new FormData();
-    const blob = new Blob([new Uint8Array(fileData)]);
+    // Convert Uint8Array to ArrayBuffer to ensure compatibility with Blob constructor
+    // Slice creates a new ArrayBuffer (not SharedArrayBuffer)
+    const arrayBuffer = fileData.buffer.slice(
+      fileData.byteOffset,
+      fileData.byteOffset + fileData.byteLength
+    ) as ArrayBuffer;
+    const blob = new Blob([new Uint8Array(arrayBuffer)]);
     formData.append('file', blob, fileName);
 
     try {
@@ -138,7 +148,7 @@ export class ExpressClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      return await response.json() as { fileId: string };
     } catch (error) {
       console.error('File upload failed:', error);
       throw error;
@@ -159,7 +169,7 @@ export class ExpressClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      return await response.json() as { status: string; timestamp: string };
     } catch (error) {
       console.error('Health check failed:', error);
       throw error;
@@ -169,7 +179,7 @@ export class ExpressClient {
   /**
    * Send webhook event
    */
-  async sendWebhook(path: string, payload: Record<string, any>): Promise<Record<string, any>> {
+  async sendWebhook(path: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
       const response = await fetch(`${this.baseURL}${path}`, {
         method: 'POST',
@@ -181,7 +191,7 @@ export class ExpressClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      return await response.json() as Record<string, unknown>;
     } catch (error) {
       console.error('Webhook failed:', error);
       throw error;
@@ -192,7 +202,7 @@ export class ExpressClient {
    * Get Server-Sent Events stream
    */
   async streamEvents(
-    onMessage: (data: any) => void,
+    onMessage: (data: unknown) => void,
     onError?: (error: Error) => void
   ): Promise<void> {
     try {
@@ -220,12 +230,12 @@ export class ExpressClient {
         const lines = buffer.split('\n');
 
         // Keep the last incomplete line in buffer
-        buffer = lines.pop() || '';
+        buffer = lines.pop() ?? '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6));
+              const data = JSON.parse(line.slice(6)) as unknown;
               onMessage(data);
             } catch (error) {
               console.error('Failed to parse SSE data:', error);
