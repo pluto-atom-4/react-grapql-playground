@@ -5,7 +5,7 @@
  * and integration with mutation hooks.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   isRetryableError,
   classifyError,
@@ -377,7 +377,6 @@ describe('Retry Logic', () => {
       }
 
       // Delays should have sub-millisecond precision (no rounding issues)
-      const hasDecimal = delays.some((d) => d % 1 !== 0);
       // Due to floating point, some should have decimal precision
       expect(delays.length).toBeGreaterThan(0);
     });

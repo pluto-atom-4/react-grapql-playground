@@ -5,6 +5,7 @@
  * Tests verify optimistic responses appear in Apollo cache before server response,
  * proper type matching, and rollback on errors.
  */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InMemoryCache, gql } from '@apollo/client';
@@ -199,10 +200,9 @@ describe('Optimistic Updates', () => {
     it('Optimistic response should appear immediately without waiting for server', () => {
       return new Promise<void>((resolve) => {
         const startTime = Date.now();
-        const tempId = generateTempId();
 
         // Simulate optimistic update timing
-        setTimeout(() => {
+        globalThis.setTimeout(() => {
           const optimisticTime = Date.now() - startTime;
           expect(optimisticTime).toBeLessThan(200); // Should be very fast (< 200ms)
           resolve();
@@ -487,9 +487,7 @@ describe('Optimistic Updates', () => {
           }
         `,
         data: {
-          builds: [
-            { __typename: 'Build', id: buildId1, name: 'Build 1' },
-          ],
+          builds: [{ __typename: 'Build', id: buildId1, name: 'Build 1' }],
         },
       });
 
