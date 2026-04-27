@@ -95,10 +95,7 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
 /**
  * Clean up test data created during E2E tests via GraphQL mutations
  */
-export function cleanupTestData(
-  _apiClient: GraphQLClient,
-  data: SeededTestData
-): void {
+export function cleanupTestData(_apiClient: GraphQLClient, data: SeededTestData): void {
   try {
     // Note: Apollo GraphQL backend doesn't have delete mutations implemented
     // Test cleanup would require database-level cleanup

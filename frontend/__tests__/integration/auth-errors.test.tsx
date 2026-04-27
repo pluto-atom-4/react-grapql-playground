@@ -44,7 +44,7 @@ function LoginForm() {
     try {
       // Simulate API call
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const response = await new Promise((resolve, reject) => {
+      const response = (await new Promise((resolve, reject) => {
         setTimeout(() => {
           if (email === 'invalid@example.com' || password === 'wrongpassword') {
             reject(new Error('Invalid email or password'));
@@ -57,8 +57,8 @@ function LoginForm() {
             reject(new Error('Unexpected error'));
           }
         }, 100);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      })) as any;
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
       localStorage.setItem('auth_token', response.token);
@@ -79,7 +79,10 @@ function LoginForm() {
 
   const handleRetry = () => {
     setShowRetry(false);
-    const event = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
+    const event = new Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }) as unknown as React.FormEvent;
     void handleLogin(event);
   };
 
@@ -91,7 +94,11 @@ function LoginForm() {
           {error}
         </div>
       )}
-      <form onSubmit={(e) => { void handleLogin(e); }}>
+      <form
+        onSubmit={(e) => {
+          void handleLogin(e);
+        }}
+      >
         <label>
           Email
           <input
@@ -115,7 +122,12 @@ function LoginForm() {
         </button>
       </form>
       {showRetry && (
-        <button onClick={() => { void handleRetry(); }} type="button">
+        <button
+          onClick={() => {
+            void handleRetry();
+          }}
+          type="button"
+        >
           Retry
         </button>
       )}

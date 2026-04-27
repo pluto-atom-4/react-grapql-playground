@@ -35,28 +35,28 @@ test.describe('Authentication - Login/Logout Flows', () => {
   }) => {
     // Navigate to home page first to establish origin
     await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' });
-    
+
     // Clear any existing auth state
     await context.clearCookies();
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
     });
-    
+
     // Reload to ensure clean state
     await page.reload({ waitUntil: 'domcontentloaded' });
-    
+
     // Click the login link
     await page.click('[data-testid="home-login-link"]');
-    
+
     // Wait for login page to load
     await page.waitForURL(/.*\/login/, { timeout: 10000 });
-    
+
     // Pause for form to render
     await page.waitForTimeout(500);
 
     const loginPage = new LoginPage(page);
-    
+
     // Verify login form is ready
     const isReady = await loginPage.isFormReady();
     expect(isReady).toBeTruthy();
@@ -68,10 +68,10 @@ test.describe('Authentication - Login/Logout Flows', () => {
     // Fill form and submit
     await loginPage.fillByTestId('email-input', testEmail);
     await loginPage.fillByTestId('password-input', testPassword);
-    
+
     // Start listening for URL change BEFORE submitting (use regex for flexible matching)
     const urlChangePromise = page.waitForURL(/.*\/dashboard/, { timeout: 20000 });
-    
+
     // Click submit button
     await loginPage.clickByTestId('submit-button');
 
@@ -108,7 +108,7 @@ test.describe('Authentication - Login/Logout Flows', () => {
     await loginPage.fillByTestId('email-input', testEmail);
     await loginPage.fillByTestId('password-input', 'WrongPassword123!');
     await loginPage.clickByTestId('submit-button');
-    
+
     // Wait for loading state to clear
     await page.waitForTimeout(1500);
 
@@ -138,7 +138,7 @@ test.describe('Authentication - Login/Logout Flows', () => {
     await loginPage.fillByTestId('email-input', 'nonexistent-user-12345@example.com');
     await loginPage.fillByTestId('password-input', 'TestPassword123!');
     await loginPage.clickByTestId('submit-button');
-    
+
     // Wait for loading to clear
     await page.waitForTimeout(1500);
 
@@ -176,12 +176,16 @@ test.describe('Authentication - Login/Logout Flows', () => {
 
     // Navigate back to dashboard
     await authenticatedPage.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    
+
     // Wait for dashboard to show (either builds list or empty state)
     try {
-      await authenticatedPage.locator('[data-testid="builds-list"]').waitFor({ state: 'visible', timeout: 5000 });
+      await authenticatedPage
+        .locator('[data-testid="builds-list"]')
+        .waitFor({ state: 'visible', timeout: 5000 });
     } catch {
-      await authenticatedPage.locator('[data-testid="empty-state"]').waitFor({ state: 'visible', timeout: 5000 });
+      await authenticatedPage
+        .locator('[data-testid="empty-state"]')
+        .waitFor({ state: 'visible', timeout: 5000 });
     }
 
     // Token unchanged after complex navigation
@@ -221,7 +225,7 @@ test.describe('Authentication - Login/Logout Flows', () => {
     await authenticatedPage.goto('/', { waitUntil: 'domcontentloaded' });
     // Give page time to detect missing auth and render login page
     await authenticatedPage.waitForTimeout(500);
-    
+
     // Should show login link on home page when not authenticated
     const loginLink = authenticatedPage.locator('[data-testid="home-login-link"]');
     await expect(loginLink).toBeVisible({ timeout: 5000 });
@@ -241,11 +245,13 @@ test.describe('Authentication - Login/Logout Flows', () => {
     await authenticatedPage.evaluate(() => {
       localStorage.removeItem('auth_token');
       // Dispatch storage event to notify React components
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'auth_token',
-        newValue: null,
-        oldValue: localStorage.getItem('auth_token'),
-      }));
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'auth_token',
+          newValue: null,
+          oldValue: localStorage.getItem('auth_token'),
+        })
+      );
     });
 
     // Wait for redirect to login page (polling with retries)
@@ -354,7 +360,7 @@ test.describe('Authentication - Error Handling', () => {
     await loginPage.fillByTestId('email-input', 'not-an-email');
     await loginPage.fillByTestId('password-input', 'TestPassword123!');
     await loginPage.clickByTestId('submit-button');
-    
+
     // Wait for form to process
     await page.waitForTimeout(1500);
 
@@ -392,7 +398,7 @@ test.describe('Authentication - Advanced Scenarios', () => {
 
     // Verify still on login page (failed login)
     expect(page.url()).toContain('/login');
-    
+
     // Verify no token created
     const tokenAfterFailure = await page.evaluate(() => localStorage.getItem('auth_token'));
     expect(tokenAfterFailure).toBeFalsy();
@@ -605,13 +611,13 @@ test.describe('Authentication - Session Management', () => {
     await loginPage.fillByTestId('email-input', testEmail);
     await loginPage.fillByTestId('password-input', 'IncorrectPassword!');
     await loginPage.clickByTestId('submit-button');
-    
+
     // Wait for form processing
     await page.waitForTimeout(1500);
 
     // Should stay on login page (failed login)
     expect(page.url()).toContain('/login');
-    
+
     // Should not have auth token
     const token = await page.evaluate(() => localStorage.getItem('auth_token'));
     expect(token).toBeFalsy();

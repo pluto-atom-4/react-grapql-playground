@@ -1,4 +1,3 @@
-
 /**
  * Global setup for Playwright tests
  * Verifies all required services are running before tests begin
@@ -28,7 +27,10 @@ async function globalSetup() {
 
   for (const service of serviceChecks) {
     try {
-      const status = await checkService(service.url, service.check as 'frontend' | 'graphql' | 'express');
+      const status = await checkService(
+        service.url,
+        service.check as 'frontend' | 'graphql' | 'express'
+      );
       if (status) {
         console.log(`✅ ${service.name} is running`);
         results.push({ name: service.name, status: 'success' });

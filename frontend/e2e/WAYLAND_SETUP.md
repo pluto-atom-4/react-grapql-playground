@@ -47,7 +47,7 @@ pnpm e2e:wayland my-test.spec.ts
 ✅ **Reliable**: Chromium works best with X11 backend, even in headless mode  
 ✅ **Simple**: No complex configuration needed  
 ✅ **Portable**: Works on any Linux with Xvfb installed  
-✅ **CI-Friendly**: Same approach works locally and in CI/CD  
+✅ **CI-Friendly**: Same approach works locally and in CI/CD
 
 ## Alternative: Firefox Only
 

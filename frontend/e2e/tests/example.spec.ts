@@ -61,12 +61,12 @@ test.describe('UI Tests (Using authenticatedPage fixture)', () => {
     // Get builds from table (count rows in tbody)
     const buildRows = authenticatedPage.locator('[data-testid="builds-list"] tbody tr');
     const count = await buildRows.count();
-    
+
     // If table is empty, accept it (no builds in database)
     // If table has rows, verify first build structure
     if (count > 0) {
       console.log(`✓ Dashboard shows ${count} builds`);
-      
+
       // Verify first build has name visible
       const firstName = await buildRows.first().locator('[data-testid="build-name"]').textContent();
       expect(firstName).toBeTruthy();
@@ -128,7 +128,8 @@ test.describe('API Tests (Using apiClient fixture)', () => {
    * This test uses apiClient fixture (no page/UI interaction)
    */
   test('API Test 1: Query builds returns valid data', async ({ apiClient }) => {
-    const result = await apiClient.query(`
+    const result = await apiClient.query(
+      `
       query GetBuilds($limit: Int!, $offset: Int!) {
         builds(limit: $limit, offset: $offset) {
           id
@@ -137,10 +138,12 @@ test.describe('API Tests (Using apiClient fixture)', () => {
           createdAt
         }
       }
-    `, {
-      limit: 10,
-      offset: 0,
-    });
+    `,
+      {
+        limit: 10,
+        offset: 0,
+      }
+    );
 
     // Verify response structure
     expect(result.data).toBeDefined();

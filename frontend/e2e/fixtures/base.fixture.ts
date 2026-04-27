@@ -25,18 +25,18 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await context.clearCookies();
     await page.evaluate(() => localStorage.clear());
-    
+
     // Reload to get fresh state
     await page.reload({ waitUntil: 'domcontentloaded' });
-    
+
     // Add small pause for page to fully render
     await page.waitForTimeout(500);
-    
+
     // Click login link to navigate to login form
     const loginLink = page.locator('[data-testid="home-login-link"]');
     await loginLink.waitFor({ state: 'visible', timeout: 10000 });
     await loginLink.click();
-    
+
     // Add pause for login page to render
     await page.waitForTimeout(500);
 
@@ -58,11 +58,11 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     // Submit
     const submitButton = page.locator('[data-testid="submit-button"]');
     await submitButton.waitFor({ state: 'visible', timeout: 5000 });
-    
+
     // Start listening for redirect BEFORE click
     const urlChangePromise = page.waitForURL(/.*\/dashboard/, { timeout: 20000 });
     await submitButton.click();
-    
+
     // Wait for redirect
     try {
       await urlChangePromise;
@@ -81,12 +81,12 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
     );
 
     // Use the authenticated page
-     
+
     // eslint-disable-next-line no-console
     console.log('[fixture] About to run test with authenticated page');
-    
+
     await use(page);
-    
+
     // Cleanup - clear localStorage after test
     // Note: Do NOT close the page here - Playwright manages page lifecycle
     try {
@@ -96,8 +96,11 @@ const authenticatedPageFixture = base.extend<{ authenticatedPage: Page }>({
       }
     } catch (err) {
       // Page might already be closed, that's ok
-       
-      console.warn('[fixture] Cleanup error (page may be closed):', err instanceof Error ? err.message : err);
+
+      console.warn(
+        '[fixture] Cleanup error (page may be closed):',
+        err instanceof Error ? err.message : err
+      );
     }
   },
 });
@@ -109,7 +112,7 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
   apiClient: async ({ authenticatedPage }, use) => {
     // Extract JWT token from localStorage (authenticatedPage has already logged in)
     let token = '';
-    
+
     try {
       // Try using page.evaluate() (works in most cases)
       token = await authenticatedPage.evaluate(() => {
@@ -121,28 +124,32 @@ const apiClientFixture = authenticatedPageFixture.extend<{ apiClient: GraphQLCli
       }
     } catch (error) {
       // Fallback for Firefox sandbox: try getting from context storage
-       
-      console.warn('[apiClient] page.evaluate() failed, trying context.cookies():', error instanceof Error ? error.message : error);
+
+      console.warn(
+        '[apiClient] page.evaluate() failed, trying context.cookies():',
+        error instanceof Error ? error.message : error
+      );
       try {
         const cookies = await authenticatedPage.context().cookies();
-        const authCookie = cookies.find(c => c.name === 'auth_token');
+        const authCookie = cookies.find((c) => c.name === 'auth_token');
         if (authCookie) {
           token = authCookie.value;
           // eslint-disable-next-line no-console
           console.log('[apiClient] Token extracted from cookies');
         } else {
-           
           console.warn('[apiClient] No auth_token cookie found');
         }
       } catch (cookieErr) {
         // If both methods fail, continue without token (tests may still work for public queries)
-         
-        console.warn('[apiClient] Could not extract auth token from page or cookies:', cookieErr instanceof Error ? cookieErr.message : cookieErr);
+
+        console.warn(
+          '[apiClient] Could not extract auth token from page or cookies:',
+          cookieErr instanceof Error ? cookieErr.message : cookieErr
+        );
       }
     }
 
     if (!token) {
-       
       console.warn('[apiClient] WARNING: No auth token found, API requests will be unauthorized');
     }
 

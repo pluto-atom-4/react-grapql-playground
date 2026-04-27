@@ -36,15 +36,15 @@ export class LoginPage extends BasePage {
   async goto(): Promise<void> {
     // Navigate to home page first
     await this.page.goto('/', { waitUntil: 'domcontentloaded' });
-    
+
     // Add small pause for page to fully render
     await this.page.waitForTimeout(300);
-    
+
     // Click login link to navigate to login form
     const loginLink = this.page.locator('[data-testid="home-login-link"]');
     await loginLink.waitFor({ state: 'visible', timeout: 10000 });
     await loginLink.click();
-    
+
     // Wait for login form to be visible
     const emailInput = this.getByTestId('email-input');
     await emailInput.waitFor({ state: 'visible', timeout: 10000 });

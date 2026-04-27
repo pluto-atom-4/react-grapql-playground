@@ -93,7 +93,10 @@ export async function waitForNetworkIdle(page: Page, timeout = 5000): Promise<vo
     await page.waitForLoadState('networkidle', { timeout });
   } catch (error) {
     // Network idle timeout is not critical - allow tests to continue
-    console.warn('[waitForNetworkIdle] Timeout (continuing):', error instanceof Error ? error.message : error);
+    console.warn(
+      '[waitForNetworkIdle] Timeout (continuing):',
+      error instanceof Error ? error.message : error
+    );
   }
 }
 
@@ -125,7 +128,10 @@ export async function waitForApolloCacheReady(page: Page, timeout = 5000): Promi
       await page.waitForTimeout(100);
     } catch (error) {
       // If page is closed or error occurs, stop waiting
-      if (error instanceof Error && (error.message.includes('closed') || error.message.includes('Target'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('closed') || error.message.includes('Target'))
+      ) {
         console.warn('Page closed or not available - stopping Apollo cache wait');
         return;
       }

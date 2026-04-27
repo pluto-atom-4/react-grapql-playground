@@ -49,7 +49,11 @@ function LoginForm() {
   return (
     <div>
       <h1>Welcome</h1>
-      <form onSubmit={(e) => { void handleLogin(e); }}>
+      <form
+        onSubmit={(e) => {
+          void handleLogin(e);
+        }}
+      >
         <label>
           Email
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
