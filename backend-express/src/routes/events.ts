@@ -24,7 +24,6 @@
 
 import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import express from 'express';
-import type { BufferEncoding } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 import { eventBus, EventBusMetricsCollector } from '../services/event-bus';
 import { EventDeduplicator } from '../services/event-deduplicator';
