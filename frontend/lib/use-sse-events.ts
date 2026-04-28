@@ -19,7 +19,7 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { SSEMetrics } from './sse-types';
 
 /**
@@ -276,9 +276,49 @@ export function useSSEEvents(): void {
   };
 
   /**
+   * Reconnect with exponential backoff
+   */
+  const reconnectWithBackoff = (): void => {
+    const config = getReconnectConfig();
+
+    if (reconnectAttemptRef.current >= config.maxAttempts) {
+      debugLog('Max reconnection attempts reached, keeping frontend operational', {
+        attempts: reconnectAttemptRef.current,
+      });
+      // eslint-disable-next-line no-console
+      console.error(
+        `[SSE] Failed to reconnect after ${reconnectAttemptRef.current} attempts. Frontend remains operational without real-time updates.`
+      );
+      return;
+    }
+
+    const delay = calculateReconnectDelay(
+      reconnectAttemptRef.current,
+      config.baseDelayMs,
+      config.maxDelayMs
+    );
+
+    reconnectAttemptRef.current += 1;
+    updateMetrics('reconnectAttempts');
+
+    debugLog('Scheduling reconnection', {
+      attempt: reconnectAttemptRef.current,
+      delayMs: delay,
+      maxAttempts: config.maxAttempts,
+    });
+
+    reconnectTimeoutRef.current = globalThis.setTimeout(() => {
+      debugLog('Attempting to reconnect', {
+        attempt: reconnectAttemptRef.current,
+      });
+      connect();
+    }, delay);
+  };
+
+  /**
    * Connect to SSE endpoint with reconnection logic
    */
-  const connect = useCallback((): void => {
+  const connect = (): void => {
     const config = getReconnectConfig();
     const eventSourceURL = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
 
@@ -298,14 +338,16 @@ export function useSSEEvents(): void {
         updateMetrics('totalEventsReceived');
         updateEventTypeCounter('buildCreated');
 
-        // Check for deduplication
         if (dedupRef.current.isDuplicate(eventData.eventId)) {
           debugLog('Duplicate buildCreated event skipped', { eventId: eventData.eventId });
           updateMetrics('totalDuplicates');
           return;
         }
 
-        debugLog('Processing buildCreated', { buildId: eventData.buildId, eventId: eventData.eventId });
+        debugLog('Processing buildCreated', {
+          buildId: eventData.buildId,
+          eventId: eventData.eventId,
+        });
 
         handleEventWithMetrics('buildCreated', () => {
           client.cache.modify({
@@ -351,7 +393,6 @@ export function useSSEEvents(): void {
         updateMetrics('totalEventsReceived');
         updateEventTypeCounter('buildStatusChanged');
 
-        // Check for deduplication
         if (dedupRef.current.isDuplicate(eventData.eventId)) {
           debugLog('Duplicate buildStatusChanged event skipped', { eventId: eventData.eventId });
           updateMetrics('totalDuplicates');
@@ -406,7 +447,6 @@ export function useSSEEvents(): void {
         updateMetrics('totalEventsReceived');
         updateEventTypeCounter('partAdded');
 
-        // Check for deduplication
         if (dedupRef.current.isDuplicate(eventData.eventId)) {
           debugLog('Duplicate partAdded event skipped', { eventId: eventData.eventId });
           updateMetrics('totalDuplicates');
@@ -482,7 +522,6 @@ export function useSSEEvents(): void {
         updateMetrics('totalEventsReceived');
         updateEventTypeCounter('testRunSubmitted');
 
-        // Check for deduplication
         if (dedupRef.current.isDuplicate(eventData.eventId)) {
           debugLog('Duplicate testRunSubmitted event skipped', { eventId: eventData.eventId });
           updateMetrics('totalDuplicates');
@@ -496,7 +535,6 @@ export function useSSEEvents(): void {
         });
 
         handleEventWithMetrics('testRunSubmitted', () => {
-          // Try to update build detail cache
           try {
             client.cache.modify({
               fields: {
@@ -541,7 +579,6 @@ export function useSSEEvents(): void {
             });
           } catch (error) {
             debugLog('Failed to update test runs in cache', error);
-            // Silently ignore if build not yet in cache (will be fetched fresh)
           }
         });
       });
@@ -570,7 +607,6 @@ export function useSSEEvents(): void {
         });
 
         handleEventWithMetrics('fileUploaded', () => {
-          // File upload notification - application-specific handling
           debugLog('File upload event received, applications can handle accordingly');
           updateMetrics('totalCacheUpdates');
         });
@@ -601,7 +637,6 @@ export function useSSEEvents(): void {
         });
 
         handleEventWithMetrics('ciResults', () => {
-          // CI results handling - update build cache if applicable
           client.cache.modify({
             fields: {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -656,7 +691,6 @@ export function useSSEEvents(): void {
         });
 
         handleEventWithMetrics('sensorData', () => {
-          // Sensor data handling - application can persist readings
           debugLog('Sensor data event received, applications can persist accordingly');
           updateMetrics('totalCacheUpdates');
         });
@@ -824,7 +858,6 @@ export function useSSEEvents(): void {
         });
 
         handleEventWithMetrics('webhook', () => {
-          // Webhook handling - application-specific
           debugLog('Webhook event received, applications can handle accordingly');
           updateMetrics('totalCacheUpdates');
         });
@@ -847,46 +880,6 @@ export function useSSEEvents(): void {
     }
   };
 
-  /**
-   * Reconnect with exponential backoff
-   */
-  const reconnectWithBackoff = useCallback((): void => {
-    const config = getReconnectConfig();
-
-    if (reconnectAttemptRef.current >= config.maxAttempts) {
-      debugLog('Max reconnection attempts reached, keeping frontend operational', {
-        attempts: reconnectAttemptRef.current,
-      });
-      // eslint-disable-next-line no-console
-      console.error(
-        `[SSE] Failed to reconnect after ${reconnectAttemptRef.current} attempts. Frontend remains operational without real-time updates.`
-      );
-      return;
-    }
-
-    const delay = calculateReconnectDelay(
-      reconnectAttemptRef.current,
-      config.baseDelayMs,
-      config.maxDelayMs
-    );
-
-    reconnectAttemptRef.current += 1;
-    updateMetrics('reconnectAttempts');
-
-    debugLog('Scheduling reconnection', {
-      attempt: reconnectAttemptRef.current,
-      delayMs: delay,
-      maxAttempts: config.maxAttempts,
-    });
-
-    reconnectTimeoutRef.current = globalThis.setTimeout(() => {
-      debugLog('Attempting to reconnect', {
-        attempt: reconnectAttemptRef.current,
-      });
-      connect();
-    }, delay);
-  }, []);
-
   useEffect(() => {
     connect();
 
@@ -901,5 +894,5 @@ export function useSSEEvents(): void {
         globalThis.clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [client, connect]);
+  }, [client]);
 }
