@@ -325,7 +325,7 @@ export function useSSEEvents(): void {
    * Connect to SSE endpoint with reconnection logic
    */
   const connect = (): void => {
-    const config = getReconnectConfig();
+    const _config = getReconnectConfig();
     const eventSourceURL = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
 
     try {
