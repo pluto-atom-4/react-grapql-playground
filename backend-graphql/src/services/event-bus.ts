@@ -90,20 +90,31 @@ export async function emitEvent(
 
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
-      const controller = new AbortController() as unknown as { abort: () => void; signal?: unknown };
-      const timeoutId = setTimeout(() => controller.abort(), retryConfig.timeoutMs);
-
-      const response = await fetch(expressEventUrl, {
+      const fetchOptions: RequestInit & { signal?: unknown } = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${eventSecret}`, // ✅ Shared-secret authentication
+          Authorization: `Bearer ${eventSecret}`,
         },
         body: JSON.stringify(eventPayload),
-        signal: controller.signal as unknown as AbortSignal,
-      });
+      };
 
-      clearTimeout(timeoutId);
+      let timeoutHandle: NodeJS.Timeout | null = null;
+
+      // Use AbortController if available (Node.js 15+)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof (global as any).AbortController === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const controller = new (global as any).AbortController();
+        timeoutHandle = setTimeout(() => controller.abort(), retryConfig.timeoutMs);
+        fetchOptions.signal = controller.signal;
+      }
+
+      const response = await fetch(expressEventUrl, fetchOptions);
+
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
 
       if (response.ok) {
         return; // Success
