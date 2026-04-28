@@ -93,7 +93,7 @@ function getOrInitializeMetrics(): SSEMetrics {
       eventTypeCounters: {},
     };
   }
-  return window.__SSE_METRICS as SSEMetrics;
+  return window.__SSE_METRICS;
 }
 
 /**
