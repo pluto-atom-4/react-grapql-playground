@@ -148,7 +148,6 @@ router.get('/', (req: Request, res: Response) => {
   res.write = (function (this: Response, ...args: any[]) {
     lastActivityTime = Date.now();
     client.eventCount++;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     return originalWrite.apply(this, args);
   }).bind(res) as unknown as typeof res.write;
 
