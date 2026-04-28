@@ -86,7 +86,6 @@ export async function emitEvent(
   };
 
   let lastError: Error | null = null;
-  let delay = retryConfig.baseDelayMs;
 
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
@@ -136,10 +135,12 @@ export async function emitEvent(
         return; // Don't throw, let mutation complete
       }
 
-      // Calculate next delay with exponential backoff
-      const nextDelay = Math.min(
-        delay * retryConfig.backoffMultiplier,
-        retryConfig.maxDelayMs
+      // Calculate next delay with exponential backoff (using correct formula)
+      const nextDelay = calculateBackoffDelay(
+        attempt + 1,
+        retryConfig.baseDelayMs,
+        retryConfig.maxDelayMs,
+        retryConfig.backoffMultiplier
       );
 
       console.warn(
@@ -152,7 +153,6 @@ export async function emitEvent(
 
       // Wait before retry
       await new Promise(resolve => setTimeout(resolve, nextDelay));
-      delay = nextDelay;
     }
   }
 }
