@@ -226,6 +226,8 @@ function broadcastEvent(eventType: string, data: EventPayloadWithId): void {
         metricsCollector.recordFailedBroadcast();
       }
     } catch (error) {
+      // Ignore write errors, client will be cleaned up on next heartbeat
+      void error;
       sseClients.delete(clientId);
       metricsCollector.recordBroadcastError();
     }
