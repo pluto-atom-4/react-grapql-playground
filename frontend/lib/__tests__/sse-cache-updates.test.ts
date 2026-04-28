@@ -1166,9 +1166,15 @@ describe('SSE Cache Updates', () => {
       const latencies: number[] = [];
 
       const measureLatency = (fn: () => void): void => {
-        const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const start =
+          typeof performance !== 'undefined' && 'now' in performance
+            ? performance.now()
+            : Date.now();
         fn();
-        const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const end =
+          typeof performance !== 'undefined' && 'now' in performance
+            ? performance.now()
+            : Date.now();
         const duration = end - start;
         latencies.push(duration);
       };
