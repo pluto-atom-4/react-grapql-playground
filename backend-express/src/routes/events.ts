@@ -142,13 +142,14 @@ router.get('/', (req: Request, res: Response) => {
   }, connectionTimeoutMs / 2);
 
   // Track writes to update last activity time
-  const originalWrite = res.write;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  res.write = (function (this: Response, ...args: unknown[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const originalWrite = res.write as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res.write = (function (this: Response, ...args: any[]) {
     lastActivityTime = Date.now();
     client.eventCount++;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    return originalWrite.apply(this, args as unknown[]);
+    return originalWrite.apply(this, args);
   }).bind(res) as unknown as typeof res.write;
 
   // Cleanup function: called on disconnect, error, or timeout
