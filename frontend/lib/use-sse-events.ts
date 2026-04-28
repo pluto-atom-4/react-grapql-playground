@@ -205,8 +205,8 @@ class EventDeduplicator {
  */
 export function useSSEEvents(): void {
   const client = useApolloClient();
-  const eventSourceRef = useRef<EventSource | undefined>();
-  const reconnectTimeoutRef = useRef<unknown>();
+  const eventSourceRef = useRef<EventSource | undefined>(undefined);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const reconnectAttemptRef = useRef<number>(0);
   const dedupRef = useRef<EventDeduplicator>(new EventDeduplicator(
     parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
@@ -326,7 +326,6 @@ export function useSSEEvents(): void {
    * Connect to SSE endpoint with reconnection logic
    */
   const connect = (): void => {
-    const _config = getReconnectConfig();
     const eventSourceURL = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
 
     try {
