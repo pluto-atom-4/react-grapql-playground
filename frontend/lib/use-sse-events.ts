@@ -748,8 +748,8 @@ export function useSSEEvents(): void {
                   const partsArray = Array.isArray(existingParts) ? existingParts : [];
 
                   const filtered = partsArray.filter(
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     (part) =>
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                       (readField({ fieldName: 'id', from: part }) as string) !== eventData.partId
                   );
 
