@@ -20,6 +20,7 @@
 
 import { useApolloClient } from '@apollo/client/react';
 import { useEffect, useRef } from 'react';
+import type { SSEMetrics } from './sse-types';
 
 /**
  * Exponential backoff configuration from environment variables
@@ -28,20 +29,6 @@ interface ReconnectConfig {
   maxAttempts: number;
   baseDelayMs: number;
   maxDelayMs: number;
-}
-
-/**
- * SSE Debug metrics for observability
- */
-interface SSEMetrics {
-  totalEventsReceived: number;
-  totalDuplicates: number;
-  totalCacheUpdates: number;
-  totalCacheUpdateErrors: number;
-  reconnectAttempts: number;
-  averageLatencyMs: number;
-  lastEventTime?: number;
-  eventTypeCounters: Record<string, number>;
 }
 
 /**
@@ -66,16 +53,6 @@ function getReconnectConfig(): ReconnectConfig {
     maxAttempts: parseInt(process.env.NEXT_PUBLIC_SSE_RECONNECT_MAX_ATTEMPTS ?? '10', 10),
     baseDelayMs: parseInt(process.env.NEXT_PUBLIC_SSE_BASE_RETRY_DELAY_MS ?? '1000', 10),
     maxDelayMs: parseInt(process.env.NEXT_PUBLIC_SSE_MAX_RETRY_DELAY_MS ?? '30000', 10),
-  };
-}
-
-/**
- * Get deduplication configuration from environment variables
- */
-function getDedupConfig(): { windowSize: number; ttlMs: number } {
-  return {
-    windowSize: parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
-    ttlMs: parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_TTL_MS ?? '300000', 10),
   };
 }
 
@@ -227,7 +204,7 @@ class EventDeduplicator {
 export function useSSEEvents(): void {
   const client = useApolloClient();
   const eventSourceRef = useRef<EventSource | undefined>();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>();
   const reconnectAttemptRef = useRef<number>(0);
   const dedupRef = useRef<EventDeduplicator>(new EventDeduplicator(
     parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
@@ -268,8 +245,10 @@ export function useSSEEvents(): void {
   const debugLog = (message: string, data?: unknown): void => {
     if (debugRef.current) {
       if (data !== undefined) {
+        // eslint-disable-next-line no-console
         console.log(`[SSE Debug] ${message}`, data);
       } else {
+        // eslint-disable-next-line no-console
         console.log(`[SSE Debug] ${message}`);
       }
     }
