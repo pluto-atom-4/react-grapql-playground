@@ -152,10 +152,9 @@ describe('EventDeduplicator', () => {
       // Mark a new event to trigger cleanup
       dedup2.mark(uuidv4(), Date.now());
 
-      // Size should be reduced (old entries cleaned, new one added)
+      // Size should be 1 after cleanup (all old entries removed, only new one added)
       const stats = dedup2.getStats();
-      expect(stats.size).toBeGreaterThanOrEqual(1);
-      expect(stats.size).toBeLessThan(6);
+      expect(stats.size).toBe(1);
     });
   });
 });
