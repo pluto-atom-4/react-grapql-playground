@@ -204,7 +204,7 @@ class EventDeduplicator {
 export function useSSEEvents(): void {
   const client = useApolloClient();
   const eventSourceRef = useRef<EventSource | undefined>();
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>();
   const reconnectAttemptRef = useRef<number>(0);
   const dedupRef = useRef<EventDeduplicator>(new EventDeduplicator(
     parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
@@ -259,14 +259,14 @@ export function useSSEEvents(): void {
    */
   const handleEventWithMetrics = (eventType: string, handler: () => void): void => {
     const startTime =
-      typeof performance !== 'undefined' && performance.now
-        ? (performance.now() as number)
+      typeof performance !== 'undefined' && 'now' in performance
+        ? performance.now()
         : Date.now();
     try {
       handler();
       const endTime =
-        typeof performance !== 'undefined' && performance.now
-          ? (performance.now() as number)
+        typeof performance !== 'undefined' && 'now' in performance
+          ? performance.now()
           : Date.now();
       const duration = endTime - startTime;
       latencyTimingsRef.current.push(duration);
