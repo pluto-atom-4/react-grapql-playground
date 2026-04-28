@@ -51,10 +51,10 @@ export class EventDeduplicator {
    * If the event was seen but is now outside TTL, it's treated as a new event.
    *
    * @param eventId - Unique event identifier (UUID)
-   * @param timestamp - Event timestamp (for reference; uses current time for TTL check)
+   * @param _timestamp - Event timestamp (for reference; uses current time for TTL check)
    * @returns true if duplicate, false if new/expired
    */
-  isDuplicate(eventId: string, timestamp: number): boolean {
+  isDuplicate(eventId: string, _timestamp: number): boolean {
     const lastSeen = this.dedup.get(eventId);
     if (!lastSeen) return false;
 
@@ -75,9 +75,9 @@ export class EventDeduplicator {
    * and enforces maxSize limit by removing oldest entry if at capacity.
    *
    * @param eventId - Unique event identifier (UUID)
-   * @param timestamp - Event timestamp (for reference only)
+   * @param _timestamp - Event timestamp (for reference only)
    */
-  mark(eventId: string, timestamp: number): void {
+  mark(eventId: string, _timestamp: number): void {
     // Cleanup expired entries periodically
     if (Date.now() - this.lastCleanup > this.cleanupIntervalMs) {
       this.cleanup();
