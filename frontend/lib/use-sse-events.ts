@@ -1,12 +1,19 @@
 /**
  * useSSEEvents: Client-side hook for real-time SSE event listening with cache updates
  *
+ * Phase D Enhancements:
+ * - Exponential backoff reconnection logic (up to 10 attempts, 1s → 2s → 4s → ... → 30s)
+ * - Event ID-based deduplication (sliding window of 1000 events, 5-min TTL)
+ * - Comprehensive cache updates for all 10 event types
+ * - Debug mode with metrics collection (window.__SSE_DEBUG, window.__SSE_METRICS)
+ *
  * Pattern:
  * - Opens EventSource connection to Express /events endpoint
- * - Listens for real-time events (buildCreated, buildStatusChanged, partAdded, testRunSubmitted)
+ * - Listens for real-time events (buildCreated, buildStatusChanged, partAdded, testRunSubmitted, etc.)
  * - Parses event payloads and updates Apollo Client cache via cache.modify()
- * - Handles out-of-order events with timestamp-based deduplication
- * - Handles automatic reconnection on disconnect
+ * - Deduplicates by eventId (sliding window, 5-min TTL)
+ * - Reconnects automatically with exponential backoff on disconnect
+ * - Tracks metrics for observability: totalEventsReceived, totalDuplicates, totalCacheUpdates, reconnectAttempts, averageLatencyMs
  */
 
 'use client';
@@ -15,19 +22,115 @@ import { useApolloClient } from '@apollo/client/react';
 import { useEffect, useRef } from 'react';
 
 /**
+ * Exponential backoff configuration from environment variables
+ */
+interface ReconnectConfig {
+  maxAttempts: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}
+
+/**
+ * SSE Debug metrics for observability
+ */
+interface SSEMetrics {
+  totalEventsReceived: number;
+  totalDuplicates: number;
+  totalCacheUpdates: number;
+  totalCacheUpdateErrors: number;
+  reconnectAttempts: number;
+  averageLatencyMs: number;
+  lastEventTime?: number;
+  eventTypeCounters: Record<string, number>;
+}
+
+/**
  * Event payload type for type-safe event parsing
  */
 interface EventPayload {
+  eventId?: string;
   event: string;
   buildId?: string;
   partId?: string;
   testRunId?: string;
+  fileId?: string;
   payload?: Record<string, unknown>;
   timestamp: number;
 }
 
 /**
- * Parses SSE event data and extracts structured payload
+ * Get reconnect configuration from environment variables
+ */
+function getReconnectConfig(): ReconnectConfig {
+  return {
+    maxAttempts: parseInt(process.env.NEXT_PUBLIC_SSE_RECONNECT_MAX_ATTEMPTS ?? '10', 10),
+    baseDelayMs: parseInt(process.env.NEXT_PUBLIC_SSE_BASE_RETRY_DELAY_MS ?? '1000', 10),
+    maxDelayMs: parseInt(process.env.NEXT_PUBLIC_SSE_MAX_RETRY_DELAY_MS ?? '30000', 10),
+  };
+}
+
+/**
+ * Get deduplication configuration from environment variables
+ */
+function getDedupConfig(): { windowSize: number; ttlMs: number } {
+  return {
+    windowSize: parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
+    ttlMs: parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_TTL_MS ?? '300000', 10),
+  };
+}
+
+/**
+ * Check if debug mode is enabled via environment variable
+ */
+function isDebugEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_SSE_DEBUG === 'true';
+}
+
+/**
+ * Initialize or get global metrics object
+ */
+function getOrInitializeMetrics(): SSEMetrics {
+  if (typeof window === 'undefined') {
+    return {
+      totalEventsReceived: 0,
+      totalDuplicates: 0,
+      totalCacheUpdates: 0,
+      totalCacheUpdateErrors: 0,
+      reconnectAttempts: 0,
+      averageLatencyMs: 0,
+      eventTypeCounters: {},
+    };
+  }
+
+  if (!window.__SSE_METRICS) {
+    window.__SSE_METRICS = {
+      totalEventsReceived: 0,
+      totalDuplicates: 0,
+      totalCacheUpdates: 0,
+      totalCacheUpdateErrors: 0,
+      reconnectAttempts: 0,
+      averageLatencyMs: 0,
+      eventTypeCounters: {},
+    };
+  }
+  return window.__SSE_METRICS as SSEMetrics;
+}
+
+/**
+ * Calculate exponential backoff delay for reconnection attempt
+ * Formula: delay = min(baseDelay * (2 ^ attemptNumber), maxDelay)
+ */
+function calculateReconnectDelay(
+  attempt: number,
+  baseDelayMs: number,
+  maxDelayMs: number
+): number {
+  const delay = baseDelayMs * Math.pow(2, attempt);
+  return Math.min(delay, maxDelayMs);
+}
+
+/**
+ * Parses SSE event data and extracts structured payload with eventId
  */
 function parseSSEEvent(data: string): EventPayload | null {
   try {
@@ -36,12 +139,16 @@ function parseSSEEvent(data: string): EventPayload | null {
     const buildId = parsed.buildId;
     const partId = parsed.partId;
     const testRunId = parsed.testRunId;
+    const fileId = parsed.fileId;
+    const eventId = parsed.eventId;
 
     return {
+      eventId: typeof eventId === 'string' ? eventId : undefined,
       event: typeof event === 'string' ? event : '',
       buildId: typeof buildId === 'string' ? buildId : undefined,
       partId: typeof partId === 'string' ? partId : undefined,
       testRunId: typeof testRunId === 'string' ? testRunId : undefined,
+      fileId: typeof fileId === 'string' ? fileId : undefined,
       payload: parsed.payload as Record<string, unknown> | undefined,
       timestamp: typeof parsed.timestamp === 'number' ? parsed.timestamp : Date.now(),
     };
@@ -51,11 +158,83 @@ function parseSSEEvent(data: string): EventPayload | null {
 }
 
 /**
+ * Sliding window deduplicator for event IDs
+ * Maintains a set of recent eventIds with TTL-based cleanup
+ */
+class EventDeduplicator {
+  private eventIdMap: Map<string, number> = new Map(); // eventId -> timestamp
+  private maxSize: number;
+  private ttlMs: number;
+
+  constructor(maxSize: number = 1000, ttlMs: number = 300000) {
+    this.maxSize = maxSize;
+    this.ttlMs = ttlMs;
+  }
+
+  /**
+   * Check if event is duplicate and add if new
+   * Returns true if duplicate, false if new
+   */
+  isDuplicate(eventId: string | undefined): boolean {
+    if (!eventId) return false;
+
+    const now = Date.now();
+
+    // Clean up expired entries (TTL-based)
+    for (const [id, timestamp] of this.eventIdMap.entries()) {
+      if (now - timestamp > this.ttlMs) {
+        this.eventIdMap.delete(id);
+      }
+    }
+
+    // Check if duplicate
+    if (this.eventIdMap.has(eventId)) {
+      return true;
+    }
+
+    // Add new event ID
+    this.eventIdMap.set(eventId, now);
+
+    // Trim to max size if needed (sliding window)
+    if (this.eventIdMap.size > this.maxSize) {
+      const oldestEntry = [...this.eventIdMap.entries()].sort(
+        (a, b) => a[1] - b[1]
+      )[0];
+      if (oldestEntry) {
+        this.eventIdMap.delete(oldestEntry[0]);
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Get current dedup window size for debugging
+   */
+  getSize(): number {
+    return this.eventIdMap.size;
+  }
+}
+
+/**
  * Hook to listen for SSE events and update Apollo cache in real-time
+ * Features:
+ * - Exponential backoff reconnection
+ * - Event ID-based deduplication
+ * - All 10 event type handlers
+ * - Debug mode with metrics
  */
 export function useSSEEvents(): void {
   const client = useApolloClient();
-  const lastSeenTimestampRef = useRef<number>(0);
+  const eventSourceRef = useRef<EventSource | undefined>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const reconnectAttemptRef = useRef<number>(0);
+  const dedupRef = useRef<EventDeduplicator>(new EventDeduplicator(
+    parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
+    parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_TTL_MS ?? '300000', 10)
+  ));
+  const debugRef = useRef<boolean>(isDebugEnabled());
+  const latencyTimingsRef = useRef<number[]>([]);
 
   useEffect(() => {
     const eventSourceURL = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
