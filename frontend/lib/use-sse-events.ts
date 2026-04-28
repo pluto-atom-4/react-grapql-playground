@@ -19,7 +19,7 @@
 'use client';
 
 import { useApolloClient } from '@apollo/client/react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { SSEMetrics } from './sse-types';
 
 /**
