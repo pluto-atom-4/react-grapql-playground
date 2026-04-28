@@ -258,10 +258,16 @@ export function useSSEEvents(): void {
    * Handle event with timing and metrics
    */
   const handleEventWithMetrics = (eventType: string, handler: () => void): void => {
-    const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const startTime =
+      typeof performance !== 'undefined' && performance.now
+        ? (performance.now() as number)
+        : Date.now();
     try {
       handler();
-      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const endTime =
+        typeof performance !== 'undefined' && performance.now
+          ? (performance.now() as number)
+          : Date.now();
       const duration = endTime - startTime;
       latencyTimingsRef.current.push(duration);
       // Keep only last 100 latency timings for average calculation
