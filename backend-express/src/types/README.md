@@ -84,13 +84,16 @@ import { emitEvent } from '../../services/event-bus';
 import { BuildCreatedPayload } from '../types/events';
 
 // In createBuild resolver:
+import { createEventEnvelope } from './events';
+
 export async function createBuild(_, { name, description }, context) {
   const build = await context.prisma.build.create({
     data: { name, description, status: 'PENDING' }
   });
 
-  // Emit event with full type safety
+  // Emit event with full type safety (using helper for consistency)
   const payload: BuildCreatedPayload = {
+    ...createEventEnvelope('buildCreated', 'graphql', context.user?.id),
     buildId: build.id,
     build: {
       id: build.id,
@@ -99,11 +102,6 @@ export async function createBuild(_, { name, description }, context) {
       status: build.status,
       createdAt: build.createdAt.toISOString(),
     },
-    eventId: generateId(), // UUID
-    eventType: 'buildCreated',
-    timestamp: Date.now(),
-    sourceLayer: 'graphql',
-    userId: context.user?.id,
   };
 
   await emitEvent('buildCreated', payload);

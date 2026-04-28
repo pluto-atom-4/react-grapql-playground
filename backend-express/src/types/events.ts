@@ -31,6 +31,25 @@
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Event type constants - use these to prevent typos and ensure consistency
+ * All events must use one of these eventType values
+ */
+export const EVENT_TYPES = {
+  BUILD_CREATED: 'buildCreated',
+  BUILD_STATUS_CHANGED: 'buildStatusChanged',
+  PART_ADDED: 'partAdded',
+  PART_REMOVED: 'partRemoved',
+  TEST_RUN_SUBMITTED: 'testRunSubmitted',
+  TEST_RUN_UPDATED: 'testRunUpdated',
+  FILE_UPLOADED: 'fileUploaded',
+  WEBHOOK: 'webhook',
+  CI_RESULTS: 'ciResults',
+  SENSOR_DATA: 'sensorData',
+} as const;
+
+export type EventType = typeof EVENT_TYPES[keyof typeof EVENT_TYPES];
+
+/**
  * Base event structure wrapping all events
  * Contains metadata common to all events for routing, deduplication, and ordering
  */
@@ -452,7 +471,7 @@ export function isFileUploadedEvent(event: EventPayload): event is FileUploadedP
 }
 
 export function isWebhookEvent(event: EventPayload): event is WebhookEventPayload {
-  return event.eventType === 'webhook' || event.sourceLayer === 'webhook';
+  return event.eventType === 'webhook';
 }
 
 export function isCIResultsEvent(event: EventPayload): event is CIResultsPayload {
@@ -480,13 +499,14 @@ export type EventEmitterFunction = (
 /**
  * Helper function to create an EventEnvelope with defaults
  * Ensures consistency across all event emissions
+ * Always generates a UUID for eventId
  */
 export function createEventEnvelope(
   eventType: string,
   sourceLayer: 'graphql' | 'express' | 'webhook' = 'express',
   userId?: string,
   metadata?: Record<string, unknown>
-): Omit<EventEnvelope, 'eventId'> & { eventId?: string } {
+): EventEnvelope {
   return {
     eventId: uuidv4(),
     eventType,
