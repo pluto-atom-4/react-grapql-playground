@@ -4,11 +4,98 @@
  * Tests for real-time server-sent event parsing and Apollo cache modifications.
  * Verifies cache updates trigger reactive re-renders and handle out-of-order events.
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InMemoryCache, gql } from '@apollo/client';
+import { InMemoryCache, gql, DocumentNode } from '@apollo/client';
 import { BuildStatus, TestStatus } from '../apollo-hooks';
+import type {
+  BuildNode,
+  PartNode,
+  TestRunNode,
+  GetBuildsResult,
+  GetBuildDetailResult,
+} from '../cache-types';
+
+
+
+// ============================================================================
+// Type Guards and Validators
+// ============================================================================
+
+/**
+ * Type guard to safely narrow cache result to GetBuildsResult
+ * Uses imported type from cache-types module for consistency
+ */
+function isGetBuildsResult(value: unknown): value is GetBuildsResult {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'builds' in value &&
+    Array.isArray((value as Record<string, unknown>).builds)
+  );
+}
+
+/**
+ * Type guard to safely narrow cache result to GetBuildDetailResult
+ * Uses imported type from cache-types module for consistency
+ */
+function isGetBuildDetailResult(value: unknown): value is GetBuildDetailResult {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'build' in value &&
+    typeof (value as Record<string, unknown>).build === 'object'
+  );
+}
+
+// ============================================================================
+// Cache Helper Functions with Type Safety
+// ============================================================================
+
+/**
+ * Safely read a builds list from cache with proper typing
+ * Uses BuildNode type from shared cache-types module
+ */
+function readBuildsFromCache(
+  cache: InMemoryCache,
+  query: DocumentNode
+): BuildNode[] {
+  const result = cache.readQuery<GetBuildsResult>({ query });
+  if (isGetBuildsResult(result)) {
+    return result.builds;
+  }
+  return [];
+}
+
+/**
+ * Write builds to cache with proper typing
+ * Uses BuildNode type from shared cache-types module
+ */
+function writeBuildsToCache(
+  cache: InMemoryCache,
+  query: DocumentNode,
+  builds: BuildNode[]
+): void {
+  cache.writeQuery<GetBuildsResult>({
+    query,
+    data: { builds },
+  });
+}
+
+/**
+ * Write build detail to cache with proper typing
+ * Uses GetBuildDetailResult type from shared cache-types module
+ */
+function writeBuildDetailToCache(
+  cache: InMemoryCache,
+  query: DocumentNode,
+  build: GetBuildDetailResult['build']
+): void {
+  cache.writeQuery<GetBuildDetailResult>({
+    query,
+    data: { build },
+  });
+}
 
 // Mock EventSource for Node.js environment
 if (typeof EventSource === 'undefined') {
@@ -119,37 +206,37 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
+      const initialBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Existing',
+        status: BuildStatus.Pending,
+      };
+
       // Initial data
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1', name: 'Existing', status: BuildStatus.Pending },
-          ],
-        },
-      });
+      writeBuildsToCache(cache, query, [initialBuild]);
 
       // Simulate buildCreated event by writing new data to cache
-      const newBuild = {
+      const newBuild: BuildNode = {
         __typename: 'Build',
         id: 'build-2',
         name: 'New Build',
         status: BuildStatus.Pending,
       };
 
-      const existing = cache.readQuery({ query });
-      const existingBuilds =
-        (existing as { builds?: Array<Record<string, unknown>> })?.builds || [];
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [...existingBuilds, newBuild],
-        },
-      });
+      const existingBuilds = readBuildsFromCache(cache, query);
+      writeBuildsToCache(cache, query, [...existingBuilds, newBuild]);
 
-      const result = cache.readQuery({ query });
-      expect(result?.builds).toHaveLength(2);
-      expect(result?.builds[1].id).toBe('build-2');
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildsResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildsResult(result)).toBe(true);
+
+      if (result && isGetBuildsResult(result)) {
+        expect(result.builds).toHaveLength(2);
+        expect(result.builds[1].id).toBe('build-2');
+        expect(result.builds[1].name).toBe('New Build');
+      }
     });
 
     it('buildStatusChanged event updates build status in cache', () => {
@@ -163,27 +250,33 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1', name: 'Build 1', status: BuildStatus.Pending },
-          ],
-        },
-      });
+      const initialBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build 1',
+        status: BuildStatus.Pending,
+      };
+
+      writeBuildsToCache(cache, query, [initialBuild]);
 
       // Simulate buildStatusChanged event by updating cache
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1', name: 'Build 1', status: BuildStatus.Running },
-          ],
-        },
-      });
+      const updatedBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build 1',
+        status: BuildStatus.Running,
+      };
 
-      const result = cache.readQuery({ query });
-      expect(result?.builds[0].status).toBe(BuildStatus.Running);
+      writeBuildsToCache(cache, query, [updatedBuild]);
+
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildsResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildsResult(result)).toBe(true);
+
+      if (result && isGetBuildsResult(result)) {
+        expect(result.builds[0].status).toBe(BuildStatus.Running);
+      }
     });
   });
 
@@ -203,36 +296,49 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'Build',
-            parts: [{ __typename: 'Part', id: 'part-1', name: 'Part 1', sku: 'SKU-1' }],
-          },
-        },
-      });
+      const initialPart: PartNode = {
+        __typename: 'Part',
+        id: 'part-1',
+        name: 'Part 1',
+        sku: 'SKU-1',
+      };
+
+      const buildDetail: GetBuildDetailResult['build'] = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build',
+        status: BuildStatus.Pending,
+        parts: [initialPart],
+        testRuns: [],
+      };
+
+      writeBuildDetailToCache(cache, query, buildDetail);
 
       // Simulate partAdded event by updating cache
-      const newPart = { __typename: 'Part', id: 'part-2', name: 'New Part', sku: 'SKU-2' };
+      const newPart: PartNode = {
+        __typename: 'Part',
+        id: 'part-2',
+        name: 'New Part',
+        sku: 'SKU-2',
+      };
 
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'Build',
-            parts: [{ __typename: 'Part', id: 'part-1', name: 'Part 1', sku: 'SKU-1' }, newPart],
-          },
-        },
-      });
+      const updatedBuildDetail: GetBuildDetailResult['build'] = {
+        ...buildDetail,
+        parts: [...buildDetail.parts, newPart],
+      };
 
-      const result = cache.readQuery({ query });
-      expect(result?.build.parts).toHaveLength(2);
-      expect(result?.build.parts[1].id).toBe('part-2');
+      writeBuildDetailToCache(cache, query, updatedBuildDetail);
+
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildDetailResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildDetailResult(result)).toBe(true);
+
+      if (result && isGetBuildDetailResult(result)) {
+        expect(result.build.parts).toHaveLength(2);
+        expect(result.build.parts[1].id).toBe('part-2');
+        expect(result.build.parts[1].name).toBe('New Part');
+      }
     });
   });
 
@@ -252,46 +358,49 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'Build',
-            testRuns: [
-              { __typename: 'TestRun', id: 'test-1', status: TestStatus.Pending, result: '' },
-            ],
-          },
-        },
-      });
+      const initialTestRun: TestRunNode = {
+        __typename: 'TestRun',
+        id: 'test-1',
+        status: TestStatus.Pending,
+        result: '',
+      };
+
+      const buildDetail: GetBuildDetailResult['build'] = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build',
+        status: BuildStatus.Pending,
+        parts: [],
+        testRuns: [initialTestRun],
+      };
+
+      writeBuildDetailToCache(cache, query, buildDetail);
 
       // Simulate testRunSubmitted event by updating cache
-      const newTestRun = {
+      const newTestRun: TestRunNode = {
         __typename: 'TestRun',
         id: 'test-2',
         status: TestStatus.Running,
         result: 'PASS',
       };
 
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'Build',
-            testRuns: [
-              { __typename: 'TestRun', id: 'test-1', status: TestStatus.Pending, result: '' },
-              newTestRun,
-            ],
-          },
-        },
-      });
+      const updatedBuildDetail: GetBuildDetailResult['build'] = {
+        ...buildDetail,
+        testRuns: [...buildDetail.testRuns, newTestRun],
+      };
 
-      const result = cache.readQuery({ query });
-      expect(result?.build.testRuns).toHaveLength(2);
-      expect(result?.build.testRuns[1].id).toBe('test-2');
+      writeBuildDetailToCache(cache, query, updatedBuildDetail);
+
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildDetailResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildDetailResult(result)).toBe(true);
+
+      if (result && isGetBuildDetailResult(result)) {
+        expect(result.build.testRuns).toHaveLength(2);
+        expect(result.build.testRuns[1].id).toBe('test-2');
+        expect(result.build.testRuns[1].result).toBe('PASS');
+      }
     });
   });
 
@@ -318,7 +427,7 @@ describe('SSE Cache Updates', () => {
       ];
 
       let lastSeenTimestamp = 0;
-      const processedEvents = [];
+      const processedEvents: unknown[] = [];
 
       events.forEach((e) => {
         if (e.timestamp > lastSeenTimestamp) {
@@ -354,27 +463,41 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: { builds: [{ __typename: 'Build', id: 'build-1' }] },
-      });
+      const initialBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build 1',
+        status: BuildStatus.Pending,
+      };
+
+      writeBuildsToCache(cache, query, [initialBuild]);
 
       const startTime = globalThis.performance.now();
 
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1' },
-            { __typename: 'Build', id: 'build-2' },
-          ],
+      const builds: BuildNode[] = [
+        initialBuild,
+        {
+          __typename: 'Build',
+          id: 'build-2',
+          name: 'Build 2',
+          status: BuildStatus.Pending,
         },
-      });
+      ];
+
+      writeBuildsToCache(cache, query, builds);
 
       const endTime = globalThis.performance.now();
       const duration = endTime - startTime;
 
       expect(duration).toBeLessThan(100); // Should be fast
+
+      // Verify data integrity
+      const result = cache.readQuery<GetBuildsResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildsResult(result)).toBe(true);
+      if (result && isGetBuildsResult(result)) {
+        expect(result.builds).toHaveLength(2);
+      }
     });
 
     it('multiple cache modifications maintain consistency', () => {
@@ -387,39 +510,46 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [{ __typename: 'Build', id: 'build-1', status: BuildStatus.Pending }],
-        },
-      });
+      // Initial state
+      const initialBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'Build 1',
+        status: BuildStatus.Pending,
+      };
+
+      writeBuildsToCache(cache, query, [initialBuild]);
 
       // Add second build
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1', status: BuildStatus.Pending },
-            { __typename: 'Build', id: 'build-2', status: BuildStatus.Pending },
-          ],
-        },
-      });
+      const secondBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-2',
+        name: 'Build 2',
+        status: BuildStatus.Pending,
+      };
+
+      writeBuildsToCache(cache, query, [initialBuild, secondBuild]);
 
       // Update first build status
-      cache.writeQuery({
-        query,
-        data: {
-          builds: [
-            { __typename: 'Build', id: 'build-1', status: BuildStatus.Running },
-            { __typename: 'Build', id: 'build-2', status: BuildStatus.Pending },
-          ],
-        },
-      });
+      const updatedFirstBuild: BuildNode = {
+        ...initialBuild,
+        status: BuildStatus.Running,
+      };
 
-      const result = cache.readQuery({ query });
-      expect(result?.builds).toHaveLength(2);
-      expect(result?.builds[0].status).toBe(BuildStatus.Running);
-      expect(result?.builds[1].id).toBe('build-2');
+      writeBuildsToCache(cache, query, [updatedFirstBuild, secondBuild]);
+
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildsResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildsResult(result)).toBe(true);
+
+      if (result && isGetBuildsResult(result)) {
+        expect(result.builds).toHaveLength(2);
+        expect(result.builds[0].status).toBe(BuildStatus.Running);
+        expect(result.builds[0].id).toBe('build-1');
+        expect(result.builds[1].id).toBe('build-2');
+        expect(result.builds[1].status).toBe(BuildStatus.Pending);
+      }
     });
   });
 
@@ -478,11 +608,11 @@ describe('SSE Cache Updates', () => {
     it('reconnection strategy handles disconnects', () => {
       // Simulate reconnection logic
       let connectionAttempts = 0;
-      let _lastConnectionTime = 0;
+      let lastConnectionTime = 0;
 
       const reconnect = (): void => {
         connectionAttempts += 1;
-        _lastConnectionTime = Date.now();
+        lastConnectionTime = Date.now();
       };
 
       // Initial connection
@@ -492,6 +622,7 @@ describe('SSE Cache Updates', () => {
       globalThis.setTimeout(reconnect, 1000);
 
       expect(connectionAttempts).toBeGreaterThan(0);
+      expect(lastConnectionTime).toBeGreaterThan(0);
     });
   });
 
@@ -535,29 +666,35 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: { builds: [] },
-      });
+      writeBuildsToCache(cache, query, []);
+
+      const newBuild: BuildNode = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'New Build',
+        status: BuildStatus.Pending,
+      };
 
       cache.modify({
         fields: {
-          builds: (existing = [] as Array<Record<string, unknown>>) => [
-            ...(existing as Array<Record<string, unknown>>),
-            {
-              __typename: 'Build',
-              id: 'build-1',
-              name: 'New Build',
-              status: BuildStatus.Pending,
-            },
-          ],
+          builds: (existing: unknown): BuildNode[] => {
+            const existingBuilds = (existing as BuildNode[]) || [];
+            return [...existingBuilds, newBuild];
+          },
         },
       });
 
-      const result = cache.readQuery({ query });
-      expect(result?.builds).toHaveLength(1);
-      expect(result?.builds[0].id).toBe('build-1');
-      expect(result?.builds[0].name).toBe('New Build');
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildsResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildsResult(result)).toBe(true);
+
+      if (result && isGetBuildsResult(result)) {
+        expect(result.builds).toHaveLength(1);
+        expect(result.builds[0].id).toBe('build-1');
+        expect(result.builds[0].name).toBe('New Build');
+        expect(result.builds[0].status).toBe(BuildStatus.Pending);
+      }
     });
 
     it('status change preserves other build properties', () => {
@@ -572,37 +709,37 @@ describe('SSE Cache Updates', () => {
         }
       `;
 
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'My Build',
-            status: BuildStatus.Pending,
-            description: 'Build description',
-          },
-        },
-      });
+      const initialBuildDetail: GetBuildDetailResult['build'] = {
+        __typename: 'Build',
+        id: 'build-1',
+        name: 'My Build',
+        status: BuildStatus.Pending,
+        description: 'Build description',
+        parts: [],
+        testRuns: [],
+      };
 
-      // Update cache directly with new values
-      cache.writeQuery({
-        query,
-        data: {
-          build: {
-            __typename: 'Build',
-            id: 'build-1',
-            name: 'My Build',
-            status: BuildStatus.Running,
-            description: 'Build description',
-          },
-        },
-      });
+      writeBuildDetailToCache(cache, query, initialBuildDetail);
 
-      const result = cache.readQuery({ query });
-      expect(result?.build.name).toBe('My Build');
-      expect(result?.build.description).toBe('Build description');
-      expect(result?.build.status).toBe(BuildStatus.Running);
+      // Update cache directly with new status value
+      const updatedBuildDetail: GetBuildDetailResult['build'] = {
+        ...initialBuildDetail,
+        status: BuildStatus.Running,
+      };
+
+      writeBuildDetailToCache(cache, query, updatedBuildDetail);
+
+      // Read result with proper type
+      const result = cache.readQuery<GetBuildDetailResult>({ query });
+      expect(result).toBeDefined();
+      expect(isGetBuildDetailResult(result)).toBe(true);
+
+      if (result && isGetBuildDetailResult(result)) {
+        expect(result.build.name).toBe('My Build');
+        expect(result.build.description).toBe('Build description');
+        expect(result.build.status).toBe(BuildStatus.Running);
+        expect(result.build.id).toBe('build-1');
+      }
     });
   });
 });
