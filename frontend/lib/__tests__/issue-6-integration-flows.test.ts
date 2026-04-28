@@ -12,6 +12,7 @@
  * Total: 39 integration tests covering all Issue #6 acceptance criteria
  */
 
+/* eslint-disable no-undef */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**
@@ -94,7 +95,7 @@ describe('Test Suite 1: Query + Mutation + Optimistic + SSE Flow', () => {
     expect(elapsed).toBeLessThan(500);
   });
 
-  it('T1.5: Multiple mutations execute concurrently without race conditions', async () => {
+  it('T1.5: Multiple mutations execute concurrently without race conditions', () => {
     // When multiple mutations fire rapidly:
     // 1. Each mutation is queued
     // 2. Optimistic updates are applied in order
@@ -409,7 +410,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
     // Optimistic data persists in cache
   });
 
-  it('E2.15: Cancelled requests don\'t trigger retry or error', () => {
+  it("E2.15: Cancelled requests don't trigger retry or error", () => {
     // If user navigates away or cancels request:
     // 1. Request is aborted
     // 2. No retry attempts
@@ -559,7 +560,7 @@ describe('Test Suite 3: Real-Time SSE Synchronization', () => {
  * Test Suite 4: Performance Under Load (6 tests)
  */
 describe('Test Suite 4: Performance Under Load', () => {
-  it('P4.1: 50 concurrent mutations complete without race conditions', async () => {
+  it('P4.1: 50 concurrent mutations complete without race conditions', () => {
     // Launch 50 mutations simultaneously
     // Each should complete successfully with consistent state
 
@@ -574,7 +575,7 @@ describe('Test Suite 4: Performance Under Load', () => {
     });
   });
 
-  it('P4.2: Optimistic updates appear instantly (<50ms from mutation call)', async () => {
+  it('P4.2: Optimistic updates appear instantly (<50ms from mutation call)', () => {
     // When mutation called:
     // 1. Optimistic response applied to cache immediately
     // 2. Component re-renders with optimistic data

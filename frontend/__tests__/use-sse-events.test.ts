@@ -135,9 +135,7 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
         const partsArray = (Array.isArray(existingParts) ? existingParts : []) as Array<
           Record<string, unknown>
         >;
-        const partExists = partsArray.some(
-          (part) => readField('id', part) === eventData.partId
-        );
+        const partExists = partsArray.some((part) => readField('id', part) === eventData.partId);
 
         expect(partExists).toBe(false);
 
@@ -183,9 +181,7 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
       const partsArray = (Array.isArray(existingParts) ? existingParts : []) as Array<
         Record<string, unknown>
       >;
-      const partExists = partsArray.some(
-        (part) => readField('id', part) === eventData.partId
-      );
+      const partExists = partsArray.some((part) => readField('id', part) === eventData.partId);
 
       expect(partExists).toBe(true);
 
@@ -197,7 +193,9 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
             parts: partsArray,
           };
 
-      const resultParts = (result as Record<string, unknown>).parts as Array<Record<string, unknown>>;
+      const resultParts = (result as Record<string, unknown>).parts as Array<
+        Record<string, unknown>
+      >;
       expect(resultParts).toHaveLength(1);
     });
   });
@@ -226,9 +224,9 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
 
       if (readField('id', existingBuild) === eventData.buildId) {
         const existingTestRuns = readField('testRuns', existingBuild);
-        const testRunsArray = (
-          Array.isArray(existingTestRuns) ? existingTestRuns : []
-        ) as Array<Record<string, unknown>>;
+        const testRunsArray = (Array.isArray(existingTestRuns) ? existingTestRuns : []) as Array<
+          Record<string, unknown>
+        >;
         const testRunExists = testRunsArray.some(
           (tr) => readField('id', tr) === eventData.testRunId
         );
@@ -277,12 +275,10 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
       };
 
       const existingTestRuns = readField('testRuns', existingBuild);
-      const testRunsArray = (
-        Array.isArray(existingTestRuns) ? existingTestRuns : []
-      ) as Array<Record<string, unknown>>;
-      const testRunExists = testRunsArray.some(
-        (tr) => readField('id', tr) === eventData.testRunId
-      );
+      const testRunsArray = (Array.isArray(existingTestRuns) ? existingTestRuns : []) as Array<
+        Record<string, unknown>
+      >;
+      const testRunExists = testRunsArray.some((tr) => readField('id', tr) === eventData.testRunId);
 
       expect(testRunExists).toBe(true);
 
@@ -294,13 +290,10 @@ describe('useSSEEvents cache modifications - Logic Tests', () => {
             testRuns: testRunsArray,
           };
 
-      const resultTestRuns = (result as Record<string, unknown>).testRuns as Array<Record<string, unknown>>;
+      const resultTestRuns = (result as Record<string, unknown>).testRuns as Array<
+        Record<string, unknown>
+      >;
       expect(resultTestRuns).toHaveLength(1);
     });
   });
 });
-
-
-
-
-

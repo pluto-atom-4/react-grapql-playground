@@ -16,8 +16,6 @@ import type {
   GetBuildDetailResult,
 } from '../cache-types';
 
-
-
 // ============================================================================
 // Type Guards and Validators
 // ============================================================================
@@ -56,10 +54,7 @@ function isGetBuildDetailResult(value: unknown): value is GetBuildDetailResult {
  * Safely read a builds list from cache with proper typing
  * Uses BuildNode type from shared cache-types module
  */
-function readBuildsFromCache(
-  cache: InMemoryCache,
-  query: DocumentNode
-): BuildNode[] {
+function readBuildsFromCache(cache: InMemoryCache, query: DocumentNode): BuildNode[] {
   const result = cache.readQuery<GetBuildsResult>({ query });
   if (isGetBuildsResult(result)) {
     return result.builds;
@@ -71,11 +66,7 @@ function readBuildsFromCache(
  * Write builds to cache with proper typing
  * Uses BuildNode type from shared cache-types module
  */
-function writeBuildsToCache(
-  cache: InMemoryCache,
-  query: DocumentNode,
-  builds: BuildNode[]
-): void {
+function writeBuildsToCache(cache: InMemoryCache, query: DocumentNode, builds: BuildNode[]): void {
   cache.writeQuery<GetBuildsResult>({
     query,
     data: { builds },

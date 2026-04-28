@@ -76,18 +76,20 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
         client.cache.modify({
           fields: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             builds(value: unknown, details: any) {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               const { readField } = details;
-              const existingBuilds = Array.isArray(value) ? (value as Array<Record<string, unknown>>) : [];
+              const existingBuilds = Array.isArray(value)
+                ? (value as Array<Record<string, unknown>>)
+                : [];
 
               // Check if build already exists
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
               const buildExists = existingBuilds.some(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                 (build) => readField({ fieldName: 'id', from: build }) === eventData.buildId
               );
               if (buildExists) return existingBuilds;
@@ -116,14 +118,15 @@ export function useSSEEvents(): void {
         if (eventData.timestamp <= lastSeenTimestampRef.current) return;
         lastSeenTimestampRef.current = eventData.timestamp;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
         client.cache.modify({
           fields: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             builds(value: unknown, details: any) {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               const { readField } = details;
-              const existingBuilds = Array.isArray(value) ? (value as Array<Record<string, unknown>>) : [];
+              const existingBuilds = Array.isArray(value)
+                ? (value as Array<Record<string, unknown>>)
+                : [];
 
               return existingBuilds.map((build) => {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -155,12 +158,11 @@ export function useSSEEvents(): void {
 
         // Try to update build detail cache
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
           client.cache.modify({
             fields: {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               build(value: unknown, details: any) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const { readField } = details;
                 const existingBuild = value || {};
 
@@ -173,12 +175,11 @@ export function useSSEEvents(): void {
                 const existingParts = readField({ fieldName: 'parts', from: existingBuild }) as
                   | Array<Record<string, unknown>>
                   | undefined;
-                const partsArray = (Array.isArray(existingParts) ? existingParts : []) as Array<
-                  Record<string, unknown>
-                >;
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                const partsArray = Array.isArray(existingParts) ? existingParts : [];
+
                 const partExists = partsArray.some(
-                  (part) => readField({ fieldName: 'id', from: part }) === eventData.partId
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                  (part) => (readField({ fieldName: 'id', from: part }) as string) === eventData.partId
                 );
 
                 if (partExists) return existingBuild;
@@ -197,7 +198,7 @@ export function useSSEEvents(): void {
           });
         } catch (error) {
           // Silently ignore if build not yet in cache (will be fetched fresh)
-          console.debug('Failed to update parts in cache:', error);
+          console.warn('Failed to update parts in cache:', error);
         }
       });
 
@@ -215,12 +216,11 @@ export function useSSEEvents(): void {
 
         // Try to update build detail cache
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
           client.cache.modify({
             fields: {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               build(value: unknown, details: any) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 const { readField } = details;
                 const existingBuild = value || {};
 
@@ -230,15 +230,15 @@ export function useSSEEvents(): void {
                 }
 
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                const existingTestRuns = readField({ fieldName: 'testRuns', from: existingBuild }) as
-                  | Array<Record<string, unknown>>
-                  | undefined;
-                const testRunsArray = (Array.isArray(existingTestRuns) ? existingTestRuns : []) as Array<
-                  Record<string, unknown>
-                >;
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                const existingTestRuns = readField({
+                  fieldName: 'testRuns',
+                  from: existingBuild,
+                }) as Array<Record<string, unknown>> | undefined;
+                const testRunsArray = Array.isArray(existingTestRuns) ? existingTestRuns : [];
+
                 const testRunExists = testRunsArray.some(
-                  (tr) => readField({ fieldName: 'id', from: tr }) === eventData.testRunId
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                  (tr) => (readField({ fieldName: 'id', from: tr }) as string) === eventData.testRunId
                 );
 
                 if (testRunExists) return existingBuild;
@@ -257,7 +257,7 @@ export function useSSEEvents(): void {
           });
         } catch (error) {
           // Silently ignore if build not yet in cache (will be fetched fresh)
-          console.debug('Failed to update test runs in cache:', error);
+          console.warn('Failed to update test runs in cache:', error);
         }
       });
 
