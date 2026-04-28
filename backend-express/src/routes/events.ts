@@ -141,11 +141,14 @@ router.get('/', (req: Request, res: Response) => {
 
   // Track writes to update last activity time
   const originalWrite = res.write;
-  res.write = function (this: Response, chunk: Buffer | string, ...args: unknown[]) {
+  res.write = function (this: Response, chunk: Buffer | string, encoding?: BufferEncoding | ((error?: Error | null) => void), callback?: (error?: Error | null) => void) {
     lastActivityTime = Date.now();
     client.eventCount++;
-    return originalWrite.call(this, chunk, ...args);
-  };
+    if (typeof encoding === 'function') {
+      return originalWrite.call(this, chunk, encoding);
+    }
+    return originalWrite.call(this, chunk, encoding as BufferEncoding, callback);
+  } as unknown as (chunk: Buffer | string, encoding?: BufferEncoding | ((error?: Error | null) => void), callback?: (error?: Error | null) => void) => boolean;
 
   // Cleanup function: called on disconnect, error, or timeout
   const cleanup = () => {
