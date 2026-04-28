@@ -177,7 +177,10 @@ describe('Event Bus Service - Retry Logic', () => {
         timeoutMs: 100,
       });
 
-      // Should have logged warnings for each failed attempt
+      // Should have logged warnings for each failed attempt before final success
+      // Attempt 1 fails → warning
+      // Attempt 2 fails → warning
+      // Attempt 3 succeeds → no warning
       expect(consoleWarnSpy).toHaveBeenCalledTimes(2);
       consoleWarnSpy.mock.calls.forEach(call => {
         expect((call[0] as string).toLowerCase()).toContain('attempt');
