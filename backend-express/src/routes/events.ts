@@ -126,6 +126,8 @@ router.get('/', (req: Request, res: Response) => {
         cleanup();
       }
     } catch (error) {
+      // Ignore errors when sending heartbeat
+      void error;
       clearInterval(heartbeatTimer);
       cleanup();
     }
