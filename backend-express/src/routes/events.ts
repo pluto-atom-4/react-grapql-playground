@@ -78,7 +78,7 @@ router.options('/', (_req: Request, res: Response) => {
  * - Graceful cleanup on disconnect/error
  * - Event counting and metrics tracking
  */
-router.get('/', (_req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
