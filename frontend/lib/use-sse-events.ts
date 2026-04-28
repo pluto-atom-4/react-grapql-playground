@@ -258,10 +258,11 @@ export function useSSEEvents(): void {
    * Handle event with timing and metrics
    */
   const handleEventWithMetrics = (eventType: string, handler: () => void): void => {
-    const startTime = performance.now();
+    const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
     try {
       handler();
-      const duration = performance.now() - startTime;
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const duration = endTime - startTime;
       latencyTimingsRef.current.push(duration);
       // Keep only last 100 latency timings for average calculation
       if (latencyTimingsRef.current.length > 100) {
@@ -277,7 +278,7 @@ export function useSSEEvents(): void {
   /**
    * Connect to SSE endpoint with reconnection logic
    */
-  const connect = (): void => {
+  const connect = useCallback((): void => {
     const config = getReconnectConfig();
     const eventSourceURL = process.env.NEXT_PUBLIC_EXPRESS_URL || 'http://localhost:5000';
 
