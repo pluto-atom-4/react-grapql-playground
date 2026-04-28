@@ -22,6 +22,9 @@ import { useApolloClient } from '@apollo/client/react';
 import { useEffect, useRef } from 'react';
 import type { SSEMetrics } from './sse-types';
 
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+declare const performance: Performance;
+
 /**
  * Exponential backoff configuration from environment variables
  */
