@@ -17,7 +17,6 @@
 
 import { EventEmitter } from 'events';
 import type { EventType } from '../types/events';
-import { EVENT_TYPES } from '../types/events';
 
 /**
  * Metrics interface for monitoring event bus performance
@@ -81,9 +80,9 @@ export class EventBusMetricsCollector {
    * Updates latency statistics and total broadcast count.
    *
    * @param latencyMs - Time taken to broadcast event in milliseconds
-   * @param eventType - Type of event for counting
+   * @param _eventType - Type of event for counting
    */
-  recordBroadcasted(latencyMs: number, eventType: EventType | string): void {
+  recordBroadcasted(latencyMs: number, _eventType: EventType | string): void {
     this.metrics.totalBroadcasted++;
     this.updateLatency(latencyMs);
   }
