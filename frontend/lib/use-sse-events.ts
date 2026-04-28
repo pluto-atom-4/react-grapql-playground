@@ -850,13 +850,14 @@ export function useSSEEvents(): void {
   /**
    * Reconnect with exponential backoff
    */
-  const reconnectWithBackoff = (): void => {
+  const reconnectWithBackoff = useCallback((): void => {
     const config = getReconnectConfig();
 
     if (reconnectAttemptRef.current >= config.maxAttempts) {
       debugLog('Max reconnection attempts reached, keeping frontend operational', {
         attempts: reconnectAttemptRef.current,
       });
+      // eslint-disable-next-line no-console
       console.error(
         `[SSE] Failed to reconnect after ${reconnectAttemptRef.current} attempts. Frontend remains operational without real-time updates.`
       );
@@ -878,13 +879,13 @@ export function useSSEEvents(): void {
       maxAttempts: config.maxAttempts,
     });
 
-    reconnectTimeoutRef.current = setTimeout(() => {
+    reconnectTimeoutRef.current = globalThis.setTimeout(() => {
       debugLog('Attempting to reconnect', {
         attempt: reconnectAttemptRef.current,
       });
       connect();
     }, delay);
-  };
+  }, []);
 
   useEffect(() => {
     connect();
