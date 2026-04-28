@@ -900,5 +900,6 @@ export function useSSEEvents(): void {
         globalThis.clearTimeout(reconnectTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 }
