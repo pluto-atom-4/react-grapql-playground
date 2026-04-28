@@ -1166,16 +1166,17 @@ describe('SSE Cache Updates', () => {
       const latencies: number[] = [];
 
       const measureLatency = (fn: () => void): void => {
-        const start = performance.now();
+        const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
         fn();
-        const duration = performance.now() - start;
+        const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const duration = end - start;
         latencies.push(duration);
       };
 
       measureLatency(() => {
         // Simulate cache update
         const result = Array(1000).fill(0);
-        result.length;
+        void result.length;
       });
 
       expect(latencies).toHaveLength(1);
