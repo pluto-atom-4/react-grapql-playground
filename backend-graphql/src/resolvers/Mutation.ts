@@ -2,6 +2,7 @@ import { BuildContext } from '../types';
 import { BuildStatus, TestStatus } from '@prisma/client';
 import { emitEvent } from '../services/event-bus';
 import { generateToken } from '../middleware/auth';
+import { EVENT_TYPES, createEventEnvelope } from '../types/events';
 import type { GraphQLResolveInfo } from 'graphql';
 import bcrypt from 'bcrypt';
 
@@ -12,8 +13,11 @@ import bcrypt from 'bcrypt';
  * 1. Require authentication (context.user must exist)
  * 2. Validate input
  * 3. Perform database mutation
- * 4. Emit event to Express event bus (for real-time SSE)
+ * 4. Emit event to Express event bus (for real-time SSE) with proper schema
  * 5. Return result
+ *
+ * Events include: eventId (UUID), eventType, timestamp, sourceLayer ('graphql'),
+ * userId, and typed payload matching EventPayload union.
  */
 export const mutationResolver = {
   Mutation: {
@@ -69,6 +73,7 @@ export const mutationResolver = {
     /**
      * Create a new build in PENDING status.
      * Requires authentication.
+     * Emits: BUILD_CREATED event
      */
     async createBuild(
       _parent: unknown,
@@ -92,9 +97,35 @@ export const mutationResolver = {
         },
       });
 
-      // Emit event for real-time SSE (Express event bus)
-      emitEvent('buildCreated', { buildId: build.id, build }).catch((err) => {
-        console.error('Failed to emit buildCreated event:', err);
+      // Emit BUILD_CREATED event with proper schema
+      const event = createEventEnvelope(EVENT_TYPES.BUILD_CREATED, 'graphql', context.user.id);
+      Object.assign(event, {
+        buildId: build.id,
+        build: {
+          id: build.id,
+          name: build.name,
+          description: build.description,
+          status: build.status,
+          createdAt: build.createdAt.toISOString(),
+        },
+      });
+
+      emitEvent('buildCreated', {
+        eventId: event.eventId,
+        eventType: event.eventType,
+        timestamp: event.timestamp,
+        sourceLayer: event.sourceLayer,
+        userId: event.userId,
+        buildId: build.id,
+        build: {
+          id: build.id,
+          name: build.name,
+          description: build.description,
+          status: build.status,
+          createdAt: build.createdAt.toISOString(),
+        },
+      }).catch((err) => {
+        console.error('Failed to emit BUILD_CREATED event:', err);
       });
 
       return build;
@@ -103,6 +134,7 @@ export const mutationResolver = {
     /**
      * Update build status and emit real-time event.
      * Requires authentication.
+     * Emits: BUILD_STATUS_CHANGED event
      *
      * Interview talking point: "Mutation updates DB, then emits event
      * to Express event bus, which broadcasts to frontend SSE listeners.
@@ -136,9 +168,39 @@ export const mutationResolver = {
         data: { status: args.status as BuildStatus },
       });
 
-      // Emit event for real-time SSE
-      emitEvent('buildStatusChanged', { buildId: updated.id, build: updated }).catch((err) => {
-        console.error('Failed to emit buildStatusChanged event:', err);
+      // Emit BUILD_STATUS_CHANGED event
+      const event = createEventEnvelope(
+        EVENT_TYPES.BUILD_STATUS_CHANGED,
+        'graphql',
+        context.user.id
+      );
+      Object.assign(event, {
+        buildId: updated.id,
+        oldStatus: build.status,
+        newStatus: updated.status,
+        build: {
+          id: updated.id,
+          status: updated.status,
+          updatedAt: updated.updatedAt.toISOString(),
+        },
+      });
+
+      emitEvent('buildStatusChanged', {
+        eventId: event.eventId,
+        eventType: event.eventType,
+        timestamp: event.timestamp,
+        sourceLayer: event.sourceLayer,
+        userId: event.userId,
+        buildId: updated.id,
+        oldStatus: build.status,
+        newStatus: updated.status,
+        build: {
+          id: updated.id,
+          status: updated.status,
+          updatedAt: updated.updatedAt.toISOString(),
+        },
+      }).catch((err) => {
+        console.error('Failed to emit BUILD_STATUS_CHANGED event:', err);
       });
 
       return updated;
@@ -147,6 +209,7 @@ export const mutationResolver = {
     /**
      * Add a part to a build.
      * Requires authentication.
+     * Emits: PART_ADDED event
      */
     async addPart(
       _parent: unknown,
@@ -186,8 +249,39 @@ export const mutationResolver = {
         },
       });
 
-      emitEvent('partAdded', { buildId: args.buildId, part }).catch((err) => {
-        console.error('Failed to emit partAdded event:', err);
+      // Emit PART_ADDED event
+      const event = createEventEnvelope(EVENT_TYPES.PART_ADDED, 'graphql', context.user.id);
+      Object.assign(event, {
+        buildId: args.buildId,
+        partId: part.id,
+        part: {
+          id: part.id,
+          buildId: part.buildId,
+          name: part.name,
+          sku: part.sku,
+          quantity: part.quantity,
+          createdAt: part.createdAt.toISOString(),
+        },
+      });
+
+      emitEvent('partAdded', {
+        eventId: event.eventId,
+        eventType: event.eventType,
+        timestamp: event.timestamp,
+        sourceLayer: event.sourceLayer,
+        userId: event.userId,
+        buildId: args.buildId,
+        partId: part.id,
+        part: {
+          id: part.id,
+          buildId: part.buildId,
+          name: part.name,
+          sku: part.sku,
+          quantity: part.quantity,
+          createdAt: part.createdAt.toISOString(),
+        },
+      }).catch((err) => {
+        console.error('Failed to emit PART_ADDED event:', err);
       });
 
       return part;
@@ -196,6 +290,7 @@ export const mutationResolver = {
     /**
      * Submit a test run result for a build.
      * Requires authentication.
+     * Emits: TEST_RUN_SUBMITTED event
      */
     async submitTestRun(
       _parent: unknown,
@@ -236,8 +331,45 @@ export const mutationResolver = {
         },
       });
 
-      emitEvent('testRunSubmitted', { buildId: args.buildId, testRun }).catch((err) => {
-        console.error('Failed to emit testRunSubmitted event:', err);
+      // Emit TEST_RUN_SUBMITTED event
+      const event = createEventEnvelope(
+        EVENT_TYPES.TEST_RUN_SUBMITTED,
+        'graphql',
+        context.user.id
+      );
+      Object.assign(event, {
+        buildId: args.buildId,
+        testRunId: testRun.id,
+        testRun: {
+          id: testRun.id,
+          buildId: testRun.buildId,
+          status: testRun.status,
+          result: testRun.result,
+          fileUrl: testRun.fileUrl,
+          completedAt: testRun.completedAt?.toISOString(),
+          createdAt: testRun.createdAt.toISOString(),
+        },
+      });
+
+      emitEvent('testRunSubmitted', {
+        eventId: event.eventId,
+        eventType: event.eventType,
+        timestamp: event.timestamp,
+        sourceLayer: event.sourceLayer,
+        userId: event.userId,
+        buildId: args.buildId,
+        testRunId: testRun.id,
+        testRun: {
+          id: testRun.id,
+          buildId: testRun.buildId,
+          status: testRun.status,
+          result: testRun.result,
+          fileUrl: testRun.fileUrl,
+          completedAt: testRun.completedAt?.toISOString(),
+          createdAt: testRun.createdAt.toISOString(),
+        },
+      }).catch((err) => {
+        console.error('Failed to emit TEST_RUN_SUBMITTED event:', err);
       });
 
       return testRun;
@@ -246,7 +378,22 @@ export const mutationResolver = {
 };
 
 /**
- * Emit event to Express event bus.
- * Implemented via HTTP POST in services/event-bus.ts.
- * Errors are logged but don't throw—mutations complete even if events fail.
+ * Event emission pattern used by all mutations:
+ *
+ * 1. Create event envelope with createEventEnvelope():
+ *    const event = createEventEnvelope(EVENT_TYPES.BUILD_CREATED, 'graphql', context.user.id);
+ *
+ * 2. Call emitEvent() with typed payload:
+ *    await emitEvent('eventName', {
+ *      eventId: event.eventId,
+ *      eventType: event.eventType,
+ *      timestamp: event.timestamp,
+ *      sourceLayer: event.sourceLayer,
+ *      userId: event.userId,
+ *      ...typedPayload
+ *    }).catch(err => console.error(...));
+ *
+ * 3. emitEvent() handles retry logic automatically (3 retries, exponential backoff)
+ *
+ * 4. Errors are logged but don't throw—mutations complete even if events fail
  */
