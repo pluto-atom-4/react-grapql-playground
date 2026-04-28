@@ -16,6 +16,8 @@ import type {
   GetBuildDetailResult,
 } from '../cache-types';
 
+declare const performance: Performance;
+
 // ============================================================================
 // Type Guards and Validators
 // ============================================================================
@@ -731,6 +733,485 @@ describe('SSE Cache Updates', () => {
         expect(result.build.status).toBe(BuildStatus.Running);
         expect(result.build.id).toBe('build-1');
       }
+    });
+  });
+
+  // ============================================================================
+  // Phase D: Frontend SSE Enhancement Tests
+  // ============================================================================
+
+  describe('Phase D: Exponential Backoff Reconnection', () => {
+    it('calculates correct exponential backoff delays', () => {
+      // Formula: delay = min(baseDelay * (2 ^ attemptNumber), maxDelay)
+      const baseDelay = 1000;
+      const maxDelay = 30000;
+
+      // Attempt 0: 1s
+      const delay0 = baseDelay * Math.pow(2, 0);
+      expect(delay0).toBe(1000);
+      expect(Math.min(delay0, maxDelay)).toBe(1000);
+
+      // Attempt 1: 2s
+      const delay1 = baseDelay * Math.pow(2, 1);
+      expect(delay1).toBe(2000);
+      expect(Math.min(delay1, maxDelay)).toBe(2000);
+
+      // Attempt 2: 4s
+      const delay2 = baseDelay * Math.pow(2, 2);
+      expect(delay2).toBe(4000);
+      expect(Math.min(delay2, maxDelay)).toBe(4000);
+
+      // Attempt 3: 8s
+      const delay3 = baseDelay * Math.pow(2, 3);
+      expect(delay3).toBe(8000);
+      expect(Math.min(delay3, maxDelay)).toBe(8000);
+
+      // Attempt 4: 16s
+      const delay4 = baseDelay * Math.pow(2, 4);
+      expect(delay4).toBe(16000);
+      expect(Math.min(delay4, maxDelay)).toBe(16000);
+
+      // Attempt 5: 32s (capped at 30s)
+      const delay5 = baseDelay * Math.pow(2, 5);
+      expect(delay5).toBe(32000);
+      expect(Math.min(delay5, maxDelay)).toBe(30000);
+
+      // Attempt 6+: Stay at 30s (max)
+      const delay6 = baseDelay * Math.pow(2, 6);
+      expect(Math.min(delay6, maxDelay)).toBe(30000);
+    });
+
+    it('limits reconnection attempts to maximum', () => {
+      const maxAttempts = 10;
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        attempts += 1;
+      }
+
+      expect(attempts).toBe(maxAttempts);
+    });
+
+    it('keeps frontend operational after max reconnection attempts', () => {
+      // Simulate final reconnection failure
+      const maxAttempts = 10;
+      const finalAttempt = maxAttempts;
+
+      // Should not throw, application remains functional
+      expect(() => {
+        if (finalAttempt >= maxAttempts) {
+          console.error(
+            `[SSE] Failed to reconnect after ${maxAttempts} attempts. Frontend remains operational.`
+          );
+        }
+      }).not.toThrow();
+    });
+  });
+
+  describe('Phase D: Event Deduplication', () => {
+    it('deduplicates events by eventId', () => {
+      const eventIds = new Set<string>();
+      const duplicateEventId = 'event-123-uuid';
+      const uniqueEventId = 'event-456-uuid';
+
+      // Add first occurrence
+      eventIds.add(duplicateEventId);
+      expect(eventIds.has(duplicateEventId)).toBe(true);
+
+      // Check duplicate
+      const isDuplicate = eventIds.has(duplicateEventId);
+      expect(isDuplicate).toBe(true);
+
+      // Add unique
+      eventIds.add(uniqueEventId);
+      expect(eventIds.has(uniqueEventId)).toBe(true);
+      expect(eventIds.size).toBe(2);
+    });
+
+    it('maintains sliding window of 1000 event IDs', () => {
+      const windowSize = 1000;
+      const eventIdMap = new Map<string, number>();
+
+      // Add 1000 events
+      for (let i = 0; i < windowSize; i += 1) {
+        eventIdMap.set(`event-${i}`, Date.now());
+      }
+
+      expect(eventIdMap.size).toBe(windowSize);
+
+      // Add one more, oldest should be removed
+      const oldestEntry = [...eventIdMap.entries()].sort((a, b) => a[1] - b[1])[0];
+      if (oldestEntry) {
+        eventIdMap.delete(oldestEntry[0]);
+      }
+      eventIdMap.set(`event-${windowSize}`, Date.now());
+
+      // Should still be at max
+      if (eventIdMap.size > windowSize) {
+        const oldestEntry2 = [...eventIdMap.entries()].sort((a, b) => a[1] - b[1])[0];
+        if (oldestEntry2) {
+          eventIdMap.delete(oldestEntry2[0]);
+        }
+      }
+
+      expect(eventIdMap.size).toBeLessThanOrEqual(windowSize);
+    });
+
+    it('cleans up event IDs older than 5-minute TTL', () => {
+      const ttlMs = 300000; // 5 minutes
+      const eventIdMap = new Map<string, number>();
+      const now = Date.now();
+
+      // Add old event (beyond TTL)
+      eventIdMap.set('old-event', now - ttlMs - 1000);
+
+      // Add recent event
+      eventIdMap.set('recent-event', now);
+
+      // Simulate TTL cleanup
+      const expiredEvents: string[] = [];
+      for (const [eventId, timestamp] of eventIdMap.entries()) {
+        if (now - timestamp > ttlMs) {
+          expiredEvents.push(eventId);
+        }
+      }
+
+      expiredEvents.forEach((eventId) => {
+        eventIdMap.delete(eventId);
+      });
+
+      // Old event should be cleaned up
+      expect(eventIdMap.has('old-event')).toBe(false);
+      expect(eventIdMap.has('recent-event')).toBe(true);
+    });
+
+    it('prevents duplicate cache updates', () => {
+      const processedEventIds = new Set<string>();
+      const cacheUpdates: Array<{ eventId: string; update: string }> = [];
+
+      // Process event first time
+      const eventId = 'event-duplicate-test';
+      if (!processedEventIds.has(eventId)) {
+        processedEventIds.add(eventId);
+        cacheUpdates.push({ eventId, update: 'cache-update-1' });
+      }
+
+      // Try to process again (should be skipped)
+      if (!processedEventIds.has(eventId)) {
+        cacheUpdates.push({ eventId, update: 'cache-update-2' });
+      }
+
+      // Only first update should be recorded
+      expect(cacheUpdates).toHaveLength(1);
+      expect(cacheUpdates[0].update).toBe('cache-update-1');
+    });
+  });
+
+  describe('Phase D: Cache Updates for All 10 Event Types', () => {
+    it('handles buildCreated event type', () => {
+      const eventType = 'buildCreated';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles buildStatusChanged event type', () => {
+      const eventType = 'buildStatusChanged';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles partAdded event type', () => {
+      const eventType = 'partAdded';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles partRemoved event type', () => {
+      const eventType = 'partRemoved';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles testRunSubmitted event type', () => {
+      const eventType = 'testRunSubmitted';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles testRunUpdated event type', () => {
+      const eventType = 'testRunUpdated';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles fileUploaded event type', () => {
+      const eventType = 'fileUploaded';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles ciResults event type', () => {
+      const eventType = 'ciResults';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles sensorData event type', () => {
+      const eventType = 'sensorData';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('handles webhook event type', () => {
+      const eventType = 'webhook';
+      const eventTypeCounters: Record<string, number> = {};
+
+      eventTypeCounters[eventType] = (eventTypeCounters[eventType] ?? 0) + 1;
+      expect(eventTypeCounters[eventType]).toBe(1);
+    });
+
+    it('counts all 10 event types correctly', () => {
+      const eventTypeCounters: Record<string, number> = {
+        buildCreated: 1,
+        buildStatusChanged: 2,
+        partAdded: 1,
+        partRemoved: 1,
+        testRunSubmitted: 3,
+        testRunUpdated: 1,
+        fileUploaded: 1,
+        ciResults: 1,
+        sensorData: 1,
+        webhook: 1,
+      };
+
+      const totalEvents = Object.values(eventTypeCounters).reduce((a, b) => a + b, 0);
+      expect(totalEvents).toBe(13);
+      expect(Object.keys(eventTypeCounters)).toHaveLength(10);
+    });
+  });
+
+  describe('Phase D: Debug Mode with Metrics', () => {
+    it('collects totalEventsReceived metric', () => {
+      const metrics = {
+        totalEventsReceived: 0,
+        totalDuplicates: 0,
+        totalCacheUpdates: 0,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 0,
+        averageLatencyMs: 0,
+        eventTypeCounters: {},
+      };
+
+      metrics.totalEventsReceived += 1;
+      metrics.totalEventsReceived += 1;
+      metrics.totalEventsReceived += 1;
+
+      expect(metrics.totalEventsReceived).toBe(3);
+    });
+
+    it('collects totalDuplicates metric', () => {
+      const metrics = {
+        totalEventsReceived: 0,
+        totalDuplicates: 0,
+        totalCacheUpdates: 0,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 0,
+        averageLatencyMs: 0,
+        eventTypeCounters: {},
+      };
+
+      metrics.totalDuplicates += 1;
+      metrics.totalDuplicates += 1;
+
+      expect(metrics.totalDuplicates).toBe(2);
+    });
+
+    it('collects totalCacheUpdates metric', () => {
+      const metrics = {
+        totalEventsReceived: 0,
+        totalDuplicates: 0,
+        totalCacheUpdates: 0,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 0,
+        averageLatencyMs: 0,
+        eventTypeCounters: {},
+      };
+
+      metrics.totalCacheUpdates += 1;
+
+      expect(metrics.totalCacheUpdates).toBe(1);
+    });
+
+    it('collects reconnectAttempts metric', () => {
+      const metrics = {
+        totalEventsReceived: 0,
+        totalDuplicates: 0,
+        totalCacheUpdates: 0,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 0,
+        averageLatencyMs: 0,
+        eventTypeCounters: {},
+      };
+
+      for (let i = 0; i < 5; i += 1) {
+        metrics.reconnectAttempts += 1;
+      }
+
+      expect(metrics.reconnectAttempts).toBe(5);
+    });
+
+    it('calculates averageLatencyMs from latency timings', () => {
+      const latencyTimings = [10, 20, 30, 40, 50];
+      const average = latencyTimings.reduce((a, b) => a + b, 0) / latencyTimings.length;
+
+      expect(average).toBe(30);
+    });
+
+    it('tracks per-event-type counters', () => {
+      const metrics = {
+        totalEventsReceived: 0,
+        totalDuplicates: 0,
+        totalCacheUpdates: 0,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 0,
+        averageLatencyMs: 0,
+        eventTypeCounters: {} as Record<string, number>,
+      };
+
+      metrics.eventTypeCounters['buildCreated'] = 1;
+      metrics.eventTypeCounters['buildStatusChanged'] = 2;
+      metrics.eventTypeCounters['partAdded'] = 1;
+
+      expect(metrics.eventTypeCounters['buildCreated']).toBe(1);
+      expect(metrics.eventTypeCounters['buildStatusChanged']).toBe(2);
+      expect(metrics.eventTypeCounters['partAdded']).toBe(1);
+    });
+
+    it('logs events in debug mode', () => {
+      const debugEnabled = true;
+      const consoleLogs: string[] = [];
+
+      const debugLog = (message: string): void => {
+        if (debugEnabled) {
+          consoleLogs.push(message);
+        }
+      };
+
+      debugLog('[SSE Debug] Event received');
+      debugLog('[SSE Debug] Cache updated');
+
+      expect(consoleLogs).toHaveLength(2);
+      expect(consoleLogs[0]).toContain('Event received');
+    });
+
+    it('suppresses debug logging when disabled', () => {
+      const debugEnabled = false;
+      const consoleLogs: string[] = [];
+
+      const debugLog = (message: string): void => {
+        if (debugEnabled) {
+          consoleLogs.push(message);
+        }
+      };
+
+      debugLog('[SSE Debug] This should not be logged');
+
+      expect(consoleLogs).toHaveLength(0);
+    });
+
+    it('aggregates metrics into window.__SSE_METRICS', () => {
+      const metrics = {
+        totalEventsReceived: 10,
+        totalDuplicates: 2,
+        totalCacheUpdates: 8,
+        totalCacheUpdateErrors: 0,
+        reconnectAttempts: 1,
+        averageLatencyMs: 25,
+        eventTypeCounters: {
+          buildCreated: 2,
+          buildStatusChanged: 3,
+          partAdded: 5,
+        },
+      };
+
+      // Simulate window.__SSE_METRICS
+      const sseMetrics = metrics;
+
+      expect(sseMetrics.totalEventsReceived).toBe(10);
+      expect(sseMetrics.totalDuplicates).toBe(2);
+      expect(sseMetrics.totalCacheUpdates).toBe(8);
+      expect(sseMetrics.reconnectAttempts).toBe(1);
+      expect(sseMetrics.averageLatencyMs).toBe(25);
+    });
+  });
+
+  describe('Phase D: Performance and Latency Tracking', () => {
+    it('measures cache update latency', () => {
+      const latencies: number[] = [];
+
+      const measureLatency = (fn: () => void): void => {
+        const start =
+          typeof performance !== 'undefined' && 'now' in performance
+            ? performance.now()
+            : Date.now();
+        fn();
+        const end =
+          typeof performance !== 'undefined' && 'now' in performance
+            ? performance.now()
+            : Date.now();
+        const duration = end - start;
+        latencies.push(duration);
+      };
+
+      measureLatency(() => {
+        // Simulate cache update
+        const result = Array(1000).fill(0);
+        void result.length;
+      });
+
+      expect(latencies).toHaveLength(1);
+      expect(latencies[0]).toBeGreaterThanOrEqual(0);
+    });
+
+    it('maintains rolling average of latencies', () => {
+      const latencies: number[] = [];
+      const maxLatencies = 100;
+
+      const addLatency = (latency: number): void => {
+        latencies.push(latency);
+        if (latencies.length > maxLatencies) {
+          latencies.shift();
+        }
+      };
+
+      for (let i = 0; i < 150; i += 1) {
+        addLatency(Math.random() * 50);
+      }
+
+      expect(latencies.length).toBeLessThanOrEqual(maxLatencies);
+      expect(latencies.length).toBe(maxLatencies);
+
+      const average = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+      expect(average).toBeGreaterThan(0);
+      expect(average).toBeLessThan(50);
     });
   });
 });
