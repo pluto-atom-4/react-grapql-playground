@@ -140,15 +140,18 @@ router.get('/', (req: Request, res: Response) => {
   }, connectionTimeoutMs / 2);
 
   // Track writes to update last activity time
-  const originalWrite = res.write;
-  res.write = function (this: Response, chunk: Buffer | string, encoding?: BufferEncoding | ((error?: Error | null) => void), callback?: (error?: Error | null) => void) {
+  const originalWrite = res.write.bind(res);
+  res.write = ((chunk: Buffer | string, encoding?: BufferEncoding | (() => void), callback?: (() => void) | undefined) => {
     lastActivityTime = Date.now();
     client.eventCount++;
     if (typeof encoding === 'function') {
-      return originalWrite.call(this, chunk, encoding);
+      return originalWrite(chunk, encoding);
     }
-    return originalWrite.call(this, chunk, encoding as BufferEncoding, callback);
-  } as unknown as (chunk: Buffer | string, encoding?: BufferEncoding | ((error?: Error | null) => void), callback?: (error?: Error | null) => void) => boolean;
+    if (typeof callback === 'function') {
+      return originalWrite(chunk, encoding as BufferEncoding, callback);
+    }
+    return originalWrite(chunk, encoding as BufferEncoding);
+  }) as unknown as typeof res.write;
 
   // Cleanup function: called on disconnect, error, or timeout
   const cleanup = () => {
