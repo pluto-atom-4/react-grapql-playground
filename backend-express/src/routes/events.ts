@@ -143,16 +143,16 @@ router.get('/', (req: Request, res: Response) => {
 
   // Track writes to update last activity time
   const originalWrite = res.write.bind(res);
-  res.write = ((chunk: Buffer | string, encoding?: BufferEncoding | (() => void), callback?: (() => void) | undefined) => {
+  res.write = ((chunk: Buffer | string, encoding?: string | (() => void), callback?: (() => void) | undefined) => {
     lastActivityTime = Date.now();
     client.eventCount++;
     if (typeof encoding === 'function') {
       return originalWrite(chunk, encoding);
     }
     if (typeof callback === 'function') {
-      return originalWrite(chunk, encoding as BufferEncoding, callback);
+      return originalWrite(chunk, encoding as string, callback);
     }
-    return originalWrite(chunk, encoding as BufferEncoding);
+    return originalWrite(chunk, encoding as string);
   }) as unknown as typeof res.write;
 
   // Cleanup function: called on disconnect, error, or timeout
