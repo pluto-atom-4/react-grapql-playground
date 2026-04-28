@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { EventDeduplicator } from '../event-deduplicator';
 import { v4 as uuidv4 } from 'uuid';
 
