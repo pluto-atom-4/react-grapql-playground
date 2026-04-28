@@ -165,7 +165,8 @@ router.get('/', (req: Request, res: Response) => {
     try {
       res.end();
     } catch (error) {
-      // Connection already closed
+      // Ignore errors when ending connection
+      void error;
     }
   };
 
