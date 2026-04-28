@@ -14,8 +14,6 @@
  * Flow: GraphQL mutation → HTTP POST (authenticated, with retries) → Express → EventBus.emit() → SSE broadcast → Frontend
  */
 
-import { EventEnvelope } from '../types/events';
-
 interface EventPayload {
   event: string;
   payload: Record<string, unknown>;
@@ -92,7 +90,7 @@ export async function emitEvent(
 
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
-      const controller = new AbortController();
+      const controller = new AbortController() as unknown as { abort: () => void; signal?: unknown };
       const timeoutId = setTimeout(() => controller.abort(), retryConfig.timeoutMs);
 
       const response = await fetch(expressEventUrl, {
@@ -102,7 +100,7 @@ export async function emitEvent(
           Authorization: `Bearer ${eventSecret}`, // ✅ Shared-secret authentication
         },
         body: JSON.stringify(eventPayload),
-        signal: controller.signal,
+        signal: controller.signal as unknown as AbortSignal,
       });
 
       clearTimeout(timeoutId);
