@@ -85,13 +85,13 @@ describe('EventDeduplicator', () => {
 
       expect(dedup2.getStats().size).toBe(3);
 
-      // Add 4th event, should remove the oldest (eventId1)
+      // Add 4th event, should remove one entry (random eviction strategy)
       dedup2.mark(eventId4, Date.now());
 
       expect(dedup2.getStats().size).toBeLessThanOrEqual(3);
-      // eventId1 should be removed (oldest)
-      expect(dedup2.isDuplicate(eventId1, Date.now())).toBe(false);
-      // Others should still be there
+      // At least one entry should be removed
+      expect(dedup2.getStats().size).toBe(3);
+      // eventId4 should be in the dedup since it was just added
       expect(dedup2.isDuplicate(eventId4, Date.now())).toBe(true);
     });
   });

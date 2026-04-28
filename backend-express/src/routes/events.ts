@@ -34,7 +34,7 @@ const router: ExpressRouter = Router();
 
 // Deduplicator instance (shared across all SSE connections)
 const dedup = new EventDeduplicator({
-  maxSize: parseInt(process.env.EVENT_DEDUP_MAX_SIZE || '1000'),
+  maxSize: parseInt(process.env.EVENT_DEDUP_WINDOW_SIZE || '1000'),
   ttlMs: parseInt(process.env.EVENT_DEDUP_TTL_MS || '300000'),
 });
 
@@ -132,21 +132,28 @@ router.get('/', (req: Request, res: Response) => {
     }
   }, heartbeatIntervalMs);
 
-  // Timeout: close connection if no writes for 2 minutes (configurable)
+  // Timeout: close connection if no event broadcasts for 2 minutes (configurable)
+  // Note: Heartbeat keeps connection alive but doesn't reset the inactivity timer.
+  // Only actual event broadcasts trigger activity update.
   const connectionTimeoutMs = parseInt(process.env.CONNECTION_TIMEOUT_MS || '120000');
-  let lastActivityTime = Date.now();
+  let lastBroadcastTime = Date.now();
   const timeoutTimer = setInterval(() => {
-    if (Date.now() - lastActivityTime > connectionTimeoutMs) {
+    if (Date.now() - lastBroadcastTime > connectionTimeoutMs) {
       cleanup();
     }
   }, connectionTimeoutMs / 2);
 
-  // Track writes to update last activity time
+  // Track writes to update last broadcast time (only for actual events, not heartbeat)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const originalWrite = res.write as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   res.write = (function (this: Response, ...args: any[]) {
-    lastActivityTime = Date.now();
+    // Only reset activity time if writing actual event data (event: prefix)
+    // Heartbeat comments (:) don't reset the timeout
+    const data = args[0];
+    if (typeof data === 'string' && data.includes('event:')) {
+      lastBroadcastTime = Date.now();
+    }
     client.eventCount++;
     return originalWrite.apply(this, args);
   }).bind(res) as unknown as typeof res.write;

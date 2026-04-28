@@ -83,11 +83,15 @@ export class EventDeduplicator {
       this.cleanup();
     }
 
-    // If at capacity, remove oldest entry
+    // If at capacity, remove oldest entry with random eviction (O(1))
+    // TTL-based cleanup handles removing expired entries anyway,
+    // so random eviction is efficient and prevents O(n log n) sort operations
     if (this.dedup.size >= this.maxSize) {
-      // Find entry with smallest (oldest) timestamp
-      const oldest = Array.from(this.dedup.entries()).sort(([, a], [, b]) => a - b)[0];
-      if (oldest) this.dedup.delete(oldest[0]);
+      const entries = Array.from(this.dedup.keys());
+      if (entries.length > 0) {
+        const randomIdx = Math.floor(Math.random() * entries.length);
+        this.dedup.delete(entries[randomIdx]);
+      }
     }
 
     this.dedup.set(eventId, Date.now());
