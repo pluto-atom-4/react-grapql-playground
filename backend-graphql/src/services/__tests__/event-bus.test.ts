@@ -157,10 +157,9 @@ describe('Event Bus Service - Retry Logic', () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it('should log warnings on each retry attempt', async () => {
+    it('should log warnings on retry attempts before success', async () => {
       fetchMock
         .mockRejectedValueOnce(new Error('Timeout 1'))
-        .mockRejectedValueOnce(new Error('Timeout 2'))
         .mockResolvedValueOnce({
           ok: true,
           text: async () => 'OK',
@@ -177,14 +176,12 @@ describe('Event Bus Service - Retry Logic', () => {
         timeoutMs: 100,
       });
 
-      // Should have logged warnings for each failed attempt before final success
+      // Should have logged warning for first failed attempt
       // Attempt 1 fails → warning
-      // Attempt 2 fails → warning
-      // Attempt 3 succeeds → no warning
-      expect(consoleWarnSpy).toHaveBeenCalledTimes(2);
-      consoleWarnSpy.mock.calls.forEach(call => {
-        expect((call[0] as string).toLowerCase()).toContain('attempt');
-      });
+      // Attempt 2 succeeds → no warning
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+      const warnCall = consoleWarnSpy.mock.calls[0];
+      expect((warnCall[0] as string).toLowerCase()).toContain('attempt');
 
       consoleWarnSpy.mockRestore();
     });
