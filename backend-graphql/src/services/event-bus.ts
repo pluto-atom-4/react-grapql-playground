@@ -99,7 +99,7 @@ export async function emitEvent(
         body: JSON.stringify(eventPayload),
       };
 
-      let timeoutHandle: NodeJS.Timeout | null = null;
+      let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
       // Use AbortController if available (Node.js 15+)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
