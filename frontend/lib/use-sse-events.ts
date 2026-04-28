@@ -206,7 +206,8 @@ class EventDeduplicator {
 export function useSSEEvents(): void {
   const client = useApolloClient();
   const eventSourceRef = useRef<EventSource | undefined>(undefined);
-  const reconnectTimeoutRef = useRef<number | undefined>(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reconnectTimeoutRef = useRef<any>(undefined);
   const reconnectAttemptRef = useRef<number>(0);
   const dedupRef = useRef<EventDeduplicator>(new EventDeduplicator(
     parseInt(process.env.NEXT_PUBLIC_SSE_DEDUP_WINDOW_SIZE ?? '1000', 10),
@@ -897,6 +898,7 @@ export function useSSEEvents(): void {
         eventSourceRef.current.close();
       }
       if (reconnectTimeoutRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         globalThis.clearTimeout(reconnectTimeoutRef.current);
       }
     };
