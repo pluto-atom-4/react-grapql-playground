@@ -141,10 +141,10 @@ router.get('/', (_req: Request, res: Response) => {
 
   // Track writes to update last activity time
   const originalWrite = res.write;
-  res.write = function (this: Response, ...args: unknown[]) {
+  res.write = function (this: Response, chunk: Buffer | string, ...args: unknown[]) {
     lastActivityTime = Date.now();
     client.eventCount++;
-    return originalWrite.apply(this, args);
+    return originalWrite.call(this, chunk, ...args);
   };
 
   // Cleanup function: called on disconnect, error, or timeout
