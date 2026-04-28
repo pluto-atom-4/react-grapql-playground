@@ -293,7 +293,6 @@ export function useSSEEvents(): void {
       debugLog('Max reconnection attempts reached, keeping frontend operational', {
         attempts: reconnectAttemptRef.current,
       });
-      // eslint-disable-next-line no-console
       console.error(
         `[SSE] Failed to reconnect after ${reconnectAttemptRef.current} attempts. Frontend remains operational without real-time updates.`
       );
