@@ -898,8 +898,8 @@ export function useSSEEvents(): void {
         eventSourceRef.current.close();
       }
       if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
+        globalThis.clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [client]);
+  }, [client, connect]);
 }
