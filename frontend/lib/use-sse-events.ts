@@ -563,8 +563,8 @@ export function useSSEEvents(): void {
                   const testRunsArray = Array.isArray(existingTestRuns) ? existingTestRuns : [];
 
                   const testRunExists = testRunsArray.some(
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     (tr) =>
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                       (readField({ fieldName: 'id', from: tr }) as string) === eventData.testRunId
                   );
 
