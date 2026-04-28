@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { JSX, useEffect } from "react";
+import { JSX, useEffect } from 'react';
 import LoginForm from '@/components/login-form';
 
 export default function LoginPage(): JSX.Element {

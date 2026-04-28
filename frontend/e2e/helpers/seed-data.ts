@@ -10,6 +10,26 @@ export interface SeededTestData {
   testRunIds: string[];
 }
 
+// GraphQL response types
+interface CreateBuildResponse {
+  createBuild?: {
+    id: string;
+    status: string;
+  };
+}
+
+interface AddPartResponse {
+  addPart?: {
+    id: string;
+  };
+}
+
+interface SubmitTestRunResponse {
+  submitTestRun?: {
+    id: string;
+  };
+}
+
 /**
  * Seed test data for E2E tests via GraphQL mutations
  */
@@ -22,7 +42,7 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
 
   try {
     // Create test build
-    const createBuildResult = await apiClient.mutation(
+    const createBuildResult = await apiClient.mutation<CreateBuildResponse>(
       `
       mutation CreateBuild($name: String!, $description: String) {
         createBuild(name: $name, description: $description) {
@@ -43,7 +63,7 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
 
       // Create test parts
       for (let i = 0; i < 2; i++) {
-        const createPartResult = await apiClient.mutation(
+        const createPartResult = await apiClient.mutation<AddPartResponse>(
           `
           mutation AddPart($buildId: ID!, $name: String!, $sku: String!, $quantity: Int!) {
             addPart(buildId: $buildId, name: $name, sku: $sku, quantity: $quantity) {
@@ -65,7 +85,7 @@ export async function seedTestData(apiClient: GraphQLClient): Promise<SeededTest
       }
 
       // Create test run
-      const createTestRunResult = await apiClient.mutation(
+      const createTestRunResult = await apiClient.mutation<SubmitTestRunResponse>(
         `
         mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String) {
           submitTestRun(buildId: $buildId, status: $status, result: $result) {
@@ -122,7 +142,7 @@ export async function seedBuildWithParts(
   const partIds: string[] = [];
 
   // Create build
-  const buildResult = await apiClient.mutation(
+  const buildResult = await apiClient.mutation<CreateBuildResponse>(
     `
     mutation CreateBuild($name: String!, $description: String) {
       createBuild(name: $name, description: $description) {
@@ -143,7 +163,7 @@ export async function seedBuildWithParts(
 
   // Create parts
   for (let i = 0; i < partCount; i++) {
-    const partResult = await apiClient.mutation(
+    const partResult = await apiClient.mutation<AddPartResponse>(
       `
       mutation AddPart($buildId: ID!, $name: String!, $sku: String!, $quantity: Int!) {
         addPart(buildId: $buildId, name: $name, sku: $sku, quantity: $quantity) {

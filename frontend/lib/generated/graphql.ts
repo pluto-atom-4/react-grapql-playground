@@ -29,6 +29,22 @@ export type Scalars = {
   DateTime: { input: any; output: any };
 };
 
+export type AuthPayload = {
+  __typename?: 'AuthPayload';
+  /** JWT token for authentication */
+  token: Scalars['String']['output'];
+  /** User that authenticated */
+  user: AuthUser;
+};
+
+export type AuthUser = {
+  __typename?: 'AuthUser';
+  /** User email address */
+  email: Scalars['String']['output'];
+  /** User unique identifier */
+  id: Scalars['ID']['output'];
+};
+
 export type Build = {
   __typename?: 'Build';
   /** Timestamp when build was created */
@@ -86,6 +102,19 @@ export type Mutation = {
    */
   createBuild: Build;
   /**
+   * Authenticate user with email and password.
+   * Returns JWT token valid for 24 hours.
+   *
+   * Example:
+   *   mutation {
+   *     login(email: "user@example.com", password: "password123") {
+   *       token
+   *       user { id email }
+   *     }
+   *   }
+   */
+  login: AuthPayload;
+  /**
    * Submit a test run for a build.
    *
    * fileUrl should point to Express /upload endpoint result.
@@ -129,6 +158,11 @@ export type MutationAddPartArgs = {
 export type MutationCreateBuildArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+export type MutationLoginArgs = {
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
 };
 
 export type MutationSubmitTestRunArgs = {
@@ -248,6 +282,20 @@ export enum TestStatus {
   Running = 'RUNNING',
 }
 
+export type LoginMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+export type LoginMutation = {
+  __typename?: 'Mutation';
+  login: {
+    __typename?: 'AuthPayload';
+    token: string;
+    user: { __typename?: 'AuthUser'; id: string; email: string };
+  };
+};
+
 export type BuildInfoFragment = {
   __typename?: 'Build';
   id: string;
@@ -277,6 +325,7 @@ export type TestRunInfoFragment = {
   fileUrl?: string | null;
   completedAt?: any | null;
   createdAt: any;
+  updatedAt: any;
 } & { ' $fragmentName'?: 'TestRunInfoFragment' };
 
 export type GetBuildsQueryVariables = Exact<{
@@ -432,11 +481,78 @@ export const TestRunInfoFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'fileUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
         ],
       },
     },
   ],
 } as unknown as DocumentNode<TestRunInfoFragment, unknown>;
+export const LoginDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'Login' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'login' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'token' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'user' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
 export const GetBuildsDocument = {
   kind: 'Document',
   definitions: [
@@ -612,6 +728,7 @@ export const GetBuildDetailDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'fileUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
         ],
       },
     },
@@ -671,6 +788,7 @@ export const GetTestRunsDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'fileUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
         ],
       },
     },
@@ -993,6 +1111,7 @@ export const SubmitTestRunDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'fileUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'completedAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
         ],
       },
     },

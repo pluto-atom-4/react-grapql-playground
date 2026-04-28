@@ -154,11 +154,7 @@ describe('Apollo Hooks - Mutation Hooks with Error Handling', () => {
 
   describe('Type Definitions', () => {
     it('BuildStatus enum has expected values', () => {
-      const statuses = [
-        BuildStatus.Pending,
-        BuildStatus.Running,
-        BuildStatus.Complete,
-      ];
+      const statuses = [BuildStatus.Pending, BuildStatus.Running, BuildStatus.Complete];
       expect(statuses.length).toBeGreaterThan(0);
     });
 
@@ -327,4 +323,3 @@ describe('Apollo Hooks - Mutation Hooks with Error Handling', () => {
     });
   });
 });
-

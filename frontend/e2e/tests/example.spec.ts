@@ -193,20 +193,18 @@ test.describe('API Tests (Using apiClient fixture)', () => {
 
     // Verify mutation succeeded
     expect(result.data).toBeDefined();
-     
+
     const build = (result.data as { createBuild?: { id?: string; name?: string; status?: string } })
       ?.createBuild;
     expect(build).toBeDefined();
     if (build) {
-       
       expect(build.id).toBeDefined();
-       
+
       expect(build.name).toBe(buildName);
-       
+
       expect(build.status).toBeDefined();
     }
 
-     
     console.log(`✓ Created build: ${build?.name}`);
   });
 
