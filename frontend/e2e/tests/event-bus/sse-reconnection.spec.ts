@@ -154,7 +154,7 @@ test.describe('Event Bus: SSE Reconnection Resilience', () => {
       expect(true).toBe(true);
     } catch (err) {
       // If this fails, the stress test may have broken the connection
-      throw new Error(`Dashboard not functional after stress test: ${err instanceof Error ? err.message : err}`);
+      throw new Error(`Dashboard not functional after stress test: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 
