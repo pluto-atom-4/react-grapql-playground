@@ -363,3 +363,6 @@ router.post(
 
 export default router;
 
+// Export metrics and dedup for testing purposes
+export { metricsCollector, dedup };
+
