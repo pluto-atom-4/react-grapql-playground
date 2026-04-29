@@ -198,7 +198,7 @@ describe('Phase E1: Event Bus Integration Tests', () => {
     });
 
     it('should preserve event payload during broadcast', async () => {
-      const receivedPayloads: any[] = [];
+      const receivedPayloads: Record<string, unknown>[] = [];
 
       eventBus.on('buildStatusChanged', (payload) => {
         receivedPayloads.push(payload);
