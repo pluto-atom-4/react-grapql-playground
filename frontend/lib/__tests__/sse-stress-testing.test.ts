@@ -25,8 +25,8 @@ import { describe, it, expect } from 'vitest';
 declare const global: {
   gc?: () => void;
 };
-declare const setTimeout: (callback: () => void, ms: number) => NodeJS.Timeout;
-declare const setInterval: (callback: () => void, ms: number) => NodeJS.Timeout;
+declare const setTimeout: (callback: () => void, ms: number) => unknown;
+declare const _setInterval: (callback: () => void, ms: number) => unknown;
 
 // Import from node
 import { performance } from 'node:perf_hooks';

@@ -58,13 +58,15 @@ test.describe('Event Bus: Event Deduplication', () => {
 
     // Get event listener metadata (if available) from Apollo cache
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const eventMetrics = (await authenticatedPage.evaluate(() => {
-        // Try to access dedup metrics from window or Apollo cache
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const w = window as any;
-        return w.__E2E_DEDUP_METRICS__ || { rejected: 0, accepted: 0 };
-      })) as { rejected: number; accepted: number };
+      const eventMetrics = (
+        await authenticatedPage.evaluate(() => {
+          // Try to access dedup metrics from window or Apollo cache
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const w = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+          return w.__E2E_DEDUP_METRICS__ || { rejected: 0, accepted: 0 };
+        })
+      ) as { rejected: number; accepted: number };
 
       // Verify dedup metrics show some rejections (if implemented)
       console.warn('[TC-E2E-DEDUP-001] Dedup metrics:', eventMetrics);
