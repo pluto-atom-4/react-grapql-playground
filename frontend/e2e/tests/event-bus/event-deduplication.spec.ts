@@ -58,6 +58,7 @@ test.describe('Event Bus: Event Deduplication', () => {
 
     // Get event listener metadata (if available) from Apollo cache
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const eventMetrics = (await authenticatedPage.evaluate(() => {
         // Try to access dedup metrics from window or Apollo cache
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
