@@ -173,18 +173,23 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
 
     const totalEvents = 5000;
     const duplicateRate = 0.2; // 20% duplicates
-    const uniqueCount = Math.floor(totalEvents * (1 - duplicateRate));
+    const uniqueCount = Math.floor(totalEvents * (1 - duplicateRate)); // 4000 unique
     const startTime = performance.now();
     let duplicateDetected = 0;
+    let newEventsCount = 0;
 
     // Emit events with duplicates mixed in
+    // Strategy: cycle through uniqueCount IDs, creating duplicates naturally
     for (let i = 0; i < totalEvents; i++) {
-      const eventId = `event-${i % uniqueCount}`; // This creates duplicates
+      // Create event IDs that cycle: event-0, event-1, ... event-3999, event-0, event-1, etc.
+      // This creates 4000 unique IDs, with the next 1000 being duplicates of the first 1000
+      const eventId = `event-${i % uniqueCount}`;
       const isDup = dedup.isDuplicate(eventId, Date.now());
 
       if (isDup) {
         duplicateDetected++;
       } else {
+        newEventsCount++;
         dedup.mark(eventId, Date.now());
       }
     }
@@ -192,6 +197,7 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
     const elapsedMs = performance.now() - startTime;
 
     // Verify dedup detection accuracy
+    // We expect: first uniqueCount events are new, remaining (totalEvents - uniqueCount) are duplicates
     const expectedDuplicates = totalEvents - uniqueCount;
     expect(duplicateDetected).toBe(expectedDuplicates);
 
