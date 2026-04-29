@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 /**
  * Event Bus Stress Testing Suite
  *
@@ -16,7 +18,8 @@
  * - 100+ concurrent clients
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { performance } from 'perf_hooks';
 import { EventDeduplicator } from '../../services/event-deduplicator';
 import { EventBusMetricsCollector } from '../../services/event-bus';
 import { v4 as uuidv4 } from 'uuid';
@@ -108,7 +111,7 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
     expect(elapsedMs).toBeLessThan(20000); // Should complete within 20 seconds
 
     // Provide performance metrics
-    console.log(`
+    console.warn(`
       ✓ Emitted ${targetEmissions} events in ${elapsedMs.toFixed(0)}ms
       ✓ Avg latency: ${avgLatency.toFixed(2)}ms (max: ${metrics.maxLatencyMs.toFixed(2)}ms)
       ✓ Memory growth: ${memoryGrowth.toFixed(2)}MB (start: ${startMemory.toFixed(2)}MB → end: ${endMemory.toFixed(2)}MB)
@@ -157,7 +160,7 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
         expect(latency.maxLatency).toBeLessThan(200);
       }
 
-      console.log(`
+      console.warn(`
         ✓ Latency degradation is linear and acceptable:
         ${latencies.map((l) => `  - ${l.rate} events/sec: avg=${l.avgLatency.toFixed(2)}ms max=${l.maxLatency.toFixed(2)}ms`).join('\n')}
       `);
@@ -211,7 +214,7 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
     const stats = dedup.getStats();
     expect(stats.size).toBeLessThanOrEqual(1000);
 
-    console.log(`
+    console.warn(`
       ✓ Processed ${totalEvents} events with dedup in ${elapsedMs.toFixed(2)}ms
       ✓ New events marked: ${newEventsMarked}
       ✓ Duplicates detected: ${duplicateDetected}/${expectedDuplicates}
@@ -224,7 +227,7 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
 describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
   it('2.1: event bus memory stays stable over sustained load', async () => {
     const measurements: Array<{ time: number; memory: number }> = [];
-    const startMemory = getHeapUsedMB();
+    const _startMemory = getHeapUsedMB();
     const metricsCollector = new EventBusMetricsCollector();
 
     // Run for 300 simulated seconds (5-minute equivalent)
@@ -274,7 +277,7 @@ describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
 
     expect(fluctuation).toBeLessThan(10); // Less than 10MB fluctuation
 
-    console.log(`
+    console.warn(`
       ✓ Processed ${totalEvents} events over ${durationSeconds}s
       ✓ Memory growth: ${growthPercent.toFixed(2)}% (${firstMemory.toFixed(2)}MB → ${lastMemory.toFixed(2)}MB)
       ✓ Memory fluctuation: ${fluctuation.toFixed(2)}MB (range: ${minMemory.toFixed(2)}-${maxMemory.toFixed(2)}MB)
@@ -314,7 +317,7 @@ describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
     const memoryGrowth = endMemory - startMemory;
     expect(memoryGrowth).toBeLessThan(25); // Less than 25MB for 100k unique events (realistic)
 
-    console.log(`
+    console.warn(`
       ✓ Processed 100,000 unique events
       ✓ Dedup window bounded: ${stats.size}/${stats.maxSize} entries
       ✓ Memory growth: ${memoryGrowth.toFixed(2)}MB
@@ -359,7 +362,7 @@ describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
     const finalMemory = getHeapUsedMB();
     expect(finalMemory).toBeLessThan(100); // Should not exceed 100MB
 
-    console.log(`
+    console.warn(`
       ✓ Completed ${cycles} cycles of ${clientsPerCycle} connect/disconnect
       ✓ Final memory usage: ${finalMemory.toFixed(2)}MB
       ✓ Total connections/disconnections: ${cycles * clientsPerCycle}
@@ -393,7 +396,7 @@ describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
     const metricsJson = JSON.stringify(metrics);
     expect(metricsJson.length).toBeLessThan(10000); // Metrics should be compact
 
-    console.log(`
+    console.warn(`
       ✓ Processed 100,000 events through metrics collector
       ✓ Event types tracked: ${Object.keys(metrics.eventCounts).length}
       ✓ Metrics JSON size: ${metricsJson.length} bytes
@@ -449,7 +452,7 @@ describe('Event Bus Stress Testing - Suite 3: Concurrent Client Stress', () => {
     // Verify no client dropped
     expect(clientIds.size).toBe(100);
 
-    console.log(`
+    console.warn(`
       ✓ 100 concurrent clients received ${eventCount} events each
       ✓ Average latency: ${metrics.averageLatencyMs.toFixed(2)}ms
       ✓ Total events processed: ${metrics.totalBroadcasted}
@@ -495,7 +498,7 @@ describe('Event Bus Stress Testing - Suite 3: Concurrent Client Stress', () => {
     // Verify no crashes (latency is continuous)
     expect(metrics.averageLatencyMs).toBeGreaterThan(0);
 
-    console.log(`
+    console.warn(`
       ✓ Completed ${cycles} cycles of churn operations
       ✓ Events processed: ${metrics.totalEmitted}
       ✓ Final connected clients: ${connectedNow}
@@ -536,7 +539,7 @@ describe('Event Bus Stress Testing - Suite 3: Concurrent Client Stress', () => {
     // Verify latency is reasonable (not dominated by slow client)
     expect(metrics.averageLatencyMs).toBeLessThan(50);
 
-    console.log(`
+    console.warn(`
       ✓ ${eventCount} events delivered to ${fastClients} fast + ${slowClients} slow clients
       ✓ Average latency: ${metrics.averageLatencyMs.toFixed(2)}ms (includes slow client)
       ✓ Total broadcasts: ${totalBroadcasts}
@@ -581,7 +584,7 @@ describe('Event Bus Stress Testing - Suite 4: Error Scenario Stress', () => {
     // Verify service didn't crash despite malformed events
     expect(metrics.totalBroadcasted).toBeGreaterThan(0);
 
-    console.log(`
+    console.warn(`
       ✓ Processed ${processedValid} valid events, rejected ${rejectedMalformed} malformed
       ✓ Service remained stable and operational
       ✓ Total events broadcast: ${metrics.totalBroadcasted}
@@ -617,7 +620,7 @@ describe('Event Bus Stress Testing - Suite 4: Error Scenario Stress', () => {
     expect(metrics.totalEmitted).toBeGreaterThan(0);
     expect(metrics.connectedClients).toBe(0); // All disconnected
 
-    console.log(`
+    console.warn(`
       ✓ Survived ${totalReconnections} rapid reconnection cycles
       ✓ Service metrics: ${metrics.totalEmitted} events emitted
       ✓ No crashes or hangs detected
@@ -675,7 +678,7 @@ describe('Event Bus Stress Testing - Suite 4: Error Scenario Stress', () => {
     // Verify continuity (no events lost between phases)
     expect(metricsBeforeRestart.totalEmitted).toBe(50);
 
-    console.log(`
+    console.warn(`
       ✓ Phase 1: Emitted ${metricsBeforeRestart.totalEmitted} events
       ✓ Metrics reset: ${metricsAfterRestart.totalEmitted} events
       ✓ Phase 3: Emitted ${metricsAfterRestart.totalEmitted} more events
