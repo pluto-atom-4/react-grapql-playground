@@ -58,18 +58,18 @@ test.describe('Event Bus: Event Deduplication', () => {
 
     // Get event listener metadata (if available) from Apollo cache
     try {
-      const eventMetrics = await authenticatedPage.evaluate(() => {
+      const eventMetrics = (await authenticatedPage.evaluate(() => {
         // Try to access dedup metrics from window or Apollo cache
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any;
         return w.__E2E_DEDUP_METRICS__ || { rejected: 0, accepted: 0 };
-      });
+      })) as { rejected: number; accepted: number };
 
       // Verify dedup metrics show some rejections (if implemented)
-      console.log('[TC-E2E-DEDUP-001] Dedup metrics:', eventMetrics);
-    } catch (err) {
+      console.warn('[TC-E2E-DEDUP-001] Dedup metrics:', eventMetrics);
+    } catch {
       // Metrics might not be exposed, that's ok for E2E
-      console.log('[TC-E2E-DEDUP-001] Could not retrieve dedup metrics');
+      console.warn('[TC-E2E-DEDUP-001] Could not retrieve dedup metrics');
     }
 
     // Verify: Build still appears exactly once
@@ -159,7 +159,7 @@ test.describe('Event Bus: Event Deduplication', () => {
   // TC-E2E-DEDUP-003: Dedup window expiration allows reacceptance
   // --------------------------------------------------------------------------
   test('TC-E2E-DEDUP-003: Dedup window expiration (simulated)', async ({
-    authenticatedPage,
+    _authenticatedPage,
   }) => {
     const buildName = `E2E Dedup Expiry ${Date.now()}`;
 
@@ -211,7 +211,7 @@ test.describe('Event Bus: Event Deduplication', () => {
   // TC-E2E-DEDUP-004: Idempotent operations don't cause duplicates
   // --------------------------------------------------------------------------
   test('TC-E2E-DEDUP-004: Idempotent operations prevent duplicates', async ({
-    authenticatedPage,
+    _authenticatedPage,
   }) => {
     const buildName = `E2E Idempotent ${Date.now()}`;
 
@@ -290,7 +290,7 @@ test.describe('Event Bus: Event Deduplication', () => {
   // TC-E2E-DEDUP-006: Cache consistency after dedup
   // --------------------------------------------------------------------------
   test('TC-E2E-DEDUP-006: Cache remains consistent after dedup operations', async ({
-    authenticatedPage,
+    _authenticatedPage,
   }) => {
     const buildName = `E2E Cache Consistency ${Date.now()}`;
 

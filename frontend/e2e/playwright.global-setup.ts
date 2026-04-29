@@ -2,7 +2,7 @@
  * Global setup for Playwright tests
  * Verifies all required services are running before tests begin
  */
-async function globalSetup() {
+async function globalSetup(): Promise<void> {
   console.log('🔍 Verifying service connectivity...');
 
   const serviceChecks = [
