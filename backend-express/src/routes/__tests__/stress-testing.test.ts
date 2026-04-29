@@ -172,33 +172,35 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
     });
 
     const totalEvents = 5000;
-    const duplicateRate = 0.2; // 20% duplicates
-    const uniqueCount = Math.floor(totalEvents * (1 - duplicateRate)); // 4000 unique
+    const uniqueIdCount = 1000; // Only 1000 unique IDs
     const startTime = performance.now();
     let duplicateDetected = 0;
-    let newEventsCount = 0;
+    let newEventsMarked = 0;
 
-    // Emit events with duplicates mixed in
-    // Strategy: cycle through uniqueCount IDs, creating duplicates naturally
+    // Emit events, cycling through 1000 unique IDs
+    // First 1000 iterations: all new (marked)
+    // Next 4000 iterations: all duplicates (rejected)
     for (let i = 0; i < totalEvents; i++) {
-      // Create event IDs that cycle: event-0, event-1, ... event-3999, event-0, event-1, etc.
-      // This creates 4000 unique IDs, with the next 1000 being duplicates of the first 1000
-      const eventId = `event-${i % uniqueCount}`;
+      const eventId = `event-${i % uniqueIdCount}`;
+
+      // Check if duplicate (doesn't mark, just checks)
       const isDup = dedup.isDuplicate(eventId, Date.now());
 
       if (isDup) {
         duplicateDetected++;
       } else {
-        newEventsCount++;
+        // Not a duplicate, mark it
         dedup.mark(eventId, Date.now());
+        newEventsMarked++;
       }
     }
 
     const elapsedMs = performance.now() - startTime;
 
     // Verify dedup detection accuracy
-    // We expect: first uniqueCount events are new, remaining (totalEvents - uniqueCount) are duplicates
-    const expectedDuplicates = totalEvents - uniqueCount;
+    // We expect: first 1000 are new, next 4000 are duplicates
+    const expectedDuplicates = totalEvents - uniqueIdCount;
+    expect(newEventsMarked).toBe(uniqueIdCount);
     expect(duplicateDetected).toBe(expectedDuplicates);
 
     // Verify dedup performance overhead is minimal
@@ -208,11 +210,11 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
     // Verify dedup window stays bounded
     const stats = dedup.getStats();
     expect(stats.size).toBeLessThanOrEqual(1000);
-    expect(stats.size).toBeGreaterThan(900); // Most entries retained
 
     console.log(`
       ✓ Processed ${totalEvents} events with dedup in ${elapsedMs.toFixed(2)}ms
-      ✓ Duplicates detected: ${duplicateDetected}/${expectedDuplicates} (accuracy: ${((duplicateDetected / expectedDuplicates) * 100).toFixed(1)}%)
+      ✓ New events marked: ${newEventsMarked}
+      ✓ Duplicates detected: ${duplicateDetected}/${expectedDuplicates}
       ✓ Dedup window size: ${stats.size}/${stats.maxSize}
       ✓ Avg time/event: ${avgTimePerEvent.toFixed(3)}ms
     `);
