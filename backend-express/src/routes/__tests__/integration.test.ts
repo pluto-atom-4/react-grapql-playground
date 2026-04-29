@@ -1,22 +1,22 @@
 /**
  * Phase E1: Backend Integration Tests for Event Bus
  *
- * Tests the complete GraphQL → Express → Frontend event flow with real HTTP calls
- * and SSE connections. Covers:
- * - Single client event flow
- * - Multi-client synchronization
+ * Tests the complete GraphQL → Express → Frontend event flow via event bus
+ * and HTTP endpoints. Covers:
+ * - Single/multi-client event flow (via event bus)
+ * - Event deduplication
  * - Error handling and recovery
  * - Latency and performance
  * - Metrics accumulation
- * - Concurrent load scenarios
+ * - HTTP endpoint validation
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
-import express, { Express, Response } from 'express';
+import express, { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import eventsRouter from '../events';
-import { eventBus, EventBusMetricsCollector } from '../../services/event-bus';
+import { eventBus } from '../../services/event-bus';
 
 /**
  * Test helper: Create Express app with events router
@@ -27,70 +27,6 @@ function createTestApp(): Express {
   app.use('/events', eventsRouter);
   process.env.EXPRESS_EVENT_SECRET = 'test-secret-key';
   return app;
-}
-
-/**
- * Test helper: Connect SSE client by making a GET request
- * Returns a tuple of (response, events collected array)
- * Uses the response object directly to simulate SSE stream
- */
-function connectSSEStream(req: any): {
-  close: () => void;
-  getEvents: () => Promise<any[]>;
-} {
-  const events: any[] = [];
-  let response: Response | null = null;
-  let closed = false;
-
-  const makeRequest = req.get('/events');
-
-  // Override response write to capture SSE messages
-  const originalWrite = makeRequest.end.bind(makeRequest);
-  makeRequest.end = function (callback: Function) {
-    return originalWrite((err: any, res: any) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      response = res;
-      // Parse SSE response
-      if (res.text) {
-        const lines = res.text.split('\n\n');
-        for (const line of lines) {
-          if (line.trim().startsWith('data:')) {
-            try {
-              const dataStr = line.replace(/^event:.*\n/, '').replace(/^data: /, '');
-              const data = JSON.parse(dataStr);
-              events.push(data);
-            } catch (e) {
-              // Ignore parsing errors
-            }
-          }
-        }
-      }
-
-      callback(err, res);
-    });
-  };
-
-  return {
-    close: () => {
-      closed = true;
-    },
-    getEvents: async () => {
-      return new Promise((resolve) => {
-        const checkEvents = () => {
-          if (closed || events.length > 0) {
-            resolve(events);
-          } else {
-            setTimeout(checkEvents, 50);
-          }
-        };
-        checkEvents();
-      });
-    },
-  };
 }
 
 
