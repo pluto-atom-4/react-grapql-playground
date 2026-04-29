@@ -35,6 +35,10 @@ describe('Phase E1: Event Bus Integration Tests', () => {
 
   beforeEach(() => {
     app = createTestApp();
+    // Reset metrics and deduplicator before each test
+    metricsCollector.reset();
+    // Clear all event bus listeners
+    eventBus.removeAllListeners();
   });
 
   afterEach(async () => {
