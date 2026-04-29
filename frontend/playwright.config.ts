@@ -13,7 +13,7 @@ const isWayland =
   process.env.XDG_SESSION_TYPE === 'wayland' || process.env.DISPLAY?.includes('wayland');
 
 if (isWayland) {
-  console.log('🖥️  Wayland display server detected - using Wayland-safe configuration');
+  console.warn('🖥️  Wayland display server detected - using Wayland-safe configuration');
 }
 
 /**

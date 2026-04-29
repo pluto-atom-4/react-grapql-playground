@@ -81,7 +81,7 @@ test.describe('Event Bus: Build Workflow', () => {
   // TC-E2E-BW-002: Create Build workflow with real-time update
   // --------------------------------------------------------------------------
   test('TC-E2E-BW-002: Create Build workflow with real-time update', async ({
-    authenticatedPage,
+    _authenticatedPage,
   }) => {
     const buildName = `E2E Test Build ${Date.now()}`;
 

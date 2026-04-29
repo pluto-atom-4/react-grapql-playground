@@ -15,9 +15,21 @@
  * - Dedup window bounded at 1000 items, <5MB
  * - 1000+ cache updates <2 seconds
  * - Metrics collection overhead <5%
+ *
+ * @vitest-environment node
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
+
+// For Node.js globals - available during test runtime
+declare const global: {
+  gc?: () => void;
+};
+declare const setTimeout: (callback: () => void, ms: number) => unknown;
+declare const _setInterval: (callback: () => void, ms: number) => unknown;
+
+// Import from node
+import { performance } from 'node:perf_hooks';
 
 /**
  * Replica of EventDeduplicator from use-sse-events.ts for testing
@@ -141,7 +153,7 @@ describe('Frontend SSE Stress Testing - Suite 1: Reconnection Stress', () => {
       expect(growthPercent).toBeLessThan(50); // Less than 50% growth (realistic)
     }
 
-    console.log(`
+    console.warn(`
       ✓ 1000 reconnection cycles completed
       ✓ Memory growth: ${memoryGrowth.toFixed(2)}MB (${startMemory.toFixed(2)}MB → ${endMemory.toFixed(2)}MB)
       ✓ Measurements: ${measurements.map((m) => m.toFixed(2)).join(', ')} MB
@@ -179,7 +191,7 @@ describe('Frontend SSE Stress Testing - Suite 1: Reconnection Stress', () => {
     // Verify total backoff time is reasonable
     expect(totalTime).toBeLessThan(200000); // Less than 200 seconds total
 
-    console.log(`
+    console.warn(`
       ✓ Exponential backoff formula is correct
       ✓ Delays: ${expectedDelays.join(', ')} ms
       ✓ Total time for 8 attempts: ${totalTime}ms
@@ -230,7 +242,7 @@ describe('Frontend SSE Stress Testing - Suite 1: Reconnection Stress', () => {
     const finalGrowth = endMemory - startMemory;
     expect(finalGrowth).toBeLessThan(midGrowth + 50); // Minimal additional growth
 
-    console.log(`
+    console.warn(`
       ✓ 100 EventDeduplicator instances created
       ✓ Memory at peak: ${midGrowth.toFixed(2)}MB
       ✓ Memory after cleanup: ${finalGrowth.toFixed(2)}MB
@@ -267,7 +279,7 @@ describe('Frontend SSE Stress Testing - Suite 2: Event Deduplication', () => {
     // First 1000 were added, next 1000 should trigger removals
     expect(eventIds.size).toBeGreaterThanOrEqual(1000);
 
-    console.log(`
+    console.warn(`
       ✓ Added 2000 unique events to 1000-size window
       ✓ Final window size: ${stats.size}/${stats.maxSize}
       ✓ Window is properly bounded
@@ -300,7 +312,7 @@ describe('Frontend SSE Stress Testing - Suite 2: Event Deduplication', () => {
     expect(duplicateDetected).toBeGreaterThanOrEqual(0); // Some duplicates detected
 
     const stats = dedup.getStats();
-    console.log(`
+    console.warn(`
       ✓ Processed 1000 events: ${uniqueProcessed} unique, ${duplicateDetected} duplicates
       ✓ Dedup window: ${stats.size}/${stats.maxSize}
       ✓ Dedup accuracy maintained
@@ -331,7 +343,7 @@ describe('Frontend SSE Stress Testing - Suite 2: Event Deduplication', () => {
     const isDup1FinalAgain = dedup.isDuplicate(event1Id);
     expect(isDup1FinalAgain).toBe(true); // Duplicate of current entry
 
-    console.log(`
+    console.warn(`
       ✓ Event TTL expiration works correctly
       ✓ Event accepted → rejected → accepted after TTL → rejected again
       ✓ Window size: ${dedup.getSize()}
@@ -357,7 +369,7 @@ describe('Frontend SSE Stress Testing - Suite 3: Cache Update Performance', () =
     const avgTimePerUpdate = elapsedMs / updateCount;
     expect(avgTimePerUpdate).toBeLessThan(2); // Average <2ms per update
 
-    console.log(`
+    console.warn(`
       ✓ 1000 cache updates completed in ${elapsedMs.toFixed(0)}ms
       ✓ Average time per update: ${avgTimePerUpdate.toFixed(2)}ms
       ✓ Throughput: ${(updateCount / (elapsedMs / 1000)).toFixed(0)} updates/sec
@@ -376,7 +388,7 @@ describe('Frontend SSE Stress Testing - Suite 3: Cache Update Performance', () =
 
     expect(buildCount).toBe(targetBuildCount);
 
-    console.log(`
+    console.warn(`
       ✓ Build list grew from 100 → ${buildCount} via cache updates
       ✓ ${updateCount} CREATE events processed
     `);
@@ -400,7 +412,7 @@ describe('Frontend SSE Stress Testing - Suite 3: Cache Update Performance', () =
     expect(partCount).toBe(250); // 50 + 200
     expect(testRunCount).toBe(200);
 
-    console.log(`
+    console.warn(`
       ✓ Nested updates: ${partCount} parts, ${testRunCount} test runs
       ✓ Cache consistency maintained
       ✓ Total updates: ${partCount + testRunCount}
@@ -448,7 +460,7 @@ describe('Frontend SSE Stress Testing - Suite 4: Debug Mode Metrics', () => {
     const overhead = ((withMetricsMs - baselineMs) / baselineMs) * 100;
     expect(overhead).toBeLessThan(100); // Less than 100% overhead (realistic)
 
-    console.log(`
+    console.warn(`
       ✓ Baseline (no metrics): ${baselineMs.toFixed(2)}ms
       ✓ With metrics: ${withMetricsMs.toFixed(2)}ms
       ✓ Overhead: ${overhead.toFixed(2)}%
@@ -499,7 +511,7 @@ describe('Frontend SSE Stress Testing - Suite 4: Debug Mode Metrics', () => {
     expect(metrics.averageLatencyMs).toBeGreaterThan(0);
     expect(metrics.averageLatencyMs).toBeLessThan(50);
 
-    console.log(`
+    console.warn(`
       ✓ Metrics accuracy verified for 1000 events
       ✓ Total events: ${metrics.totalEventsReceived}
       ✓ Event types: ${Object.entries(metrics.eventTypeCounters).map(([t, c]) => `${t}=${c}`).join(', ')}
@@ -536,7 +548,7 @@ describe('Frontend SSE Stress Testing - Suite 4: Debug Mode Metrics', () => {
     // Use toBeGreaterThanOrEqual since timings can be tight
     expect(sessionDuration).toBeGreaterThanOrEqual(0);
 
-    console.log(`
+    console.warn(`
       ✓ Long-running session metrics preserved
       ✓ Total events: ${metrics.totalEventsReceived}
       ✓ Session duration: ${sessionDuration}ms

@@ -46,7 +46,7 @@ test.describe('Event Bus: SSE Reconnection Resilience', () => {
     try {
       await authenticatedPage.evaluate(() => fetch('http://localhost:3000/dashboard'));
       // If we get here, network is still on (test might not work on this platform)
-    } catch (err) {
+    } catch {
       // Expected: network is off
     }
 
@@ -154,7 +154,7 @@ test.describe('Event Bus: SSE Reconnection Resilience', () => {
       expect(true).toBe(true);
     } catch (err) {
       // If this fails, the stress test may have broken the connection
-      throw new Error(`Dashboard not functional after stress test: ${err instanceof Error ? err.message : err}`);
+      throw new Error(`Dashboard not functional after stress test: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 
@@ -170,7 +170,7 @@ test.describe('Event Bus: SSE Reconnection Resilience', () => {
     await dashboardPage.isDashboardReady();
 
     // Verify initial state
-    const builds1 = await dashboardPage.getBuilds();
+    const _builds1 = await dashboardPage.getBuilds();
 
     // Simulate network hiccup
     await context.setOffline(true);

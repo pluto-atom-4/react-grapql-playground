@@ -14,10 +14,10 @@
  * - No page refresh needed for synchronization
  */
 
-import { test, expect, devices, Browser } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // Helper to login in a page
-async function loginPage(page: any, baseURL: string): Promise<void> {
+async function loginPage(page: Page, baseURL: string): Promise<void> {
   await page.goto(`${baseURL}/`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
 
@@ -52,7 +52,7 @@ async function loginPage(page: any, baseURL: string): Promise<void> {
   try {
     await urlChangePromise;
   } catch (err) {
-    throw new Error(`Dashboard redirect failed: ${err instanceof Error ? err.message : err}`);
+    throw new Error(`Dashboard redirect failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // Wait for JWT token
@@ -231,7 +231,7 @@ test.describe('Event Bus: Multi-Client Synchronization', () => {
   // --------------------------------------------------------------------------
   // TC-E2E-MCS-003: One user, two tabs synchronization
   // --------------------------------------------------------------------------
-  test('TC-E2E-MCS-003: One user, two tabs synchronization', async ({ page, browser }) => {
+  test('TC-E2E-MCS-003: One user, two tabs synchronization', async ({ page, _browser }) => {
     const baseURL = process.env.BASE_URL || 'http://localhost:3000';
 
     // Login in first page
@@ -332,8 +332,8 @@ test.describe('Event Bus: Multi-Client Synchronization', () => {
       }
 
       // Verify all 3 builds appear in page2 (they should arrive via SSE)
-      for (let i = 0; i < 3; i++) {
-        const buildName = `E2E Load Build`;
+      for (let _i = 0; _i < 3; _i++) {
+        const _buildName = `E2E Load Build`;
         const buildCards = page2.locator('[data-testid^="build-"]');
         const count = await buildCards.count();
         // Just verify we have multiple builds (exact match may vary based on test data)

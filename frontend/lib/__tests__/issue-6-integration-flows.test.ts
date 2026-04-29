@@ -230,7 +230,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
     // 3. Exponential backoff applied (100ms, 200ms, 400ms)
     // 4. Retry attempt made
 
-    const isNetworkError = (error: Error) => {
+    const isNetworkError = (error: Error): boolean => {
       return error.message.includes('Network') || error.message.includes('timeout');
     };
 
@@ -241,7 +241,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
   it('E2.2: Exponential backoff formula correctly calculates delays', () => {
     // Exponential backoff: delay = 100ms × 2^attempt + random jitter (±20%)
 
-    const calculateBackoff = (attempt: number, baseDelay = 100) => {
+    const calculateBackoff = (attempt: number, baseDelay = 100): number => {
       const delay = baseDelay * Math.pow(2, attempt);
       const jitter = Math.random() * 0.4 - 0.2; // ±20%
       return Math.round(delay * (1 + jitter));
@@ -264,7 +264,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
     // Retryable: 5xx (500, 502, 503, 504), network errors, timeouts, 429
     // Non-retryable: 4xx (except 429), 401, 403
 
-    const isRetryable = (statusCode: number) => {
+    const isRetryable = (statusCode: number): boolean => {
       if (statusCode >= 500) return true; // 5xx
       if (statusCode === 429) return true; // Rate limit
       return false;
@@ -278,7 +278,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
   });
 
   it('E2.4: 4xx errors (except 429) are NOT retried', () => {
-    const isRetryable = (statusCode: number) => {
+    const isRetryable = (statusCode: number): boolean => {
       if (statusCode >= 500) return true;
       if (statusCode === 429) return true;
       return false;
@@ -291,7 +291,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
   });
 
   it('E2.5: Timeout errors trigger retry with backoff', () => {
-    const isTimeoutError = (error: Error) => {
+    const isTimeoutError = (error: Error): boolean => {
       return error.message.includes('timeout') || error.message.includes('TIMEOUT');
     };
 
@@ -300,7 +300,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
   });
 
   it('E2.6: 401 (auth) errors do NOT retry, show error message', () => {
-    const shouldRetry = (statusCode: number) => {
+    const shouldRetry = (statusCode: number): boolean => {
       if (statusCode === 401) return false; // Auth error
       return true; // Other errors might retry
     };
@@ -309,7 +309,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
   });
 
   it('E2.7: Rate limit (429) errors retry with backoff', () => {
-    const isRetryable = (statusCode: number) => {
+    const isRetryable = (statusCode: number): boolean => {
       return statusCode === 429;
     };
 

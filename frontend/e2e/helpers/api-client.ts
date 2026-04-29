@@ -74,7 +74,7 @@ export class GraphQLClient {
     try {
       // Log for debugging
       const hasToken = !!this.token;
-      console.log(
+      console.warn(
         `[GraphQLClient] Executing GraphQL request with auth: ${hasToken ? 'YES' : 'NO'}`
       );
       if (!hasToken) {

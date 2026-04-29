@@ -120,7 +120,7 @@ export function cleanupTestData(_apiClient: GraphQLClient, data: SeededTestData)
     // Note: Apollo GraphQL backend doesn't have delete mutations implemented
     // Test cleanup would require database-level cleanup
     // For now, just log that cleanup was requested
-    console.log('Cleanup requested for test data:', {
+    console.warn('Cleanup requested for test data:', {
       builds: data.buildIds,
       parts: data.partIds,
       testRuns: data.testRunIds,
