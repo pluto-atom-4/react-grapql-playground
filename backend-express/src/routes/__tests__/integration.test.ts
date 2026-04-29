@@ -30,83 +30,69 @@ function createTestApp(): Express {
 }
 
 /**
- * Test helper: Connect SSE client and return EventSource
- * Resolves after connection is established
+ * Test helper: Connect SSE client by making a GET request
+ * Returns a tuple of (response, events collected array)
+ * Uses the response object directly to simulate SSE stream
  */
-function connectSSE(baseUrl: string): Promise<EventSource> {
-  return new Promise((resolve, reject) => {
-    const es = new EventSource(`${baseUrl}/events`);
-    const timeout = setTimeout(() => {
-      es.close();
-      reject(new Error('SSE connection timeout'));
-    }, 5000);
+function connectSSEStream(req: any): {
+  close: () => void;
+  getEvents: () => Promise<any[]>;
+} {
+  const events: any[] = [];
+  let response: Response | null = null;
+  let closed = false;
 
-    es.onopen = () => {
-      clearTimeout(timeout);
-      resolve(es);
-    };
+  const makeRequest = req.get('/events');
 
-    es.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error('SSE connection error'));
-    };
-  });
-}
-
-/**
- * Test helper: Emit event via HTTP POST (simulate GraphQL mutation)
- */
-async function emitEvent(
-  req: any,
-  eventType: string,
-  payload: Record<string, any>
-): Promise<any> {
-  return req
-    .post('/events/emit')
-    .set('Authorization', 'Bearer test-secret-key')
-    .send({
-      event: eventType,
-      payload: {
-        eventId: uuidv4(),
-        eventType,
-        timestamp: Date.now(),
-        sourceLayer: 'graphql',
-        userId: 'test-user',
-        ...payload,
-      },
-    });
-}
-
-/**
- * Test helper: Wait for event on EventSource with timeout
- */
-function waitForEvent(
-  eventSource: EventSource,
-  eventType: string,
-  timeoutMs: number = 5000
-): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error(`Timeout waiting for event: ${eventType}`));
-    }, timeoutMs);
-
-    const handler = (event: Event) => {
-      const messageEvent = event as MessageEvent;
-      try {
-        const data = JSON.parse(messageEvent.data);
-        if (data.type === eventType) {
-          clearTimeout(timeout);
-          eventSource.removeEventListener(eventType, handler);
-          resolve(data);
-        }
-      } catch (e) {
-        // Ignore non-JSON messages (heartbeat)
+  // Override response write to capture SSE messages
+  const originalWrite = makeRequest.end.bind(makeRequest);
+  makeRequest.end = function (callback: Function) {
+    return originalWrite((err: any, res: any) => {
+      if (err) {
+        callback(err);
+        return;
       }
-    };
 
-    eventSource.addEventListener(eventType, handler);
-  });
+      response = res;
+      // Parse SSE response
+      if (res.text) {
+        const lines = res.text.split('\n\n');
+        for (const line of lines) {
+          if (line.trim().startsWith('data:')) {
+            try {
+              const dataStr = line.replace(/^event:.*\n/, '').replace(/^data: /, '');
+              const data = JSON.parse(dataStr);
+              events.push(data);
+            } catch (e) {
+              // Ignore parsing errors
+            }
+          }
+        }
+      }
+
+      callback(err, res);
+    });
+  };
+
+  return {
+    close: () => {
+      closed = true;
+    },
+    getEvents: async () => {
+      return new Promise((resolve) => {
+        const checkEvents = () => {
+          if (closed || events.length > 0) {
+            resolve(events);
+          } else {
+            setTimeout(checkEvents, 50);
+          }
+        };
+        checkEvents();
+      });
+    },
+  };
 }
+
 
 describe('Phase E1: Event Bus Integration Tests', () => {
   let app: Express;
