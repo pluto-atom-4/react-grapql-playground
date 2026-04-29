@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import eventsRouter, { metricsCollector, dedup } from '../events';
+import eventsRouter, { metricsCollector } from '../events';
 import { eventBus } from '../../services/event-bus';
 
 /**
