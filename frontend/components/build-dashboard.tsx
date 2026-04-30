@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
 import BuildDetailModal from './build-detail-modal';
+import { CreateBuildModal } from './create-build-modal';
 import type { Build } from '@/lib/generated/graphql';
 import './build-dashboard.css';
 
@@ -30,6 +31,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   const { createBuild } = useCreateBuild();
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Prefer fresh client-fetched data over stale server-provided initial data.
   // This ensures mutations that call refetch() show new data immediately.
@@ -49,21 +51,16 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   // since data is already available from server
   const shouldShowLoading = !initialBuilds && loading;
 
-  const handleCreateBuild = (): void => {
-    const name = prompt('Enter build name:');
-    if (!name) return;
-
-    void (async (): Promise<void> => {
-      try {
-        setIsCreating(true);
-        await createBuild(name);
-        refetch();
-      } catch (err) {
-        alert(`Failed to create build: ${String(err)}`);
-      } finally {
-        setIsCreating(false);
-      }
-    })();
+  const handleCreateBuild = async (name: string): Promise<void> => {
+    try {
+      setIsCreating(true);
+      await createBuild(name);
+      refetch();
+    } catch (err) {
+      throw new Error(`Failed to create build: ${String(err)}`);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (shouldShowLoading) {
@@ -88,7 +85,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
       <div className="dashboard-header">
         <h1>Build Dashboard</h1>
         <button
-          onClick={handleCreateBuild}
+          onClick={() => setIsCreateModalOpen(true)}
           disabled={isCreating}
           data-testid="create-build-button"
           className="btn btn-primary"
@@ -148,6 +145,13 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
           onClose={(): void => setSelectedBuildId(null)}
         />
       )}
+
+      <CreateBuildModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateBuild}
+        isLoading={isCreating}
+      />
     </>
   );
 }
