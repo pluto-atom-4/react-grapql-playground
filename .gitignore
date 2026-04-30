@@ -35,6 +35,7 @@ out/
 # IDE-specific folders
 .vscode-test/
 .history/
+.run/
 
 # Testing
 coverage/
