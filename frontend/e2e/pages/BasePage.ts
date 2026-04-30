@@ -12,25 +12,36 @@ export class BasePage {
    * on pages with polling/real-time connections
    */
   async goto(url: string, options?: { timeout?: number }): Promise<void> {
+    const gotoStart = Date.now();
     await this.page.goto(url, {
       waitUntil: 'domcontentloaded', // DOM is ready, don't wait for all network requests
       timeout: options?.timeout || 15000, // 15 second timeout
     });
+    const gotoEnd = Date.now();
+    // eslint-disable-next-line no-console
+    console.log(`[BasePage.goto] page.goto() took ${gotoEnd - gotoStart}ms`);
 
-    // Additional wait for Next.js hydration to complete
-    await this.page
-      .waitForFunction(
-        () => {
-          // Check if Next.js has hydrated
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
-          return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
-        },
-        { timeout: 5000 }
-      )
-      .catch(() => {
-        // Hydration check might fail on non-Next.js pages, that's ok
-        return true;
-      });
+    // Additional wait for Next.js hydration to complete - but with very short timeout.
+    // The page DOM is already loaded. If hydration takes too long, we'll just continue.
+    const hydrationStart = Date.now();
+    try {
+      await Promise.race([
+        this.page.waitForFunction(
+          () => {
+            // Check if Next.js has hydrated
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+            return (window as any).__NEXT_DATA__ && (window as any).__NEXT_DATA__.isReady !== false;
+          },
+          { timeout: 30000 }
+        ),
+        new Promise((resolve) => setTimeout(resolve, 1000)), // 1 second max wait
+      ]);
+    } catch {
+      // Hydration check failed or timed out - that's ok, page is ready to use
+    }
+    const hydrationEnd = Date.now();
+    // eslint-disable-next-line no-console
+    console.log(`[BasePage.goto] Hydration check took ${hydrationEnd - hydrationStart}ms`);
   }
 
   /**
