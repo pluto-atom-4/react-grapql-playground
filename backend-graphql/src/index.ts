@@ -109,7 +109,7 @@ async function main() {
 
     // Graceful shutdown
     process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, shutting down gracefully');
+      console.warn('SIGTERM received, shutting down gracefully');
       listener.close();
       await server.stop();
       await prisma.$disconnect();
