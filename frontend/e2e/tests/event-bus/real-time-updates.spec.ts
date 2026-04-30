@@ -36,7 +36,7 @@ test.describe('Event Bus: Real-Time UI Updates', () => {
     authenticatedPage,
   }) => {
     const buildName = `E2E Status Update ${Date.now()}`;
-    const _startTime = Date.now();
+    //const _startTime = Date.now();
 
     // Create a build
     await dashboardPage.clickByTestId('create-build-button');
@@ -85,9 +85,7 @@ test.describe('Event Bus: Real-Time UI Updates', () => {
   // --------------------------------------------------------------------------
   // TC-E2E-RTUI-002: New build appears in dashboard
   // --------------------------------------------------------------------------
-  test('TC-E2E-RTUI-002: New build appears in dashboard without refresh', async ({
-    _authenticatedPage,
-  }) => {
+  test('TC-E2E-RTUI-002: New build appears in dashboard without refresh', async () => {
     await dashboardPage.goto();
 
     // Get initial builds count
@@ -264,7 +262,7 @@ test.describe('Event Bus: Real-Time UI Updates', () => {
       const uploadStartTime = Date.now();
 
       // Create a simple test file
-      const _testFilePath = '/tmp/test-report.txt';
+      //const _testFilePath = '/tmp/test-report.txt';
       try {
         // Use page to upload file
         await fileInput.setInputFiles({

@@ -4,7 +4,7 @@
  * Prevents state leakage when tests run in parallel
  */
 
-export const localStorageMock = (() => {
+export const localStorageMock = ((): Storage => {
   let store: Record<string, string> = {};
 
   return {

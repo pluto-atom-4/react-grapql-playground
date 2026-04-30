@@ -82,7 +82,6 @@ export async function waitForSSEEvent(
           const messageEvent = e as MessageEvent<string>;
           const data = JSON.parse(messageEvent.data) as { type?: string };
           if (data.type === event) {
-            // eslint-disable-next-line no-console
             console.warn(`SSE:${event}:${JSON.stringify(data)}`);
             eventSource.close();
           }

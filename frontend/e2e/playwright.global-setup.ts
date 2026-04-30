@@ -3,7 +3,7 @@
  * Verifies all required services are running before tests begin
  */
 async function globalSetup(): Promise<void> {
-  console.log('🔍 Verifying service connectivity...');
+  console.warn('🔍 Verifying service connectivity...');
 
   const serviceChecks = [
     {
@@ -32,7 +32,7 @@ async function globalSetup(): Promise<void> {
         service.check as 'frontend' | 'graphql' | 'express'
       );
       if (status) {
-        console.log(`✅ ${service.name} is running`);
+        console.warn(`✅ ${service.name} is running`);
         results.push({ name: service.name, status: 'success' });
       } else {
         throw new Error('Service check failed');
@@ -59,7 +59,7 @@ async function globalSetup(): Promise<void> {
     throw new Error('Service connectivity check failed');
   }
 
-  console.log('\n✅ All services are ready for E2E testing\n');
+  console.warn('\n✅ All services are ready for E2E testing\n');
 }
 
 /**
@@ -75,7 +75,7 @@ async function checkService(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`   Checking ${url} (attempt ${attempt}/${maxRetries})...`);
+      console.warn(`   Checking ${url} (attempt ${attempt}/${maxRetries})...`);
 
       const controller = new AbortController();
       // eslint-disable-next-line no-undef
@@ -141,7 +141,7 @@ async function checkService(
       const errorMessage = error instanceof Error ? error.message : String(error);
 
       if (attempt < maxRetries) {
-        console.log(`   ⏳ Retry in ${retryDelay}ms... (${errorMessage})`);
+        console.warn(`   ⏳ Retry in ${retryDelay}ms... (${errorMessage})`);
         // eslint-disable-next-line no-undef
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       } else {
