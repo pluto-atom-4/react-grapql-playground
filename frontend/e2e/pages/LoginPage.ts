@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -8,27 +9,27 @@ export class LoginPage extends BasePage {
   /**
    * Get email input element
    */
-  readonly emailInput = () => this.getByTestId('email-input');
+  readonly emailInput = (): Locator => this.getByTestId('email-input');
 
   /**
    * Get password input element
    */
-  readonly passwordInput = () => this.getByTestId('password-input');
+  readonly passwordInput = (): Locator => this.getByTestId('password-input');
 
   /**
    * Get submit button element
    */
-  readonly submitButton = () => this.getByTestId('submit-button');
+  readonly submitButton = (): Locator => this.getByTestId('submit-button');
 
   /**
    * Get error message element
    */
-  readonly errorMessage = () => this.getByTestId('error-message');
+  readonly errorMessage = (): Locator => this.getByTestId('error-message');
 
   /**
    * Get loading indicator
    */
-  readonly loadingIndicator = () => this.getByTestId('loading-indicator');
+  readonly loadingIndicator = (): Locator => this.getByTestId('loading-indicator');
 
   /**
    * Navigate to login page via home page link (more reliable)

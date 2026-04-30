@@ -170,7 +170,6 @@ test.describe('Event Bus: SSE Reconnection Resilience', () => {
     await dashboardPage.isDashboardReady();
 
     // Verify initial state
-    const _builds1 = await dashboardPage.getBuilds();
 
     // Simulate network hiccup
     await context.setOffline(true);

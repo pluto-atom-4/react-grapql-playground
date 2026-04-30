@@ -231,7 +231,7 @@ test.describe('Event Bus: Multi-Client Synchronization', () => {
   // --------------------------------------------------------------------------
   // TC-E2E-MCS-003: One user, two tabs synchronization
   // --------------------------------------------------------------------------
-  test('TC-E2E-MCS-003: One user, two tabs synchronization', async ({ page, _browser }) => {
+  test('TC-E2E-MCS-003: One user, two tabs synchronization', async ({ page }) => {
     const baseURL = process.env.BASE_URL || 'http://localhost:3000';
 
     // Login in first page
@@ -333,7 +333,6 @@ test.describe('Event Bus: Multi-Client Synchronization', () => {
 
       // Verify all 3 builds appear in page2 (they should arrive via SSE)
       for (let _i = 0; _i < 3; _i++) {
-        const _buildName = `E2E Load Build`;
         const buildCards = page2.locator('[data-testid^="build-"]');
         const count = await buildCards.count();
         // Just verify we have multiple builds (exact match may vary based on test data)

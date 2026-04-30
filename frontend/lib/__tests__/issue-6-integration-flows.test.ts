@@ -386,7 +386,7 @@ describe('Test Suite 2: Error Scenarios with Automatic Retry', () => {
     // 3. Exponential backoff restarts
 
     let retryAttempts = 0;
-    const manualRetry = () => {
+    const manualRetry = (): void => {
       retryAttempts = 1; // Reset
     };
 

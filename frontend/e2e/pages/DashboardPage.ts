@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -8,37 +9,37 @@ export class DashboardPage extends BasePage {
   /**
    * Get builds list container
    */
-  readonly buildsList = () => this.getByTestId('builds-list');
+  readonly buildsList = (): Locator => this.getByTestId('builds-list');
 
   /**
    * Get build card by ID
    */
-  buildCard = (id: string) => this.getByTestId(`build-${id}`);
+  buildCard = (id: string): Locator => this.getByTestId(`build-${id}`);
 
   /**
    * Get create build button
    */
-  readonly createBuildButton = () => this.getByTestId('create-build-button');
+  readonly createBuildButton = (): Locator => this.getByTestId('create-build-button');
 
   /**
    * Get empty state message
    */
-  readonly emptyState = () => this.getByTestId('empty-state');
+  readonly emptyState = (): Locator => this.getByTestId('empty-state');
 
   /**
    * Get build list loading skeleton
    */
-  readonly loadingSkeleton = () => this.getByTestId('builds-loading');
+  readonly loadingSkeleton = (): Locator => this.getByTestId('builds-loading');
 
   /**
    * Get user menu
    */
-  readonly userMenu = () => this.getByTestId('user-menu');
+  readonly userMenu = (): Locator => this.getByTestId('user-menu');
 
   /**
    * Get logout button
    */
-  readonly logoutButton = () => this.getByTestId('logout-button');
+  readonly logoutButton = (): Locator => this.getByTestId('logout-button');
 
   /**
    * Navigate to dashboard
