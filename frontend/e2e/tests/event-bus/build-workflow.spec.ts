@@ -36,45 +36,74 @@ test.describe('Event Bus: Build Workflow', () => {
     const buildName = `E2E Build ${Date.now()}`;
     const startTime = Date.now();
 
-    // Step 1: Navigate to dashboard
-    await dashboardPage.goto();
+    // Step 1: Dashboard already loaded from beforeEach
+    // NOTE: Removed redundant goto() call to avoid state confusion
+    // The beforeEach already:
+    //   1. Created DashboardPage instance
+    //   2. Called dashboardPage.goto()
+    //   3. Verified page is ready with isDashboardReady()
+    // Re-navigating here breaks page state and causes element lookup timeouts
 
     // Step 2: Click "Create Build" button
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Clicking create-build-button');
     await dashboardPage.clickByTestId('create-build-button');
 
     // Step 3: Wait for create modal/form to appear
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Waiting for build-name-input element (10s timeout)');
     await dashboardPage.waitForTestId('build-name-input', 10000);
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] ✓ build-name-input appeared successfully');
 
     // Step 4: Fill build form
+    // eslint-disable-next-line no-console
+    console.warn(`[TC-E2E-BW-001] Filling build-name-input with: "${buildName}"`);
     await dashboardPage.fillByTestId('build-name-input', buildName);
 
     // Step 5: Submit form
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Clicking create-build-submit button');
     await dashboardPage.clickByTestId('create-build-submit');
 
     // Step 6: Wait for network to complete and build to appear
     const createLatency = Date.now() - startTime;
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Waiting for network to idle after create mutation');
     await dashboardPage.waitForNetworkIdle();
 
     // Verify: BUILD_CREATED event received and UI updated
+    // eslint-disable-next-line no-console
+    console.warn(`[TC-E2E-BW-001] Build created in ${createLatency}ms, waiting for build card to appear`);
     const buildRow = dashboardPage.buildCard(buildName);
     await buildRow.waitFor({ state: 'visible', timeout: 5000 });
     expect(createLatency).toBeLessThan(2000); // Create should be fast
 
     // Step 7: Verify build appears in dashboard
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Fetching builds list to verify new build');
     const builds = await dashboardPage.getBuilds();
     const createdBuild = builds.find((b) => b.name === buildName);
     expect(createdBuild).toBeDefined();
     expect(createdBuild?.status).toContain('PENDING');
 
     // Step 8: Click on build to open details
+    // eslint-disable-next-line no-console
+    console.warn(`[TC-E2E-BW-001] Clicking build card to open details: "${buildName}"`);
     await dashboardPage.clickBuild(buildName);
 
     // Step 9: Verify build detail page loaded
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Waiting for build details page to load');
     await authenticatedPage.waitForURL(`**/builds/**`, { timeout: 10000 });
 
     // Step 10: Verify build status is visible
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] Verifying build status element is visible');
     const statusElement = authenticatedPage.locator('[data-testid="build-status"]');
     await statusElement.waitFor({ state: 'visible', timeout: 5000 });
+    // eslint-disable-next-line no-console
+    console.warn('[TC-E2E-BW-001] ✓ Test completed successfully');
   });
 
   // --------------------------------------------------------------------------
