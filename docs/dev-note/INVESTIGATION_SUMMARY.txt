@@ -1,0 +1,165 @@
+================================================================================
+  E2E TEST FAILURE ANALYSIS - ISSUE #193
+  Investigation Summary
+================================================================================
+
+TITLE: TC-E2E-BW-001 Timeout Waiting for Form Input
+DATE: April 17, 2026
+STATUS: ✅ ROOT CAUSE IDENTIFIED & DOCUMENTED
+
+================================================================================
+FINDINGS SUMMARY
+================================================================================
+
+ROOT CAUSE: Browser prompt() Dialog vs. Test Infrastructure
+─────────────────────────────────────────────────────────────────────────────
+
+The test fails because:
+  1. Test expects: React modal form with <input data-testid="build-name-input">
+  2. Code provides: Browser prompt() dialog (native, not in DOM)
+  3. Result: Playwright cannot find element, times out after 10 seconds
+
+DETAILED STATUS:
+─────────────────────────────────────────────────────────────────────────────
+
+beforeEach:                    ✅ PASS (~1.3 seconds)
+Dashboard navigation:          ✅ PASS
+Create button click:           ✅ PASS
+Form input wait:               ❌ FAIL (Timeout 10000ms)
+  └─ Waiting for: [data-testid="build-name-input"]
+  └─ Actual: Browser prompt() dialog (not in DOM)
+
+AFFECTED COMPONENTS:
+─────────────────────────────────────────────────────────────────────────────
+
+1. frontend/components/build-dashboard.tsx
+   ├─ Line 52-67: handleCreateBuild() uses prompt()
+   ├─ Line 90-97: Create button with test-id
+   └─ Missing: Modal component for form
+
+2. frontend/e2e/tests/event-bus/build-workflow.spec.ts
+   ├─ Line 43: Clicks button ✅
+   ├─ Line 46: Waits for input ❌ FAILS HERE
+   └─ Lines 49-52: Form fill operations (never reached)
+
+3. frontend/e2e/pages/DashboardPage.ts
+   ├─ Line 22: createBuildButton() accessor
+   └─ Lines 101-115: createBuild() helper expects form elements
+
+EVIDENCE:
+─────────────────────────────────────────────────────────────────────────────
+
+Screenshot (test-failed-1.png) shows:
+  ✅ Dashboard loads correctly
+  ✅ "Create Build" button visible and clickable (blue, top right)
+  ❌ No modal/form appears after button click
+  ❌ No input fields visible anywhere
+  ❌ Browser prompt not captured (outside DOM)
+
+AFFECTED TEST CASES:
+─────────────────────────────────────────────────────────────────────────────
+
+All 5 build workflow tests use same pattern and would fail:
+
+  1. TC-E2E-BW-001: Create Build → Upload → Status Update    (FAILING)
+  2. TC-E2E-BW-002: Create Build with real-time update        (WOULD FAIL)
+  3. TC-E2E-BW-003: Update status workflow                    (WOULD FAIL)
+  4. TC-E2E-BW-004: Add part workflow                         (WOULD FAIL)
+  5. TC-E2E-BW-005: Multiple operations sequence              (WOULD FAIL)
+
+RECOMMENDED FIX:
+─────────────────────────────────────────────────────────────────────────────
+
+Option A (RECOMMENDED): Implement Create Build Modal Component
+  ✅ Modern UI/UX
+  ✅ Tests work immediately
+  ✅ Proper form validation
+  ✅ Accessible (ARIA)
+
+Steps:
+  1. Create frontend/components/create-build-modal.tsx
+     ├─ Modal overlay
+     ├─ Input field with data-testid="build-name-input"
+     ├─ Submit button with data-testid="create-build-submit"
+     └─ Close/escape handlers
+
+  2. Update build-dashboard.tsx
+     ├─ Add isCreateModalOpen state
+     ├─ Replace handleCreateBuild() to open modal
+     └─ Pass form submission to createBuild() hook
+
+  3. Verify tests pass
+     └─ pnpm test:e2e build-workflow.spec.ts
+
+Time estimate: 30-45 minutes
+Impact: Unblocks all 5 E2E test cases
+
+================================================================================
+DOCUMENTATION
+================================================================================
+
+Full analysis report created at:
+  📄 docs/dev-notes/E2E_BUILD_WORKFLOW_DEBUG.md
+
+Contents:
+  ✓ Executive summary
+  ✓ Current status breakdown
+  ✓ Root cause analysis with code examples
+  ✓ Component architecture flow diagrams
+  ✓ File structure and affected components
+  ✓ Why tests were written this way
+  ✓ Root causes checklist (all items verified)
+  ✓ Screenshot analysis
+  ✓ Detailed recommendations
+  ✓ Next steps (priority order)
+  ✓ Code references and line numbers
+  ✓ Success criteria
+
+================================================================================
+KEY CODE LOCATIONS
+================================================================================
+
+Main Issue:
+  └─ frontend/components/build-dashboard.tsx:52-67
+     const handleCreateBuild = (): void => {
+       const name = prompt('Enter build name:');  // ← PROBLEM
+       ...
+     }
+
+Test Expectations:
+  └─ frontend/e2e/tests/event-bus/build-workflow.spec.ts:43-52
+     await dashboardPage.clickByTestId('create-build-button');
+     await dashboardPage.waitForTestId('build-name-input', 10000);  // ← TIMES OUT
+
+Test Page Object:
+  └─ frontend/e2e/pages/DashboardPage.ts:101-115
+     async createBuild(name: string): Promise<void> {
+       await this.clickByTestId('create-build-button');
+       await this.waitForTestId('build-name-input', 10000);  // ← EXPECTS FORM
+
+================================================================================
+NEXT ACTIONS
+================================================================================
+
+Priority 1 (Unblocks all tests):
+  ├─ Implement Create Build Modal component
+  ├─ Update build-dashboard.tsx to use modal
+  └─ Verify E2E tests pass
+
+Priority 2 (Consistency):
+  ├─ Remove all prompt() usage from codebase
+  ├─ Update build-detail-modal.tsx (Add Part, Submit Test Run)
+  └─ Review other components for similar patterns
+
+Priority 3 (Testing):
+  ├─ Run full E2E suite: pnpm test:e2e
+  └─ Verify all 5 build workflow tests pass
+
+Priority 4 (Documentation):
+  ├─ Update test documentation
+  └─ Document modal component patterns
+
+================================================================================
+INVESTIGATION COMPLETE ✅
+Ready for implementation phase
+================================================================================
