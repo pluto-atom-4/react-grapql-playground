@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, SubmitEvent, useEffect } from "react";
 
 interface CreateBuildModalProps {
   isOpen: boolean;
@@ -18,9 +18,16 @@ export function CreateBuildModal({
   const [buildName, setBuildName] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) {
+      setBuildName('');
+      setError('');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+  const handleSubmit = async (e: SubmitEvent): Promise<void> => {
     e.preventDefault();
     if (!buildName.trim()) {
       setError('Build name is required');
