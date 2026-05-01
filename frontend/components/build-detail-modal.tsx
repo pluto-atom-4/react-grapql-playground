@@ -42,12 +42,13 @@ function BuildDetailContent({
   buildId: string;
   onClose: () => void;
 }): ReactElement {
-  const { build, loading, error, refetch } = useBuildDetail(buildId);
+  const { build, loading, error } = useBuildDetail(buildId);
   const { updateStatus } = useUpdateBuildStatus();
   const { addPart } = useAddPart();
   const { submitTestRun } = useSubmitTestRun();
   const [isAddingPart, setIsAddingPart] = useState(false);
   const [isSubmittingTestRun, setIsSubmittingTestRun] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   if (loading) {
     return (
@@ -90,10 +91,15 @@ function BuildDetailContent({
 
     void (async (): Promise<void> => {
       try {
+        setIsUpdatingStatus(true);
         await updateStatus(buildId, newStatus as BuildStatus);
-        refetch();
+        // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
-        alert(`Failed to update status: ${String(error)}`);
+        const message = typeof error === 'string' ? error : String(error);
+        console.error('Failed to update status:', message);
+        // After #31 merges, replace with: showToast('error', message)
+      } finally {
+        setIsUpdatingStatus(false);
       }
     })();
   };
@@ -110,9 +116,11 @@ function BuildDetailContent({
       try {
         setIsAddingPart(true);
         await addPart(buildId, name, sku, parseInt(quantityStr, 10));
-        refetch();
+        // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
-        alert(`Failed to add part: ${String(error)}`);
+        const message = typeof error === 'string' ? error : String(error);
+        console.error('Failed to add part:', message);
+        // After #31 merges, replace with: showToast('error', message)
       } finally {
         setIsAddingPart(false);
       }
@@ -138,9 +146,11 @@ function BuildDetailContent({
       try {
         setIsSubmittingTestRun(true);
         await submitTestRun(buildId, status as TestStatus);
-        refetch();
+        // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
-        alert(`Failed to submit test run: ${String(error)}`);
+        const message = typeof error === 'string' ? error : String(error);
+        console.error('Failed to submit test run:', message);
+        // After #31 merges, replace with: showToast('error', message)
       } finally {
         setIsSubmittingTestRun(false);
       }
@@ -169,7 +179,7 @@ function BuildDetailContent({
                 <button
                   key={status}
                   onClick={(): void => handleStatusChange(status)}
-                  disabled={buildData.status === status}
+                  disabled={isUpdatingStatus || buildData.status === status}
                   className="btn btn-secondary"
                 >
                   {status}
