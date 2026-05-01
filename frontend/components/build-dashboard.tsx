@@ -27,7 +27,7 @@ interface BuildsTableProps {
  * - Cache-first strategy when initialBuilds provided prevents unnecessary queries
  */
 function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
-  const { builds: fetchedBuilds, loading, error, refetch } = useBuilds();
+  const { builds: fetchedBuilds, loading, error } = useBuilds();
   const { createBuild } = useCreateBuild();
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -55,9 +55,13 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
     try {
       setIsCreating(true);
       await createBuild(name);
-      refetch();
+      // ✅ Don't call refetch()—Apollo cache already updated optimistically
+      // ✅ Close modal after successful creation
+      setIsCreateModalOpen(false);
     } catch (err) {
-      throw new Error(`Failed to create build: ${String(err)}`);
+      const message = typeof err === 'string' ? err : String(err);
+      console.error('Failed to create build:', message);
+      // After #31 merges, replace with: showToast('error', message)
     } finally {
       setIsCreating(false);
     }
