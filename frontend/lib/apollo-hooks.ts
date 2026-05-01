@@ -245,6 +245,7 @@ export function useAddPart(): {
           update(cache, { data }) {
             if (data?.addPart) {
               cache.modify({
+                id: cache.identify({ __typename: 'Build', id: buildId }),
                 fields: {
                   build(existing = {}) {
                     return {
@@ -314,6 +315,7 @@ export function useSubmitTestRun(): {
           update(cache, { data }) {
             if (data?.submitTestRun) {
               cache.modify({
+                id: cache.identify({ __typename: 'Build', id: buildId }),
                 fields: {
                   build(existing = {}) {
                     return {
