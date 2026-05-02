@@ -1,0 +1,118 @@
+================================================================================
+PHASE 2 ORCHESTRATOR ANALYSIS - EXECUTIVE SUMMARY
+================================================================================
+
+CURRENT STATE
+─────────────────────────────────────────────────────────────────────────────
+Branch: main (clean, no uncommitted changes)
+Worktrees: None
+Recent: Issue #30 (Optimistic Updates) recently merged
+
+PHASE 2 ISSUES ANALYZED
+─────────────────────────────────────────────────────────────────────────────
+#28: Error Boundaries (2h)          → Frontend only
+#29: CORS & SSE Error Handling (2h) → Frontend + Backend (Express)
+#31: Enhanced Error UI (1.5h)        → Frontend only
+#32: Timeouts & Retry Logic (1.5h)  → Frontend only
+
+FILE DEPENDENCY MATRIX
+─────────────────────────────────────────────────────────────────────────────
+
+🔴 CRITICAL CONFLICT:
+   frontend/lib/apollo-client.ts
+   ├─ Issue #28: ADD error link (onError from @apollo/client/link/error)
+   └─ Issue #32: REWRITE entire file (add RetryLink + AbortSignal.timeout)
+   
+   → Same file, overlapping concerns, MUST be coordinated
+
+🟡 MODERATE: frontend/app/layout.tsx
+   └─ Issue #28 wraps with ErrorBoundary (low collision risk)
+
+🟢 INDEPENDENT:
+   └─ Issue #29: use-sse-events.ts + events.ts (zero conflicts)
+   └─ Issue #31: toast-notification.tsx + build-detail-modal.tsx (zero conflicts)
+
+PARALLEL FEASIBILITY
+─────────────────────────────────────────────────────────────────────────────
+✅ Issues #31 & #29: CAN run in parallel (completely independent)
+⚠️  Issues #28 & #32: MUST coordinate (apollo-client.ts conflict)
+
+RECOMMENDATION: ❌ DO NOT USE GIT WORKTREE
+─────────────────────────────────────────────────────────────────────────────
+
+Use SIMPLE BRANCHING instead. Here's why:
+
+1. CONFLICT ANALYSIS
+   • Only 1 true file conflict (apollo-client.ts)
+   • Conflict is solvable via sequential implementation (#28 then #32)
+   • Worktree overhead not justified for single conflict
+
+2. TEAM SIZE
+   • Git history shows solo/small team development
+   • Worktree benefits require 3+ simultaneous developers
+   • Simple branching sufficient for current pace
+
+3. DEVELOPER EXPERIENCE
+   • Simpler workflow (no worktree setup/cleanup)
+   • Easier context switching between branches
+   • Lower risk of branch pollution or accidental conflicts
+   • Familiar to all developers
+
+4. BUILD/TEST COMPLEXITY
+   • Small codebase, fast builds
+   • Issues don't require simultaneous testing across branches
+   • No heavy cross-branch integration dependencies
+
+RECOMMENDED EXECUTION PLAN
+─────────────────────────────────────────────────────────────────────────────
+
+PHASE 1 (PARALLEL) - 2 hours each:
+  Branch 1: feat/issue-31-error-ui
+            └─ Toast UI component (independent)
+            
+  Branch 2: feat/issue-29-cors-sse
+            └─ CORS headers + SSE reconnection logic (independent)
+
+PHASE 2 (SEQUENTIAL):
+  Branch 3: feat/issue-28-error-boundaries (on main)
+            └─ Error boundary components + error link in apollo-client.ts
+            └─ Merge to main when ready
+            
+  Branch 4: feat/issue-32-timeouts (branch from #28's merged main)
+            └─ Add RetryLink + timeout to apollo-client.ts
+            └─ Integrates cleanly with #28's error link
+            └─ Push as depends-on-#28 PR
+
+TIMELINE: ~7.5 hours total (9.5 hours if sequential)
+          • 3.5 hours in parallel (phases 1a + 1b)
+          • 3.5 hours sequential (phases 2a + 2b)
+          • 1 hour testing + integration
+
+SUCCESS CRITERIA
+─────────────────────────────────────────────────────────────────────────────
+✅ File apollo-client.ts cleanly integrates error link + retry + timeout
+✅ Zero git merge conflicts during process
+✅ All tests pass (pnpm test)
+✅ Manual testing: Error UI, SSE reconnect, timeouts all work
+✅ Type safety maintained (TS strict mode)
+
+DETAILED ANALYSIS
+─────────────────────────────────────────────────────────────────────────────
+See: docs/implementation-planning/PHASE2_WORKTREE_ANALYSIS.md
+
+This document contains:
+  • Full file dependency matrix
+  • Risk assessment for each issue pair
+  • Implementation approach with code examples
+  • Testing strategy per phase
+  • Merge order and dependency tracking
+
+NEXT STEPS
+─────────────────────────────────────────────────────────────────────────────
+1. ✅ Analysis complete (you are here)
+2. Create Branch 1: feat/issue-31-error-ui (start immediately)
+3. Create Branch 2: feat/issue-29-cors-sse (start immediately)
+4. After one branch merges: Create Branch 3 (feat/issue-28-error-boundaries)
+5. After #28 merges: Create Branch 4 (feat/issue-32-timeouts)
+
+================================================================================
