@@ -15,7 +15,7 @@ function createMockEventsRouter(): Express {
   const app = express();
   
   // Mock CORS middleware that matches events.ts configuration
-  app.use((req: Request, res: Response, next) => {
+  app.use((_req: Request, res: Response, next): void => {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -24,7 +24,7 @@ function createMockEventsRouter(): Express {
   });
 
   // OPTIONS handler (preflight)
-  app.options('/events', (_req: Request, res: Response) => {
+  app.options('/events', (_req: Request, res: Response): void => {
     res.sendStatus(200);
   });
 

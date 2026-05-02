@@ -28,7 +28,7 @@ export interface SSEErrorNotification {
   title: string;
   message: string;
   action?: 'retry' | 'refresh' | 'dismiss';
-  duration?: number; // ms, null = persist
+  duration?: number | null; // ms, null = persist
   errorType: SSEErrorType;
 }
 
