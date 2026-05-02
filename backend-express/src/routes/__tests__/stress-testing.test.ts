@@ -227,7 +227,6 @@ describe('Event Bus Stress Testing - Suite 1: High-Throughput', () => {
 describe('Event Bus Stress Testing - Suite 2: Memory Leak Detection', () => {
   it('2.1: event bus memory stays stable over sustained load', async () => {
     const measurements: Array<{ time: number; memory: number }> = [];
-    const _startMemory = getHeapUsedMB();
     const metricsCollector = new EventBusMetricsCollector();
 
     // Run for 300 simulated seconds (5-minute equivalent)
