@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode, ReactElement } from 'react';
 import { AuthProvider } from '@/lib/auth-context';
 import { ApolloWrapper } from './apollo-wrapper';
+import { ToastContainer } from '@/components/toast-notification';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       <body>
         <AuthProvider>
           <ApolloWrapper>{children}</ApolloWrapper>
+          <ToastContainer />
         </AuthProvider>
       </body>
     </html>
