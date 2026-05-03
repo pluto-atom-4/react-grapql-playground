@@ -15,6 +15,7 @@ interface Toast {
 // Global toast store
 const toasts: Toast[] = [];
 const listeners: Set<(toasts: Toast[]) => void> = new Set();
+const timeouts = new Map<string, number>();
 
 export function createToast(
   message: string,
@@ -28,15 +29,24 @@ export function createToast(
   notifyListeners();
 
   if (duration) {
-    window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      timeouts.delete(id);  // Remove from map
       dismissToast(id);
     }, duration);
+    timeouts.set(id, timeoutId);  // Store timeout ID
   }
 
   return id;
 }
 
 export function dismissToast(id: string): void {
+  // Clear timeout if it exists
+  const timeoutId = timeouts.get(id);
+  if (timeoutId !== undefined) {
+    window.clearTimeout(timeoutId);
+    timeouts.delete(id);
+  }
+
   const index = toasts.findIndex((t) => t.id === id);
   if (index !== -1) {
     toasts.splice(index, 1);
@@ -46,6 +56,12 @@ export function dismissToast(id: string): void {
 
 // For testing only - clears all toasts
 export function clearAllToasts(): void {
+  // Clear all pending timeouts
+  timeouts.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  timeouts.clear();
+  
   toasts.length = 0;
   notifyListeners();
 }
