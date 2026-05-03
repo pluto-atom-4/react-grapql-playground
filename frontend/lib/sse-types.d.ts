@@ -29,6 +29,8 @@ export interface SSEMetrics {
   lastEventTime?: number;
 }
 
+import type { SSEErrorLog } from './sse-error-handler';
+
 declare global {
   interface Window {
     /**
@@ -44,6 +46,13 @@ declare global {
      * Updated in real-time as events are processed
      */
     __SSE_METRICS?: SSEMetrics;
+
+    /**
+     * Error log history for SSE connection issues
+     * Available at window.__SSE_ERROR_LOGS for debugging connection problems
+     * Contains up to 100 most recent errors
+     */
+    __SSE_ERROR_LOGS?: SSEErrorLog[];
   }
 }
 
