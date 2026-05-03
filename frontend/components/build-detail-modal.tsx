@@ -10,6 +10,7 @@ import {
   BuildStatus,
   TestStatus,
 } from '@/lib/apollo-hooks';
+import { useToast } from '@/lib/error-notifier';
 import './build-detail-modal.css';
 
 interface Part {
@@ -42,6 +43,7 @@ function BuildDetailContent({
   buildId: string;
   onClose: () => void;
 }): ReactElement {
+  const toast = useToast();
   const { build, loading, error } = useBuildDetail(buildId);
   const { updateStatus } = useUpdateBuildStatus();
   const { addPart } = useAddPart();
@@ -85,7 +87,7 @@ function BuildDetailContent({
       BuildStatus.Failed,
     ];
     if (!validStatuses.includes(newStatus as BuildStatus)) {
-      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      toast.warning(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
       return;
     }
 
@@ -93,11 +95,11 @@ function BuildDetailContent({
       try {
         setIsUpdatingStatus(true);
         await updateStatus(buildId, newStatus as BuildStatus);
+        toast.success(`Build status updated to ${newStatus}`);
         // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
         const message = typeof error === 'string' ? error : String(error);
-        console.error('Failed to update status:', message);
-        // After #31 merges, replace with: showToast('error', message)
+        toast.error(`Failed to update status: ${message}`);
       } finally {
         setIsUpdatingStatus(false);
       }
@@ -116,11 +118,11 @@ function BuildDetailContent({
       try {
         setIsAddingPart(true);
         await addPart(buildId, name, sku, parseInt(quantityStr, 10));
+        toast.success('Part added successfully');
         // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
         const message = typeof error === 'string' ? error : String(error);
-        console.error('Failed to add part:', message);
-        // After #31 merges, replace with: showToast('error', message)
+        toast.error(`Failed to add part: ${message}`);
       } finally {
         setIsAddingPart(false);
       }
@@ -138,7 +140,7 @@ function BuildDetailContent({
       TestStatus.Failed,
     ];
     if (!validStatuses.includes(status as TestStatus)) {
-      alert(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      toast.warning(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
       return;
     }
 
@@ -146,11 +148,11 @@ function BuildDetailContent({
       try {
         setIsSubmittingTestRun(true);
         await submitTestRun(buildId, status as TestStatus);
+        toast.success('Test run submitted successfully');
         // ✅ Don't call refetch()—Apollo cache already updated optimistically
       } catch (error) {
         const message = typeof error === 'string' ? error : String(error);
-        console.error('Failed to submit test run:', message);
-        // After #31 merges, replace with: showToast('error', message)
+        toast.error(`Failed to submit test run: ${message}`);
       } finally {
         setIsSubmittingTestRun(false);
       }
