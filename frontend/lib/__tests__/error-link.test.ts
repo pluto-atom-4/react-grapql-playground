@@ -46,12 +46,10 @@ vi.mock('@/lib/graphql-error-handler', async () => {
 
 describe('Apollo Error Link', () => {
   let mockToast: ReturnType<typeof vi.fn>;
-  let mockExtractErrorMessage: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockToast = vi.mocked(createToast);
-    mockExtractErrorMessage = vi.mocked(extractErrorMessage);
   });
 
   it('should extract error message from GraphQL error object', () => {
