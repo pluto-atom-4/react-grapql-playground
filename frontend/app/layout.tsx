@@ -3,6 +3,7 @@ import type { ReactNode, ReactElement } from 'react';
 import { AuthProvider } from '@/lib/auth-context';
 import { ApolloWrapper } from './apollo-wrapper';
 import { ToastContainer } from '@/components/toast-notification';
+import { ErrorBoundary } from '@/components/error-boundary';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,10 +15,12 @@ export default function RootLayout({ children }: { children: ReactNode }): React
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <ApolloWrapper>{children}</ApolloWrapper>
-          <ToastContainer />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ApolloWrapper>{children}</ApolloWrapper>
+            <ToastContainer />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
