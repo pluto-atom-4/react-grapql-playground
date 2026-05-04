@@ -60,7 +60,6 @@ pnpm-debug.log*
 
 # OS-specific files
 Thumbs.db
-.DS_Store
 .AppleDouble
 .LSOverride
 .Spotlight-V100
@@ -79,8 +78,6 @@ pids/
 *.pid.lock
 
 # Database
-*.db
-*.sqlite
 *.sqlite3
 prisma/dev.db
 prisma/dev.db-journal
@@ -100,13 +97,9 @@ blob-report/
 playwright/.cache/
 
 # Next.js specific
-.next/
-out/
 .env*.local
 .turbo
 
-# Express specific (if any)
-dist/
 
 # Misc
 *.pem
@@ -127,3 +120,4 @@ backend-express/__tests__/fixtures/*.zip
 .vscode/extensions.json
 .idea/inspectionProfiles/
 .idea/runConfigurations/
+/lint_output.txt
