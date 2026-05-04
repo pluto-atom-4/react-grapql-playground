@@ -50,10 +50,10 @@ export class TimeoutLink extends ApolloLink {
    *
    * @param operation - The GraphQL operation
    * @param forward - Function to pass operation to next link
-   * @returns Observable that either completes with result or errors with timeout
+   * @returns Observable-like object that either completes with result or errors with timeout
    */
   public request(operation: Operation, forward: (op: Operation) => any): any {
-    // Use a simple wrapper that mimics Observable behavior without explicit import
+    // Return an object with a subscribe method that behaves like an Observable
     return {
       subscribe: (handlers: any) => {
         let timeoutId: NodeJS.Timeout | undefined;
@@ -64,7 +64,6 @@ export class TimeoutLink extends ApolloLink {
           // Pass through successful responses
           next: (value: FetchResult) => {
             if (!isSubscriptionCancelled) {
-              // Clear timeout when response arrives
               clearTimeout(timeoutId);
               handlers.next?.(value);
             }
@@ -72,7 +71,6 @@ export class TimeoutLink extends ApolloLink {
           // Pass through errors from downstream links
           error: (err: any) => {
             if (!isSubscriptionCancelled) {
-              // Clear timeout when error occurs
               clearTimeout(timeoutId);
               handlers.error?.(err);
             }
@@ -80,7 +78,6 @@ export class TimeoutLink extends ApolloLink {
           // Pass through completion
           complete: () => {
             if (!isSubscriptionCancelled) {
-              // Clear timeout when operation completes
               clearTimeout(timeoutId);
               handlers.complete?.();
             }
@@ -89,20 +86,14 @@ export class TimeoutLink extends ApolloLink {
 
         // Set timeout that triggers if response takes too long
         timeoutId = setTimeout(() => {
-          // Mark subscription as cancelled to prevent duplicate events
           isSubscriptionCancelled = true;
 
           // Create timeout error with descriptive message
-          // The "timeout" keyword in the message allows error classification
-          // in graphql-error-handler.ts to identify this as a timeout error
           const timeoutError = new Error(
             `GraphQL request timeout after ${this.timeout}ms for operation '${operation.operationName}'`
           );
 
-          // Emit error to downstream links
           handlers.error?.(timeoutError);
-
-          // Clean up the forward subscription
           subscription.unsubscribe();
         }, this.timeout);
 

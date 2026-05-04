@@ -12,7 +12,7 @@
  * - Listens for real-time events (buildCreated, buildStatusChanged, partAdded, testRunSubmitted, etc.)
  * - Parses event payloads and updates Apollo Client cache via cache.modify()
  * - Deduplicates by eventId (sliding window, 5-min TTL)
- * - Reconnects automatically with exponential backoff on disconnect
+ * - Reconnects automatically with exponential backoff on disconnect (Issue #32)
  * - Tracks metrics for observability: totalEventsReceived, totalDuplicates, totalCacheUpdates, reconnectAttempts, averageLatencyMs
  */
 
@@ -21,6 +21,7 @@
 import { useApolloClient } from '@apollo/client/react';
 import { useEffect, useRef } from 'react';
 import type { SSEMetrics } from './sse-types';
+import { getExponentialBackoffDelay, DEFAULT_RETRY_CONFIG } from './graphql-error-handler';
 
 declare const performance: Performance;
 
@@ -97,15 +98,21 @@ function getOrInitializeMetrics(): SSEMetrics {
 
 /**
  * Calculate exponential backoff delay for reconnection attempt
- * Formula: delay = min(baseDelay * (2 ^ attemptNumber), maxDelay)
+ * Uses shared backoff logic from graphql-error-handler (Issue #32)
+ * Formula: delay = min(baseDelay * (2 ^ attemptNumber) ± jitter, maxDelay)
  */
 function calculateReconnectDelay(
   attempt: number,
   baseDelayMs: number,
   maxDelayMs: number
 ): number {
-  const delay = baseDelayMs * Math.pow(2, attempt);
-  return Math.min(delay, maxDelayMs);
+  // Use shared exponential backoff with jitter for consistency with GraphQL retries
+  return getExponentialBackoffDelay(
+    attempt,
+    baseDelayMs,
+    maxDelayMs,
+    DEFAULT_RETRY_CONFIG.jitterPercent
+  );
 }
 
 /**
