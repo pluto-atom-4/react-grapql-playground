@@ -14,6 +14,8 @@ import { ErrorLink } from '@apollo/client/link/error';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { extractErrorMessage } from './graphql-error-handler';
 import { createToast } from '@/components/toast-notification';
+import { TimeoutLink } from './timeout-link';
+import { RetryLink } from './retry-link';
 
 /**
  * Error link handler that catches GraphQL and network errors.
@@ -23,7 +25,7 @@ import { createToast } from '@/components/toast-notification';
  * - Continues the link chain for RetryLink integration (Issue #32)
  *
  * Link order (after Issue #32):
- * errorLink → retryLink → authLink → httpLink
+ * timeoutLink → retryLink → errorLink → authLink → httpLink
  */
 const errorLink = new ErrorLink(({ error, operation, forward }) => {
   // Extract user-friendly message
@@ -56,6 +58,10 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
 export function makeClient(): ApolloClient {
   const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:4000/graphql';
 
+  // Issue #32: Add timeout + retry links with proper ordering
+  const timeoutLink = new TimeoutLink({ timeout: 10000 });
+  const retryLink = new RetryLink({ maxRetries: 3 });
+
   const httpLink = new HttpLink({
     uri: graphqlUrl,
     credentials: 'include',
@@ -75,7 +81,12 @@ export function makeClient(): ApolloClient {
   return new ApolloClient({
     ssrMode: typeof window === 'undefined',
     cache: new InMemoryCache(),
-    // Error link first to catch all errors before other links
-    link: errorLink.concat(authLink).concat(httpLink),
+    // Link chain order (Issue #32):
+    // 1. timeoutLink: Enforce 10s hard boundary
+    // 2. retryLink: Retry failed requests 3x with exponential backoff
+    // 3. errorLink: Log errors and show toast after retries exhausted
+    // 4. authLink: Inject JWT token on each attempt
+    // 5. httpLink: Actual network request
+    link: timeoutLink.concat(retryLink).concat(errorLink).concat(authLink).concat(httpLink),
   });
 }

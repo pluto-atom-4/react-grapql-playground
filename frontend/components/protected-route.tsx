@@ -1,4 +1,3 @@
-/* globals setTimeout */
 'use client';
 
 import { useAuth } from '@/lib/auth-context';

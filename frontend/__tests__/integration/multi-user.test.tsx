@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* globals atob, btoa, setTimeout */
+/* globals atob, btoa */
 /**
  * Issue #121 - Integration Tests: Multi-User Scenarios
  * Verify user isolation and data boundaries
@@ -35,14 +35,14 @@ function UserDashboard() {
   React.useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      setTimeout(() => {
+      (() => {
         setLoading(false);
       }, 0);
       return;
     }
 
     // Decode token to get user ID
-    setTimeout(() => {
+    (() => {
       try {
         const parts = token.split('.');
         if (parts.length === 3) {

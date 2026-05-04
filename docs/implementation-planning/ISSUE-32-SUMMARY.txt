@@ -1,0 +1,260 @@
+================================================================================
+ISSUE #32: ADD TIMEOUTS & RETRY LOGIC - IMPLEMENTATION PLAN SUMMARY
+================================================================================
+
+DELIVERABLE: Comprehensive Technical Architecture Plan
+Location: docs/implementation-planning/ISSUE-32-TIMEOUT-RETRY.md
+Size: 688 lines, 23KB
+
+================================================================================
+WHAT WAS DELIVERED
+================================================================================
+
+1. ARCHITECTURE RECOMMENDATION
+   ✓ Evaluated 2 approaches (Complex vs Simple)
+   ✓ Recommended: Apollo RetryLink + TimeoutLink (Option A - Complex)
+   ✓ Provided rationale for production-grade decision
+   ✓ Trade-off analysis
+
+2. DETAILED TASK BREAKDOWN
+   ✓ 9 sequential tasks with time estimates
+   ✓ Dependency mapping
+   ✓ Total duration: 1 hour 40 minutes
+
+3. COMPLETE FILE STRUCTURE
+   ✓ Files to create: 5 (retry-link.ts, timeout-link.ts, 3 test files)
+   ✓ Files to modify: 3 (apollo-client.ts, use-sse-events.ts, apollo-client.test.ts)
+   ✓ Reference files listed
+
+4. IMPLEMENTATION DETAILS
+   ✓ TimeoutLink (60 lines): 10-second hard timeout enforcement
+   ✓ RetryLink (80 lines): 3-retry exponential backoff logic
+   ✓ Apollo Client integration: Link chain order with explanation
+   ✓ SSE reconnection update: Shared retry config
+
+5. COMPREHENSIVE TEST STRATEGY
+   ✓ TimeoutLink: 8 unit tests + mock strategy
+   ✓ RetryLink: 12 unit tests + mock strategy
+   ✓ Integration: 6 integration tests
+   ✓ Manual browser verification: 5-point checklist
+   ✓ Total: 26 test cases covering success/failure/edge cases
+
+6. ACCEPTANCE CRITERIA MAPPING
+   ✓ All 8 criteria from issue mapped to implementation
+   ✓ Verification methods specified
+   ✓ Status tracking table
+
+7. RISK MITIGATION PLAN
+   ✓ 7 risks identified with specific mitigations
+   ✓ Memory leak prevention
+   ✓ Backoff jitter handling
+   ✓ Infinite loop prevention
+   ✓ Console spam mitigation
+
+8. TYPESCRIPT CONSIDERATIONS
+   ✓ Observable/FetchResult typing
+   ✓ Error type handling (unknown vs Error)
+   ✓ RetryConfig type reuse
+   ✓ Link chain type safety
+   ✓ Strict mode compliance
+
+9. SEQUENTIAL IMPLEMENTATION PHASES
+   Phase 1: Foundation (20 min) - Create links + verify TypeScript
+   Phase 2: Integration (10 min) - Update apollo-client.ts
+   Phase 3: Testing (40 min) - Write all tests
+   Phase 4: SSE + Docs (15 min) - SSE update + CLAUDE.md
+   Phase 5: Verification (15 min) - Final build/lint/test/manual
+
+10. INTERVIEW VALUE
+    ✓ Demonstrates Apollo architecture knowledge
+    ✓ Shows distributed systems understanding (exponential backoff)
+    ✓ Exhibits production readiness thinking
+    ✓ Reveals error handling sophistication
+    ✓ Proves testing rigor (20+ tests)
+
+================================================================================
+KEY RECOMMENDATIONS
+================================================================================
+
+APPROACH: Option A - Apollo RetryLink + TimeoutLink (Complex)
+
+Why this approach wins:
+- Built on existing graphql-error-handler.ts utilities
+- Apollo best practice pattern
+- Separates concerns (timeout vs retry vs error handling)
+- Apollo DevTools compatible
+- Easier to extend (circuit breakers, rate limiting)
+- Interview-grade code demonstrates architectural thinking
+
+LINK CHAIN ORDER (Critical):
+  timeoutLink → retryLink → errorLink → authLink → httpLink
+  
+Why this order:
+1. Timeout FIRST: Enforce hard 10s boundary
+2. Retry SECOND: Don't waste retries on timed-out requests
+3. Error THIRD: Only toast after all retries exhausted
+4. Auth FOURTH: Inject token for each retry attempt
+5. HTTP LAST: Actual network request
+
+================================================================================
+IMPLEMENTATION CHECKLIST
+================================================================================
+
+Pre-Implementation:
+  [ ] Create feature branch: git checkout -b feat/timeout-retry-logic
+  [ ] Read full plan: docs/implementation-planning/ISSUE-32-TIMEOUT-RETRY.md
+
+Phase 1 - Create Links:
+  [ ] Create frontend/lib/timeout-link.ts (60 lines)
+  [ ] Create frontend/lib/retry-link.ts (80 lines)
+  [ ] Run: pnpm build (verify TypeScript passes)
+
+Phase 2 - Integrate:
+  [ ] Update frontend/lib/apollo-client.ts (link chain order)
+  [ ] Verify: makeClient() compiles without errors
+
+Phase 3 - Test:
+  [ ] Write frontend/lib/__tests__/timeout-link.test.ts (8 tests)
+  [ ] Write frontend/lib/__tests__/retry-link.test.ts (12 tests)
+  [ ] Write frontend/lib/__tests__/timeout-retry-integration.test.ts (6 tests)
+  [ ] Run: pnpm test (all 26 tests pass)
+
+Phase 4 - SSE + Docs:
+  [ ] Update frontend/lib/use-sse-events.ts (shared retry config)
+  [ ] Update CLAUDE.md with new patterns
+  [ ] Manual browser verification (5-point checklist)
+
+Phase 5 - Final Verification:
+  [ ] pnpm build → TypeScript strict check passes
+  [ ] pnpm lint → No ESLint errors
+  [ ] pnpm test → All tests pass (including existing)
+  [ ] Manual testing → All 8 acceptance criteria met
+
+Post-Implementation:
+  [ ] Create PR with comprehensive description
+  [ ] Reference Issue #32
+  [ ] Include acceptance criteria checklist
+  [ ] Link to this implementation plan
+
+================================================================================
+ACCEPTANCE CRITERIA (From Issue #32)
+================================================================================
+
+1. [ ] Requests timeout after 10 seconds
+   Implementation: TimeoutLink.request() setTimeout 10000ms
+   Verification: Manual network throttle test
+
+2. [ ] Failed requests auto-retry up to 3 times
+   Implementation: RetryLink.request() loop + attempt counter
+   Verification: Unit test: retry-link.test.ts
+
+3. [ ] Retry delays: 300ms, 600ms, 1200ms (exponential backoff)
+   Implementation: getExponentialBackoffDelay() existing function
+   Verification: Manual + Unit test with setTimeout spy
+
+4. [ ] Client errors (4xx) don't retry
+   Implementation: isRetryableError() returns false for 4xx
+   Verification: Unit test: retry-link.test.ts
+
+5. [ ] Server errors (5xx) do retry
+   Implementation: isRetryableError() returns true for 5xx
+   Verification: Unit test: retry-link.test.ts
+
+6. [ ] Network timeouts retry automatically
+   Implementation: Timeout errors classified as retryable
+   Verification: Unit test: retry-logic.test.ts
+
+7. [ ] Console logs retry attempts
+   Implementation: console.log() with structured format
+   Verification: Manual browser console check
+
+8. [ ] After 3 failed retries: Show error to user
+   Implementation: errorLink shows toast after retry exhaustion
+   Verification: Unit test: timeout-retry-integration.test.ts
+
+================================================================================
+KEY FILE REFERENCES
+================================================================================
+
+Already Exist (Reuse):
+- frontend/lib/graphql-error-handler.ts: getRetryStrategy(), isRetryableError(), getExponentialBackoffDelay()
+- frontend/lib/__tests__/retry-logic.test.ts: Existing retry logic tests
+- frontend/lib/__tests__/apollo-client.test.ts: Apollo client tests
+
+Will Create:
+- frontend/lib/timeout-link.ts (NEW)
+- frontend/lib/retry-link.ts (NEW)
+- frontend/lib/__tests__/timeout-link.test.ts (NEW)
+- frontend/lib/__tests__/retry-link.test.ts (NEW)
+- frontend/lib/__tests__/timeout-retry-integration.test.ts (NEW)
+
+Will Modify:
+- frontend/lib/apollo-client.ts (+10 lines)
+- frontend/lib/use-sse-events.ts (+5 lines)
+
+================================================================================
+ESTIMATED EFFORT BREAKDOWN
+================================================================================
+
+Task                           Duration    Difficulty
+─────────────────────────────────────────────────────
+1. Create timeout-link.ts      15 min      Easy
+2. Create retry-link.ts        15 min      Medium (Observable handling)
+3. Update apollo-client.ts     10 min      Easy
+4. Write TimeoutLink tests     20 min      Medium
+5. Write RetryLink tests       20 min      Hard (Observable mocking)
+6. Write integration tests     15 min      Medium
+7. Update SSE logic            10 min      Easy
+8. Manual verification         10 min      Easy
+9. Documentation               5 min       Easy
+─────────────────────────────────────────────────────
+TOTAL                          1h 40min    Medium
+
+Knowledge Required:
+- Apollo Client link architecture
+- RxJS Observable patterns
+- Vitest mocking strategies
+- TypeScript strict mode
+- GraphQL error handling
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Read the full implementation plan:
+   docs/implementation-planning/ISSUE-32-TIMEOUT-RETRY.md
+
+2. Start implementation following Phase 1-5 sequence
+
+3. Use the comprehensive test cases provided
+
+4. Verify each phase completes before moving to next
+
+5. Manual testing with browser DevTools for timeout/retry scenarios
+
+6. Create PR referencing this plan and Issue #32
+
+================================================================================
+CONTACT POINTS FOR QUESTIONS
+================================================================================
+
+Specific Code Patterns:
+→ See section 4: IMPLEMENTATION DETAILS
+
+Test Strategy Details:
+→ See section 5: TESTING STRATEGY
+
+Type Safety Concerns:
+→ See section 8: TYPESCRIPT CONSIDERATIONS
+
+Risk Mitigation:
+→ See section 7: RISKS & MITIGATIONS
+
+Interview Talking Points:
+→ See section 10: INTERVIEW VALUE
+
+================================================================================
+Plan Created: 2024-05-04
+Status: Ready for Implementation
+Review: Comprehensive (12 sections, 688 lines)
+================================================================================
