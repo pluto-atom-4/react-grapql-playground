@@ -1,0 +1,310 @@
+================================================================================
+GITHUB SUB-ISSUES CREATED FROM USETESTRUN ANALYSIS
+================================================================================
+
+CREATED ISSUES: 3 sub-issues from USETESTRUN-ANALYSIS.md
+
+================================================================================
+ISSUE #207: Build SubmitTestRunForm Component with FileUploader Integration
+================================================================================
+
+URL: https://github.com/pluto-atom-4/react-grapql-playground/issues/207
+
+STATUS: Ready to Start
+PRIORITY: Medium
+EFFORT: 2-3 hours
+LABELS: frontend, feature, medium-priority, ready-to-start
+
+PARENT ISSUE: #33 (Add FileUploader Component)
+
+PURPOSE:
+Create a form component that bridges FileUploader (#33) with GraphQL useSubmitTestRun mutation.
+
+KEY FEATURES:
+✓ Integrates FileUploader component for test result file attachment
+✓ Status dropdown (PASSED/FAILED/PENDING)
+✓ Optional result textarea for test summary
+✓ Form validation (require status)
+✓ GraphQL integration with error handling
+✓ Loading states and success/error toasts
+
+ACCEPTANCE CRITERIA:
+✓ Form renders with FileUploader + status dropdown + result textarea
+✓ File upload sets fileUrl state via FileUploader callback
+✓ Submit disabled until status selected
+✓ Calls useSubmitTestRun mutation with buildId, status, result, fileUrl
+✓ Success toast + onSuccess callback
+✓ Specific error messages
+✓ Tests for happy path + error scenarios
+✓ Integrated into BuildDetailModal (replaces prompt())
+
+WHY THIS MATTERS:
+- Bridges FileUploader component with test run submission workflow
+- Manufacturing technicians need professional form for test submission
+- Completes evidence attachment for audit trail compliance
+
+
+================================================================================
+ISSUE #208: Build TestRunDetailsPanel Component for Detailed View
+================================================================================
+
+URL: https://github.com/pluto-atom-4/react-grapql-playground/issues/208
+
+STATUS: Ready to Start
+PRIORITY: Medium
+EFFORT: 1.5-2 hours
+LABELS: frontend, feature, medium-priority, ready-to-start
+
+PARENT ISSUE: #37 (Add Integration Tests)
+
+PURPOSE:
+Create a detailed view component for individual test runs that uses useTestRuns hook.
+
+KEY FEATURES:
+✓ Status badge with icon (✓ PASSED | ✗ FAILED | ⏳ PENDING)
+✓ Result summary text display
+✓ Downloadable link for attached test result file
+✓ Formatted timestamps (created, completed)
+✓ Loading and error states
+✓ Close button
+
+HOOK USAGE:
+Uses useTestRuns(buildId) to fetch test runs and find specific run by ID
+
+ACCEPTANCE CRITERIA:
+✓ Component uses useTestRuns(buildId) hook
+✓ Status badge shows icon and formatting
+✓ File download link present if fileUrl exists
+✓ Timestamps formatted as readable dates
+✓ Loading spinner shown while fetching
+✓ Graceful "not found" handling
+✓ Tests: found, not found, loading, error states
+✓ Can be opened from BuildDetailModal row click
+
+WHY THIS MATTERS:
+- First real consumer of the orphaned useTestRuns hook
+- Demonstrates hook purpose in manufacturing workflow
+- Provides evidence download for technicians
+- Shows use of hook with polling support
+
+
+================================================================================
+ISSUE #209: Integrate useTestRuns Hook in BuildDetailModal with Polling
+================================================================================
+
+URL: https://github.com/pluto-atom-4/react-grapql-playground/issues/209
+
+STATUS: Ready to Start
+PRIORITY: Medium
+EFFORT: 2-2.5 hours
+LABELS: frontend, feature, medium-priority, ready-to-start
+
+PARENT ISSUE: #37 (Add Integration Tests)
+
+PURPOSE:
+Activate the orphaned useTestRuns hook by integrating it into BuildDetailModal with polling.
+
+KEY FEATURES:
+✓ Import and use useTestRuns(buildId) hook
+✓ Polling every 2 seconds when test.status === 'RUNNING'
+✓ Manual refetch on test run submission
+✓ Proper cleanup to prevent memory leaks
+✓ Documentation of hook purpose
+
+IMPLEMENTATION:
+- Hook returns { testRuns, loading, error, refetch }
+- useEffect checks if any test is RUNNING
+- If running, setInterval calls refetch() every 2 seconds
+- Interval cleared on unmount and when no tests running
+
+ACCEPTANCE CRITERIA:
+✓ BuildDetailModal imports useTestRuns hook
+✓ TestRun list renders from hook (not embedded in build query)
+✓ Manual refetch triggered after test run submission
+✓ Polling active when any test.status === 'RUNNING'
+✓ Polling stops when all tests complete
+✓ Intervals cleared on unmount
+✓ Error states displayed
+✓ Loading state shown
+✓ Code comment explains separation of concerns
+✓ Integration tests validate polling
+
+WHY THIS MATTERS:
+- Brings well-designed but unused hook into production use
+- Demonstrates separation of concerns (Builds vs TestRuns)
+- Foundation for SSE upgrade (real-time without polling)
+- Shows N+1 prevention through DataLoader (backend)
+- Interview pattern: hook composition + fetch strategies
+
+
+================================================================================
+ISSUE RELATIONSHIPS & DEPENDENCIES
+================================================================================
+
+PARENT ISSUES (Phase 2):
+├─ #32: Add Timeouts & Retry Logic (affects all mutations)
+├─ #33: Add FileUploader Component (MUST complete before #207)
+├─ #34: Implement Pagination UI (handles test run scale)
+├─ #35: Add Loading Skeletons (UX polish)
+├─ #36: Add GraphQL Code Generation Tests (type safety)
+└─ #37: Add Integration Tests (validates complete workflow)
+
+SUB-ISSUES (Newly Created):
+├─ #207: SubmitTestRunForm
+│  ├─ Depends: #33 (FileUploader)
+│  └─ Triggers: #209 (refetch on success)
+├─ #208: TestRunDetailsPanel
+│  ├─ Uses: #209 (useTestRuns hook)
+│  └─ Can run: in parallel with #207
+└─ #209: useTestRuns Integration
+   ├─ Used by: #207 (refetch), #208 (query)
+   └─ Tested by: #37 (integration test)
+
+EXECUTION ORDER:
+1. #33 must complete (FileUploader foundation)
+2. #207, #208, #209 can run in parallel or sequentially
+3. All three feed into #37 (integration test validation)
+
+BUILD DETAIL MODAL ARCHITECTURE:
+BuildDetailModal
+├─ BuildInfo (existing)
+├─ PartsSection (existing)
+└─ TestRunsSection (ENHANCED)
+   ├─ useTestRuns hook integration (#209)
+   ├─ TestRunsList + rows
+   │  └─ click → TestRunDetailsPanel (#208)
+   ├─ SubmitTestRunForm (#207)
+   │  ├─ FileUploader (#33)
+   │  ├─ StatusDropdown
+   │  └─ ResultTextarea
+   └─ (polling from #209 auto-updates when test.status === RUNNING)
+
+
+================================================================================
+MANUFACTURING WORKFLOW COVERAGE
+================================================================================
+
+COMPLETE TEST RUN LIFECYCLE (with all 3 sub-issues):
+
+1. Technician opens Build details modal
+2. Technician clicks "Submit Test Run"
+3. SubmitTestRunForm appears (#207)
+4. Technician drags/drops test report file
+5. FileUploader sends to Express backend (#33)
+6. Technician selects test status (PASSED/FAILED)
+7. Technician adds optional result notes
+8. Form submits mutation with buildId, status, result, fileUrl
+9. GraphQL resolver creates TestRun
+10. Form calls refetch() → #209 polling detects change
+11. UI updates to show new test run
+12. Technician clicks test run row
+13. TestRunDetailsPanel opens (#208)
+14. Panel shows status badge, result, timestamps
+15. Panel provides file download link
+16. Technician downloads PDF test evidence
+17. All changes audited: Build → TestRun → Evidence file
+
+RESULT: Production-ready test evidence tracking for manufacturing compliance
+
+
+================================================================================
+INTERVIEW TALKING POINTS
+================================================================================
+
+WHY useTestRuns HOOK EXISTS:
+"The hook separates concerns. A Build can have many TestRuns. Querying all
+related data in one shot causes N+1 problems. The hook lets us:
+- Fetch test runs independently if needed
+- Lazy-load details without re-querying entire Build
+- Refetch just test runs when tests complete
+- Implement different caching strategies per use case
+
+On the backend, DataLoader batch-loads TestRuns per build in one query."
+
+WHY FILEUPLOADER INTEGRATION MATTERS:
+"In manufacturing, test evidence is not optional. When a rocket engine passes
+a pressure test, we need proof—the actual PDF report.
+- Test harness exports result file
+- Technician uploads via drag-and-drop
+- File stored on Express backend
+- GraphQL mutation links fileUrl to TestRun
+- Audit trail complete: Build → TestRun → Evidence"
+
+REAL-TIME WITH POLLING:
+"When tests are running, we poll every 2 seconds instead of manual refresh.
+This is foundation for SSE upgrade:
+- User sees in-progress indicator
+- Polling detects completion
+- UI updates automatically
+- No need to refresh page
+- Scales to WebSocket for concurrent tests"
+
+SYSTEM DESIGN PATTERN:
+"Demonstrates production SaaS patterns:
+- Separation of concerns (frontend hooks)
+- N+1 prevention (DataLoader batching)
+- Real-time UX (polling → SSE)
+- Compliance-ready (file uploads + audit trail)
+- Type safety (GraphQL schema + generated types)"
+
+
+================================================================================
+TESTING STRATEGY
+================================================================================
+
+UNIT TESTS:
+✓ #207: SubmitTestRunForm with mock FileUploader + mutation
+✓ #208: TestRunDetailsPanel with mock hook + various states
+✓ #209: Polling behavior with mock apollo client
+
+INTEGRATION TESTS (Part of #37):
+✓ Create Build → Add Parts → Submit TestRun → View Details → Download
+✓ Polling detects running test and stops on completion
+✓ Form validation and error handling end-to-end
+
+TEST APPROACH:
+✓ MockedProvider for GraphQL
+✓ React Testing Library (user-centric)
+✓ No real database or file uploads
+✓ Focus on user interactions
+
+COVERAGE TARGETS:
+✓ 80%+ for all three components
+✓ All user paths covered
+✓ Error scenarios tested
+✓ Edge cases (missing data, loading states)
+
+
+================================================================================
+EFFORT ESTIMATE
+================================================================================
+
+SUB-ISSUE EFFORT BREAKDOWN:
+├─ #207 (SubmitTestRunForm):  2-3 hours
+├─ #208 (TestRunDetailsPanel): 1.5-2 hours
+└─ #209 (useTestRuns Integration): 2-2.5 hours
+
+TOTAL EFFORT: 5.5-7.5 hours
+TIMELINE: 1-2 days for senior developer
+IMPACT: Completes test run workflow for manufacturing domain
+
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+✓ All 3 sub-issues created and assigned
+✓ Each issue has clear acceptance criteria
+✓ Dependency chain documented
+✓ End-to-end workflow validated via #37 integration test
+✓ Code reviewed and merged to main branch
+✓ Tests pass (unit + integration)
+✓ Interview talking points demonstrated
+✓ Documentation updated
+
+
+================================================================================
+CREATED: May 4, 2026
+ANALYSIS SOURCE: USETESTRUN-ANALYSIS.md
+REPOSITORY: pluto-atom-4/react-grapql-playground
+================================================================================
