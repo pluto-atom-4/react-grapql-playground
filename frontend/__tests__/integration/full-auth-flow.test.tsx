@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* globals setTimeout */
 /**
  * Issue #121 - Integration Tests: Full Auth Flow
  * Tests complete login → dashboard → logout flow

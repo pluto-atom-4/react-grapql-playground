@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* globals setTimeout */
 /**
  * Issue #121 - Integration Tests: Protected Routes
  * Tests authentication requirements for protected routes and queries
