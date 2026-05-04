@@ -142,13 +142,40 @@ export function isValidationError(error: unknown): boolean {
 
 /**
  * Determines if an error is retryable based on classification.
+ * Retries network errors, timeouts, and 5xx server errors (500-599).
  *
  * @param error - The error to check
  * @returns True if error should be retried
  */
 export function isRetryableError(error: unknown): boolean {
   const errorType = classifyError(error);
-  return errorType === 'network' || errorType === 'timeout';
+  
+  // Retry network and timeout errors
+  if (errorType === 'network' || errorType === 'timeout') {
+    return true;
+  }
+
+  // Check for HTTP 5xx server errors (retryable)
+  if (!error) return false;
+  
+  const errorObj = error as Record<string, unknown>;
+  if (errorObj.networkError) {
+    const networkError = errorObj.networkError as Record<string, unknown>;
+    
+    // Check if networkError has a status code
+    if ('status' in networkError) {
+      const status = networkError.status as number;
+      if (status >= 500 && status < 600) {
+        return true; // Retry 5xx errors
+      }
+      // Don't retry 4xx client errors
+      if (status >= 400 && status < 500) {
+        return false;
+      }
+    }
+  }
+  
+  return false;
 }
 
 /**

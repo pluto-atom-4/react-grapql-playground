@@ -65,11 +65,17 @@ export class RetryLink extends ApolloLink {
     return {
       subscribe: (subscriber: any) => {
         let attempt = 0;
+        let previousSubscription: any = null;
 
         /**
          * Execute the operation, with built-in retry logic on errors
          */
         const executeRequest = () => {
+          // Unsubscribe from previous attempt to prevent zombie subscriptions
+          if (previousSubscription) {
+            previousSubscription.unsubscribe();
+          }
+
           // Subscribe to the operation from the next link
           const subscription = forward(operation).subscribe({
             // Pass through successful responses immediately
@@ -106,6 +112,9 @@ export class RetryLink extends ApolloLink {
               subscriber.complete?.();
             },
           });
+
+          // Store current subscription for cleanup on next retry
+          previousSubscription = subscription;
 
           // Return subscription for cleanup
           return subscription;
