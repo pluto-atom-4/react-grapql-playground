@@ -1,0 +1,337 @@
+================================================================================
+USETESTRUN HOOK ANALYSIS SUMMARY - Issues #32-#37
+================================================================================
+
+ANALYSIS SCOPE:
+- Hook Location: frontend/lib/apollo-hooks.ts (lines 68-86)
+- Current Consumer Count: 0 COMPONENTS (ORPHANED)
+- Related Issues: #32, #33, #34, #35, #36, #37 (Phase 2 Features)
+
+================================================================================
+ISSUE IMPACT MATRIX
+================================================================================
+
+ISSUE #32: Add Timeouts & Retry Logic
+├─ Severity: CRITICAL
+├─ Scope: Global (all mutations including useSubmitTestRun)
+├─ Gap: No timeout handling for test run submission on unreliable networks
+└─ Justification: Manufacturing technicians work on shop floor with spotty WiFi
+
+ISSUE #33: Add FileUploader Component  
+├─ Severity: CRITICAL
+├─ Scope: BuildDetailModal (test run submission form)
+├─ Gap: No UI for attaching test result files (PDFs, CSVs)
+└─ Justification: Compliance requires audit trail with uploaded evidence
+
+ISSUE #34: Implement Pagination
+├─ Severity: MODERATE
+├─ Scope: BuildDashboard (scales to 100s of test runs)
+└─ Justification: Handle large test run histories efficiently
+
+ISSUE #35: Add Loading Skeletons
+├─ Severity: LOW
+├─ Scope: BuildDetailModal (test runs table loading state)
+└─ Justification: Better perceived performance on slow networks
+
+ISSUE #36: Add GraphQL Code Generation Tests
+├─ Severity: MODERATE
+├─ Scope: apollo-hooks tests including useTestRuns
+└─ Justification: Type safety for test run queries/mutations
+
+ISSUE #37: Add Integration Tests (Vitest + RTL)
+├─ Severity: HIGH
+├─ Scope: BuildDetailModal + end-to-end workflow
+└─ Justification: Validates complete: create → add parts → submit test
+
+================================================================================
+CURRENT HOOK IMPLEMENTATION
+================================================================================
+
+Function: useTestRuns(buildId: string)
+
+Returns:
+  {
+    testRuns: TestRun[],        // Array of test runs for build
+    loading: boolean,            // Query in-flight
+    error: unknown,              // Query error (if any)
+    refetch: () => void         // Force re-fetch
+  }
+
+Query Used: TEST_RUNS_QUERY (frontend/lib/graphql-queries.ts:90-97)
+
+Skip Logic: Yes (skips query if !buildId)
+
+Cache Strategy: Automatic Apollo Client cache management
+
+What It Does:
+  ✓ Queries GraphQL backend for test runs filtered by buildId
+  ✓ Returns strongly typed TestRun[] array
+  ✓ Provides loading/error states
+  ✓ Enables manual refetch
+
+What It DOESN'T Do:
+  ✗ No file upload integration
+  ✗ No polling/subscription for real-time updates
+  ✗ No optimistic updates specific to test runs
+  ✗ Not consumed by any components (orphaned)
+  ✗ No support for test filtering/sorting
+
+================================================================================
+GRAPHQL SCHEMA: TESTRUN TYPE
+================================================================================
+
+type TestRun {
+  id: ID!                    // Unique identifier
+  buildId: ID!               // Foreign key to Build
+  status: TestStatus!        // PENDING, RUNNING, PASSED, FAILED
+  result: String             // Test summary text
+  fileUrl: String            // URL to uploaded evidence file
+  completedAt: DateTime      // When test completed
+  createdAt: DateTime!       // When test run created
+  updatedAt: DateTime!       // Last modification time
+}
+
+Related Mutation:
+  submitTestRun(
+    buildId: ID!,
+    status: TestStatus!,
+    result: String,
+    fileUrl: String
+  ): TestRun!
+
+Related Query:
+  testRuns(buildId: ID!): [TestRun!]!
+
+================================================================================
+MANUFACTURING WORKFLOW CONTEXT (Boltline)
+================================================================================
+
+Why TestRuns Matter:
+  Stoke Space manufactures rocket hardware. Each component undergoes testing:
+  1. Pressure tests (verify structural integrity)
+  2. Vibration tests (verify fatigue resistance)
+  3. Environmental tests (verify performance at temperature extremes)
+
+TestRun Lifecycle:
+  1. Technician creates Build (e.g., "Engine-Block-2026-001")
+  2. Technician adds Parts to Build (valves, actuators, etc.)
+  3. Technician triggers test on hardware (external harness)
+  4. Test harness generates report (PDF, CSV with graphs)
+  5. Test harness uploads report → Express /upload endpoint
+  6. Frontend submits TestRun with fileUrl → GraphQL submitTestRun mutation
+  7. GraphQL resolver stores TestRun in PostgreSQL
+  8. Frontend listens for SSE event (testRunCompleted)
+  9. UI updates to show test result badge (PASSED/FAILED)
+  10. Technician downloads test evidence for analysis/compliance
+
+Why File Upload Matters:
+  - COMPLIANCE: Regulators require proof of testing (PDF reports)
+  - ANALYSIS: Engineers download test reports to diagnose failures
+  - TRACEABILITY: Permanent link between Build → TestRun → Evidence
+
+================================================================================
+WHERE USETESTRUN SHOULD BE USED
+================================================================================
+
+CURRENT STATE:
+  ✗ 0 components actively use useTestRuns()
+  ✗ Data fetched via useBuildDetail() which includes testRuns nested
+
+RECOMMENDED CONSUMERS:
+
+1. BuildDetailModal (PRIMARY)
+   └─ File: frontend/components/build-detail-modal.tsx
+   └─ Current: Fetches testRuns via useBuildDetail()
+   └─ Enhancement: Use standalone useTestRuns() for polling in-progress tests
+   └─ Justification: Decouples test run data from build data
+
+2. TestRunDetailsPanel (NEW COMPONENT)
+   └─ File: frontend/components/test-run-details-panel.tsx
+   └─ Purpose: Expanded view of single test run with file download
+   └─ Uses: useTestRuns() to get all test runs for build
+
+3. TestRunHistory (NEW COMPONENT)
+   └─ File: frontend/components/test-run-history.tsx
+   └─ Purpose: Filtered/sorted history with search
+   └─ Uses: useTestRuns() to get all test runs for filtering
+
+================================================================================
+INTEGRATION PATTERN (Issue #33: FileUploader)
+================================================================================
+
+Current BuildDetailModal Flow:
+  1. User clicks "Submit Test Run" button
+  2. User prompted for test status via prompt() [PRIMITIVE]
+  3. submitTestRun() mutation called
+  4. Test run appears in table
+
+Enhanced Flow (With FileUploader + Issue #33):
+  1. User clicks "Submit Test Run" button
+  2. Form opens with:
+     - FileUploader component (drag-and-drop)
+     - Test status dropdown
+     - Test result textarea
+  3. User selects file or drags onto uploader
+  4. FileUploader.uploadFile() → Express /upload endpoint
+  5. Returns fileUrl (e.g., "http://localhost:5000/uploads/abc123.pdf")
+  6. Form submits: submitTestRun(buildId, status, result, fileUrl)
+  7. GraphQL mutation completes
+  8. Apollo cache updates optimistically
+  9. New test run appears in table
+  10. Technician can click test run to expand and see fileUrl link
+
+================================================================================
+GAPS & MISSING FEATURES
+================================================================================
+
+GAP 1: No Real-Time Updates
+  Current: User must manually refresh to see test status changes
+  Missing: SSE polling for RUNNING → PASSED/FAILED transitions
+  Solution: Add polling + SSE listener for testRunCompleted events
+
+GAP 2: No File Upload Integration  
+  Current: fileUrl field exists but no UI to populate it
+  Missing: FileUploader component (issue #33)
+  Solution: Implement issue #33, integrate with BuildDetailModal
+
+GAP 3: No Detailed Test Run UI
+  Current: Only shows status, result, completedAt in basic table
+  Missing: Expandable rows, file download links, rich details
+  Solution: Create TestRunDetailsPanel component
+
+GAP 4: No Filtering/Sorting
+  Current: Displays all test runs chronologically
+  Missing: Filter by status (PASSED/FAILED), sort by date
+  Solution: Create TestRunHistory component
+
+GAP 5: No Timeout Handling
+  Current: Test run submission can hang indefinitely on slow network
+  Missing: 10-second timeout + exponential backoff retry
+  Solution: Implement issue #32
+
+================================================================================
+RECOMMENDED COMPONENT ARCHITECTURE
+================================================================================
+
+BuildDetailModal (ENHANCED)
+├── BuildInfo Section
+│   ├── Status badge
+│   ├── Description
+│   └── Status controls (buttons to change status)
+│
+├── PartsSection
+│   ├── PartsList
+│   │   └── PartRow
+│   └── AddPartForm
+│
+└── TestRunsSection (ENHANCED)
+    ├── TestRunsList
+    │   └── TestRunRow
+    │       └── OnClick → TestRunDetailsPanel
+    │
+    ├── SubmitTestRunForm (NEW)
+    │   ├── FileUploader (from issue #33)
+    │   ├── StatusDropdown (RUNNING, PASSED, FAILED, PENDING)
+    │   └── ResultTextarea (test summary)
+    │
+    └── TestRunHistory (NEW, OPTIONAL)
+        ├── FilterDropdown (all, passed, failed)
+        ├── SortDropdown (date, status)
+        └── TestRunsTable (paginated)
+
+================================================================================
+INTERVIEW TALKING POINTS
+================================================================================
+
+POINT 1: Why This Hook Exists
+  "The useTestRuns hook separates concerns. A Build can have many test runs,
+   parts, and metadata. Querying all of that in one shot causes N+1 database
+   problems. The hook lets us:
+   
+   1. Fetch test runs independently (polling for in-progress tests)
+   2. Lazy-load details without re-querying entire Build
+   3. Refetch just test runs when tests complete (via SSE event)
+   4. Implement different caching strategies per use case
+   
+   On the backend, GraphQL resolvers use DataLoader to batch-load TestRuns
+   per build in one query, preventing cascading database round-trips."
+
+POINT 2: Why FileUploader Matters
+  "In manufacturing, test evidence is not optional. When a rocket engine
+   component passes a pressure test, we need proof—the actual PDF report
+   from the test harness.
+   
+   The FileUploader + TestRun integration means:
+   1. Test harness runs offline, generates report (PDF, CSV)
+   2. Technician uploads file via drag-and-drop
+   3. File stored on Express backend (/uploads directory)
+   4. GraphQL mutation links fileUrl to TestRun record
+   5. Audit trail complete—Build → TestRun → Evidence
+   
+   Without this, we have status (PASSED/FAILED) but no proof for regulators."
+
+POINT 3: Why This Is Phase 2
+  "Phase 1 built foundation: Create, Add, Read. Phase 2 adds real workflow:
+   
+   - Issue #32: Make mutations reliable on shop floor networks
+   - Issue #33: Add file upload (manufacturing evidence)
+   - Issue #34: Handle scale (pagination for 100s of test runs)
+   - Issue #35: Improve UX (skeleton loaders on slow networks)
+   - Issue #36: Ensure type safety (tests for generated types)
+   - Issue #37: Validate end-to-end (integration test)
+   
+   These 6 issues move the app from proof-of-concept to production-ready."
+
+================================================================================
+CURRENT VS. IDEAL STATE
+================================================================================
+
+Aspect                  | Current              | Phase 2 Complete
+------------------------+----------------------+----------------------------------
+Test Run UI             | Basic table          | Rich details + expandable + DL
+File Upload             | None                 | FileUploader with progress
+Real-Time Updates       | Manual refresh       | SSE polling for status changes
+Error Handling          | Generic errors       | Specific timeout + retry toasts
+Loading UX              | "Loading..." text    | Skeleton placeholders
+Hook Usage              | 0 components         | 3+ components
+Type Safety Tests       | None                 | Comprehensive tests
+End-to-End Tests        | None                 | Full workflow integration test
+
+================================================================================
+NEXT STEPS (IMPLEMENTATION ORDER)
+================================================================================
+
+1. IMPLEMENT ISSUE #32: Timeout + Retry Logic
+   └─ Foundational: affects all mutations
+
+2. IMPLEMENT ISSUE #33: FileUploader Component
+   └─ Critical: enables test evidence attachment
+
+3. ENHANCE BuildDetailModal
+   └─ Integrate FileUploader
+   └─ Add SubmitTestRunForm with file upload
+   └─ Implement useTestRuns for polling
+
+4. CREATE TestRunDetailsPanel
+   └─ Expanded view with file download
+
+5. CREATE TestRunHistory (Optional)
+   └─ Filtered/sorted test run history
+
+6. IMPLEMENT ISSUE #37: Integration Tests
+   └─ Validate complete workflow
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================
+
+Document: docs/product-analysis/USETESTRUN-ANALYSIS.md
+Summary: docs/product-analysis/USETESTRUN-SUMMARY.txt
+
+Key Finding: useTestRun hook is well-designed but orphaned. Issues #32-#37
+provide context and components to integrate it into the manufacturing workflow.
+
+For Interview: Focus on explaining manufacturing domain, demonstrating system
+thinking (separation of concerns, N+1 prevention, real-time updates), and
+justifying design decisions with business logic (compliance, evidence tracking).
+
