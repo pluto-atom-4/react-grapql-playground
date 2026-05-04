@@ -9,6 +9,7 @@
  */
 
 import { ApolloLink, Operation, FetchResult } from '@apollo/client';
+import { Observable } from 'rxjs';
 
 /**
  * Configuration for TimeoutLink
@@ -50,62 +51,61 @@ export class TimeoutLink extends ApolloLink {
    *
    * @param operation - The GraphQL operation
    * @param forward - Function to pass operation to next link
-   * @returns Observable-like object that either completes with result or errors with timeout
+   * @returns Observable that either completes with result or errors with timeout
    */
-  public request(operation: Operation, forward: (op: Operation) => any): any {
-    // Return an object with a subscribe method that behaves like an Observable
-    return {
-      subscribe: (handlers: any) => {
-        let timeoutId: NodeJS.Timeout | undefined;
-        let isSubscriptionCancelled = false;
+  public request(
+    operation: Operation,
+    forward: (op: Operation) => Observable<FetchResult<Record<string, unknown>>>
+  ): Observable<FetchResult<Record<string, unknown>>> {
+    // Return an Observable that enforces timeout
+    return new Observable((subscriber) => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let isSubscriptionCancelled = false;
 
-        // Subscribe to the forward operation
-        const subscription = forward(operation).subscribe({
-          // Pass through successful responses
-          next: (value: FetchResult) => {
-            if (!isSubscriptionCancelled) {
-              clearTimeout(timeoutId);
-              handlers.next?.(value);
-            }
-          },
-          // Pass through errors from downstream links
-          error: (err: any) => {
-            if (!isSubscriptionCancelled) {
-              clearTimeout(timeoutId);
-              handlers.error?.(err);
-            }
-          },
-          // Pass through completion
-          complete: () => {
-            if (!isSubscriptionCancelled) {
-              clearTimeout(timeoutId);
-              handlers.complete?.();
-            }
-          },
-        });
-
-        // Set timeout that triggers if response takes too long
-        timeoutId = setTimeout(() => {
-          isSubscriptionCancelled = true;
-
-          // Create timeout error with descriptive message
-          const timeoutError = new Error(
-            `GraphQL request timeout after ${this.timeout}ms for operation '${operation.operationName}'`
-          );
-
-          handlers.error?.(timeoutError);
-          subscription.unsubscribe();
-        }, this.timeout);
-
-        // Return cleanup function for when subscription is unsubscribed
-        return {
-          unsubscribe: () => {
-            isSubscriptionCancelled = true;
+      // Subscribe to the forward operation
+      const subscription = forward(operation).subscribe({
+        // Pass through successful responses
+        next: (value: FetchResult<Record<string, unknown>>) => {
+          if (!isSubscriptionCancelled) {
             clearTimeout(timeoutId);
-            subscription.unsubscribe();
-          },
-        };
-      },
-    };
+            subscriber.next(value);
+          }
+        },
+        // Pass through errors from downstream links
+        error: (err: unknown) => {
+          if (!isSubscriptionCancelled) {
+            clearTimeout(timeoutId);
+            subscriber.error(err);
+          }
+        },
+        // Pass through completion
+        complete: () => {
+          if (!isSubscriptionCancelled) {
+            clearTimeout(timeoutId);
+            subscriber.complete();
+          }
+        },
+      });
+
+      // Set timeout that triggers if response takes too long
+      timeoutId = setTimeout(() => {
+        isSubscriptionCancelled = true;
+
+        // Create timeout error with descriptive message
+        const timeoutError = new Error(
+          `GraphQL request timeout after ${this.timeout}ms for operation '${operation.operationName}'`
+        );
+
+        subscriber.error(timeoutError);
+        subscription.unsubscribe();
+      }, this.timeout);
+
+      // Return cleanup function for when subscription is unsubscribed
+      return (): void => {
+        isSubscriptionCancelled = true;
+        clearTimeout(timeoutId);
+        subscription.unsubscribe();
+      };
+    });
   }
 }

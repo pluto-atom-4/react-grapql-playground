@@ -46,6 +46,10 @@ export default [
         alert: 'readonly',
         prompt: 'readonly',
         console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
         // Node.js globals available in Next.js and config files
         process: 'readonly',
         __dirname: 'readonly',

@@ -10,6 +10,7 @@
  */
 
 import { ApolloLink, Operation, FetchResult } from '@apollo/client';
+import { Observable } from 'rxjs';
 import {
   getRetryStrategy,
   RetryConfig,
@@ -59,70 +60,60 @@ export class RetryLink extends ApolloLink {
    *
    * @param operation - The GraphQL operation
    * @param forward - Function to pass operation to next link
-   * @returns Observable-like object that retries on retryable errors
+   * @returns Observable that retries on retryable errors
    */
-  public request(operation: Operation, forward: (op: Operation) => any): any {
-    return {
-      subscribe: (subscriber: any) => {
-        let attempt = 0;
-        let previousSubscription: any = null;
+  public request(
+    operation: Operation,
+    forward: (op: Operation) => Observable<FetchResult<Record<string, unknown>>>
+  ): Observable<FetchResult<Record<string, unknown>>> {
+    return new Observable((subscriber) => {
+      let attempt = 0;
 
-        /**
-         * Execute the operation, with built-in retry logic on errors
-         */
-        const executeRequest = () => {
-          // Unsubscribe from previous attempt to prevent zombie subscriptions
-          if (previousSubscription) {
-            previousSubscription.unsubscribe();
-          }
+      /**
+       * Execute the operation, with built-in retry logic on errors
+       */
+      const executeRequest = (): void => {
+        // Subscribe to the operation from the next link
+        // Note: Observable handles subscription cleanup automatically
+        forward(operation).subscribe({
+          // Pass through successful responses immediately
+          next: (value: FetchResult<Record<string, unknown>>) => {
+            subscriber.next(value);
+          },
+          // Handle errors: determine if we should retry
+          error: (err: unknown) => {
+            // Check retry strategy: should we retry and with what delay?
+            const { shouldRetry, delayMs } = getRetryStrategy(err, attempt, this.config);
 
-          // Subscribe to the operation from the next link
-          const subscription = forward(operation).subscribe({
-            // Pass through successful responses immediately
-            next: (value: FetchResult) => {
-              subscriber.next?.(value);
-            },
-            // Handle errors: determine if we should retry
-            error: (err: unknown) => {
-              // Check retry strategy: should we retry and with what delay?
-              const { shouldRetry, delayMs } = getRetryStrategy(err, attempt, this.config);
+            if (shouldRetry) {
+              // Increment attempt counter for next retry
+              attempt += 1;
 
-              if (shouldRetry) {
-                // Increment attempt counter for next retry
-                attempt += 1;
+              // Log retry attempt with details
+              console.warn(
+                `[Apollo Retry] Attempt ${attempt}/${this.config.maxRetries} ` +
+                  `for ${operation.operationName} after ${delayMs}ms delay`
+              );
 
-                // Log retry attempt with details
-                console.log(
-                  `[Apollo Retry] Attempt ${attempt}/${this.config.maxRetries} ` +
-                    `for ${operation.operationName} after ${delayMs}ms delay`
-                );
+              // Schedule retry after delay
+              setTimeout(() => {
+                executeRequest();
+              }, delayMs);
+            } else {
+              // Max retries exceeded or error is not retryable
+              // Pass error to downstream links (ErrorLink, etc.)
+              subscriber.error(err);
+            }
+          },
+          // Pass through completion
+          complete: () => {
+            subscriber.complete();
+          },
+        });
+      };
 
-                // Schedule retry after delay
-                setTimeout(() => {
-                  executeRequest();
-                }, delayMs);
-              } else {
-                // Max retries exceeded or error is not retryable
-                // Pass error to downstream links (ErrorLink, etc.)
-                subscriber.error?.(err);
-              }
-            },
-            // Pass through completion
-            complete: () => {
-              subscriber.complete?.();
-            },
-          });
-
-          // Store current subscription for cleanup on next retry
-          previousSubscription = subscription;
-
-          // Return subscription for cleanup
-          return subscription;
-        };
-
-        // Execute the initial request
-        return executeRequest();
-      },
-    };
+      // Execute the initial request
+      executeRequest();
+    });
   }
 }
