@@ -92,7 +92,7 @@ describe('useDropZone Hook', () => {
       bubbles: true,
       cancelable: true,
       dataTransfer: { files: [file1, file2] },
-    }) as any;
+    });
     dropEvent.preventDefault = vi.fn();
     dropEvent.stopPropagation = vi.fn();
 
@@ -111,7 +111,7 @@ describe('useDropZone Hook', () => {
       target: {
         files: [file],
       },
-    } as any;
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
 
     inputProps.onChange(changeEvent);
 
