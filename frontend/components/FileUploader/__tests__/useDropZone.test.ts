@@ -72,7 +72,7 @@ describe('useDropZone Hook', () => {
       bubbles: true,
       cancelable: true,
       dataTransfer: { files: [file] },
-    }) as any;
+    });
     dropEvent.preventDefault = vi.fn();
     dropEvent.stopPropagation = vi.fn();
 
