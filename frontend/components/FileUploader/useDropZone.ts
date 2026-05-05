@@ -53,7 +53,13 @@ export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
 
       // Call onDrop callback with files
       if (files.length > 0) {
-        onDrop(files);
+        // Handle both sync and async onDrop callbacks
+        const result = onDrop(files);
+        if (result instanceof Promise) {
+          result.catch(() => {
+            // Silently handle promise rejection
+          });
+        }
       }
     },
     [onDrop]
