@@ -11,6 +11,13 @@ interface UseDropZoneOptions {
   onDrop: (files: File[]) => void | Promise<void>;
 }
 
+interface RootPropsReturn {
+  onDragEnter: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+}
+
 /**
  * Custom hook for drag-and-drop file handling
  * Provides drag state management and event handlers for drop zones.
