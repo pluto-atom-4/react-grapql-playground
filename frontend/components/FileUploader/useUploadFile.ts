@@ -102,7 +102,7 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
         };
 
         // Handle network errors
-        xhr.onerror = () => {
+        xhr.onerror = (): void => {
           abortController.signal.removeEventListener('abort', abortHandler);
           setLoading(false);
 
@@ -125,7 +125,7 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
         };
 
         // Handle abort
-        xhr.onabort = () => {
+        xhr.onabort = (): void => {
           abortController.signal.removeEventListener('abort', abortHandler);
           setLoading(false);
 
@@ -137,7 +137,7 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
         // Set timeout
         xhr.timeout = 300000; // 5 minutes
 
-        xhr.ontimeout = () => {
+        xhr.ontimeout = (): void => {
           abortController.signal.removeEventListener('abort', abortHandler);
           setLoading(false);
 
