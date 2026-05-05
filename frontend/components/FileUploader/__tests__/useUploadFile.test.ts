@@ -23,7 +23,7 @@ describe('useUploadFile Hook', () => {
     expect(typeof result.current.uploadFile).toBe('function');
   });
 
-  it('should accept formData, abortController, and progress callback', async () => {
+  it('should accept formData, abortController, and progress callback', () => {
     const mockXhr = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
