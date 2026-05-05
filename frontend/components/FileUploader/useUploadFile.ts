@@ -52,13 +52,13 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
         }
 
         // Handle abort
-        const abortHandler = () => {
+        const abortHandler = (): void => {
           xhr.abort();
         };
         abortController.signal.addEventListener('abort', abortHandler);
 
         // Handle completion
-        xhr.onload = () => {
+        xhr.onload = (): void => {
           abortController.signal.removeEventListener('abort', abortHandler);
           setLoading(false);
 
