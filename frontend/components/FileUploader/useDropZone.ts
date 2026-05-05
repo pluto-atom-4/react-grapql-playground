@@ -109,7 +109,12 @@ export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
           const files = Array.from(e.target.files);
-          onDrop(files);
+          const result = onDrop(files);
+          if (result instanceof Promise) {
+            result.catch(() => {
+              // Silently handle promise rejection
+            });
+          }
         }
       },
     }),
