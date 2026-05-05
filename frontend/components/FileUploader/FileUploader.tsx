@@ -56,10 +56,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressEvent>({ loaded: 0, total: 0, percentage: 0 });
   const [currentFileName, setCurrentFileName] = useState<string>('');
+  const [uploadStartTime, setUploadStartTime] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadAbortControllerRef = useRef<AbortController | null>(null);
-  const uploadStartTimeRef = useRef<number | null>(null);
 
   const { uploadFile } = useUploadFile();
   const { isDragActive, getRootProps, getInputProps } = useDropZone({
