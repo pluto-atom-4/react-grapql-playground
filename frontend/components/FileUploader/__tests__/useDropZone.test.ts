@@ -80,13 +80,7 @@ describe('useDropZone Hook', () => {
     const props = result.current.getRootProps();
 
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' });
-    const dropEvent = new MockDragEvent('drop', {
-      bubbles: true,
-      cancelable: true,
-      dataTransfer: { files: [file] },
-    });
-    dropEvent.preventDefault = vi.fn();
-    dropEvent.stopPropagation = vi.fn();
+    const dropEvent = createMockDragEvent('drop', [file]);
 
     props.onDrop(dropEvent);
 
@@ -100,13 +94,7 @@ describe('useDropZone Hook', () => {
 
     const file1 = new File(['content1'], 'test1.pdf', { type: 'application/pdf' });
     const file2 = new File(['content2'], 'test2.pdf', { type: 'application/pdf' });
-    const dropEvent = new MockDragEvent('drop', {
-      bubbles: true,
-      cancelable: true,
-      dataTransfer: { files: [file1, file2] },
-    });
-    dropEvent.preventDefault = vi.fn();
-    dropEvent.stopPropagation = vi.fn();
+    const dropEvent = createMockDragEvent('drop', [file1, file2]);
 
     props.onDrop(dropEvent);
 
@@ -135,13 +123,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dragOverEvent = new MockDragEvent('dragover', {
-      bubbles: true,
-      cancelable: true,
-    });
-    dragOverEvent.preventDefault = vi.fn();
-    dragOverEvent.stopPropagation = vi.fn();
-
+    const dragOverEvent = createMockDragEvent('dragover');
     props.onDragOver(dragOverEvent);
 
     expect(dragOverEvent.preventDefault).toHaveBeenCalled();
@@ -152,13 +134,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dropEvent = new MockDragEvent('drop', {
-      bubbles: true,
-      cancelable: true,
-      dataTransfer: { files: [] },
-    }) as any;
-    dropEvent.preventDefault = vi.fn();
-    dropEvent.stopPropagation = vi.fn();
+    const dropEvent = createMockDragEvent('drop', []);
 
     props.onDrop(dropEvent);
 
@@ -170,12 +146,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dragEvent = new MockDragEvent('dragenter', {
-      bubbles: true,
-      cancelable: true,
-    }) as any;
-    dragEvent.preventDefault = vi.fn();
-    dragEvent.stopPropagation = vi.fn();
+    const dragEvent = createMockDragEvent('dragenter');
 
     // Just verify it can be called without errors
     expect(() => props.onDragEnter(dragEvent)).not.toThrow();
@@ -186,12 +157,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dragEvent = new MockDragEvent('dragleave', {
-      bubbles: true,
-      cancelable: true,
-    }) as any;
-    dragEvent.preventDefault = vi.fn();
-    dragEvent.stopPropagation = vi.fn();
+    const dragEvent = createMockDragEvent('dragleave');
 
     // Just verify it can be called without errors
     expect(() => props.onDragLeave(dragEvent)).not.toThrow();
