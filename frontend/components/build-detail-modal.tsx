@@ -11,6 +11,7 @@ import {
   TestStatus,
 } from '@/lib/apollo-hooks';
 import { useTestRuns } from '@/lib/hooks/useTestRuns';
+import type { TestRun } from '@/lib/generated/graphql';
 import { TestRunDetailsPanel } from './test-run-details-panel';
 import { useToast } from '@/lib/error-notifier';
 import './build-detail-modal.css';
@@ -20,15 +21,6 @@ interface Part {
   name: string;
   sku: string;
   quantity: number;
-}
-
-interface TestRun {
-  id: string;
-  status: string;
-  result?: string;
-  completedAt?: string;
-  fileUrl?: string;
-  createdAt?: string;
 }
 
 interface BuildData {
@@ -56,7 +48,6 @@ function BuildDetailContent({
   // Polling hook for real-time test run updates
   const { 
     testRuns, 
-    loading: testRunsLoading, 
     error: testRunsError, 
     startPolling, 
     stopPolling, 
@@ -312,7 +303,7 @@ function BuildDetailContent({
                         </span>
                       </td>
                       <td>{run.result || '-'}</td>
-                      <td>{run.completedAt ? new Date(run.completedAt).toLocaleString() : '-'}</td>
+                      <td>{run.completedAt ? new Date(run.completedAt as string).toLocaleString() : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

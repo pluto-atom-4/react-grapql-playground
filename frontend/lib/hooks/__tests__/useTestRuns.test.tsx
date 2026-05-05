@@ -81,6 +81,13 @@ vi.mock('@apollo/client', async () => {
   };
 });
 
+vi.mock('@apollo/client/react', async () => {
+  const apolloMocks = await vi.importMock('@apollo/client');
+  return {
+    useQuery: apolloMocks.useQuery,
+  };
+});
+
 describe('useTestRuns Hook', () => {
   beforeEach(() => {
     vi.useFakeTimers();

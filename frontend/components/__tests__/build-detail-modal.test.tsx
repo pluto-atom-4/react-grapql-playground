@@ -1,13 +1,12 @@
 'use client';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
-import { TestRunDetailsPanel } from '../test-run-details-panel';
 
 // Mock the dependencies
 vi.mock('@/lib/apollo-hooks');
@@ -236,7 +235,8 @@ describe('BuildDetailModal Integration Tests', () => {
     it('should open details panel on Enter key press', async () => {
       // Note: This test checks that the row has proper keyboard event handling
       // The actual keyboard navigation is tested indirectly through the click tests above
-      const user = userEvent.setup();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _user = userEvent.setup();
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -254,7 +254,8 @@ describe('BuildDetailModal Integration Tests', () => {
     it('should open details panel on Space key press', async () => {
       // Note: This test checks that the row has proper keyboard event handling
       // The actual keyboard navigation is tested indirectly through the click tests above
-      const user = userEvent.setup();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _user = userEvent.setup();
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
