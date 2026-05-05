@@ -106,9 +106,10 @@ describe('FileUploader Component', () => {
       expect(dropZone).toBeInTheDocument();
     });
 
-    it('should have upload icon SVG', () => {
+    it('should have upload icon', () => {
       render(<FileUploader config={mockConfig} />);
-      const svg = screen.getByRole('img', { hidden: true });
+      const dropZone = screen.getByRole('button');
+      const svg = dropZone.querySelector('svg');
       expect(svg).toBeInTheDocument();
     });
   });
