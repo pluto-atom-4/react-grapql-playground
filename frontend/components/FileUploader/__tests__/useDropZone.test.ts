@@ -2,11 +2,35 @@
  * useDropZone hook tests
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useDropZone } from '../useDropZone';
 
+// Mock DragEvent for test environment
+class MockDragEvent extends Event {
+  dataTransfer: any;
+
+  constructor(type: string, init?: EventInit & { dataTransfer?: any }) {
+    super(type, init);
+    this.dataTransfer = init?.dataTransfer || {
+      files: [],
+    };
+  }
+
+  preventDefault() {
+    super.preventDefault();
+  }
+
+  stopPropagation() {
+    super.stopPropagation();
+  }
+}
+
 describe('useDropZone Hook', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should initialize with isDragActive as false', () => {
     const onDrop = vi.fn();
     const { result } = renderHook(() => useDropZone({ onDrop }));
@@ -39,7 +63,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dragEvent = new DragEvent('dragenter', {
+    const dragEvent = new MockDragEvent('dragenter', {
       bubbles: true,
       cancelable: true,
     }) as any;
@@ -58,7 +82,7 @@ describe('useDropZone Hook', () => {
     const props = result.current.getRootProps();
 
     // First drag enter
-    const dragEnterEvent = new DragEvent('dragenter', {
+    const dragEnterEvent = new MockDragEvent('dragenter', {
       bubbles: true,
       cancelable: true,
     }) as any;
@@ -69,7 +93,7 @@ describe('useDropZone Hook', () => {
     expect(result.current.isDragActive).toBe(true);
 
     // Then drag leave
-    const dragLeaveEvent = new DragEvent('dragleave', {
+    const dragLeaveEvent = new MockDragEvent('dragleave', {
       bubbles: true,
       cancelable: true,
     }) as any;
@@ -86,15 +110,13 @@ describe('useDropZone Hook', () => {
     const props = result.current.getRootProps();
 
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' });
-    const dropEvent = new DragEvent('drop', {
+    const dropEvent = new MockDragEvent('drop', {
       bubbles: true,
       cancelable: true,
+      dataTransfer: { files: [file] },
     }) as any;
     dropEvent.preventDefault = vi.fn();
     dropEvent.stopPropagation = vi.fn();
-    dropEvent.dataTransfer = {
-      files: [file],
-    };
 
     props.onDrop(dropEvent);
 
@@ -126,15 +148,13 @@ describe('useDropZone Hook', () => {
 
     const file1 = new File(['content1'], 'test1.pdf', { type: 'application/pdf' });
     const file2 = new File(['content2'], 'test2.pdf', { type: 'application/pdf' });
-    const dropEvent = new DragEvent('drop', {
+    const dropEvent = new MockDragEvent('drop', {
       bubbles: true,
       cancelable: true,
+      dataTransfer: { files: [file1, file2] },
     }) as any;
     dropEvent.preventDefault = vi.fn();
     dropEvent.stopPropagation = vi.fn();
-    dropEvent.dataTransfer = {
-      files: [file1, file2],
-    };
 
     props.onDrop(dropEvent);
 
@@ -146,7 +166,7 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dragOverEvent = new DragEvent('dragover', {
+    const dragOverEvent = new MockDragEvent('dragover', {
       bubbles: true,
       cancelable: true,
     }) as any;
@@ -164,15 +184,13 @@ describe('useDropZone Hook', () => {
     const { result } = renderHook(() => useDropZone({ onDrop }));
     const props = result.current.getRootProps();
 
-    const dropEvent = new DragEvent('drop', {
+    const dropEvent = new MockDragEvent('drop', {
       bubbles: true,
       cancelable: true,
+      dataTransfer: { files: [] },
     }) as any;
     dropEvent.preventDefault = vi.fn();
     dropEvent.stopPropagation = vi.fn();
-    dropEvent.dataTransfer = {
-      files: [],
-    };
 
     props.onDrop(dropEvent);
 
