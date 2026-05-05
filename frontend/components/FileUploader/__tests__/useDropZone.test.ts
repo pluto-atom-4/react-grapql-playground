@@ -127,7 +127,7 @@ describe('useDropZone Hook', () => {
     const dragOverEvent = new MockDragEvent('dragover', {
       bubbles: true,
       cancelable: true,
-    }) as any;
+    });
     dragOverEvent.preventDefault = vi.fn();
     dragOverEvent.stopPropagation = vi.fn();
 
