@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
+import { BuildStatus, TestStatus } from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
 import { createMockBuild, createMockTestRun } from './mocks/build';
 
@@ -23,7 +24,7 @@ vi.mock('../test-run-details-panel', () => ({
 
 const mockBuildData = createMockBuild({
   id: 'build-123',
-  status: 'RUNNING' as const,
+  status: BuildStatus.Running,
   description: 'A test build',
   parts: [{ id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5, buildId: 'build-123', createdAt: new Date().toISOString() }],
 });
@@ -31,7 +32,7 @@ const mockBuildData = createMockBuild({
 const mockTestRuns = [
   createMockTestRun({
     id: '1',
-    status: 'PASSED' as const,
+    status: TestStatus.Passed,
     result: 'All tests passed',
     completedAt: '2026-04-16T10:00:00Z',
     fileUrl: 'https://example.com/report.pdf',
@@ -40,7 +41,7 @@ const mockTestRuns = [
   }),
   createMockTestRun({
     id: '2',
-    status: 'RUNNING' as const,
+    status: TestStatus.Running,
     result: undefined,
     completedAt: undefined,
     fileUrl: undefined,
@@ -58,18 +59,25 @@ describe('BuildDetailModal Integration Tests', () => {
       build: mockBuildData,
       loading: false,
       error: null,
+      refetch: vi.fn(),
     });
 
     vi.mocked(apolloHooks.useUpdateBuildStatus).mockReturnValue({
       updateStatus: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useAddPart).mockReturnValue({
       addPart: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useSubmitTestRun).mockReturnValue({
       submitTestRun: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(testRunsHook.useTestRuns).mockReturnValue({

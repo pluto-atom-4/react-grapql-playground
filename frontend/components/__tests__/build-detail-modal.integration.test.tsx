@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
+import { BuildStatus, TestStatus } from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
 import { createMockBuild, createMockTestRun } from './mocks/build';
 
@@ -23,7 +24,7 @@ vi.mock('../test-run-details-panel', () => ({
 
 const mockBuildData = createMockBuild({
   id: 'build-123',
-  status: 'RUNNING' as const,
+  status: BuildStatus.Running,
   description: 'A test build',
   parts: [{ id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5, buildId: 'build-123', createdAt: new Date().toISOString() }],
 });
@@ -31,7 +32,7 @@ const mockBuildData = createMockBuild({
 const mockTestRuns = [
   createMockTestRun({
     id: '1',
-    status: 'PASSED' as const,
+    status: TestStatus.Passed,
     result: 'All tests passed',
     completedAt: '2026-04-16T10:00:00Z',
     fileUrl: 'https://example.com/report.pdf',
@@ -40,7 +41,7 @@ const mockTestRuns = [
   }),
   createMockTestRun({
     id: '2',
-    status: 'FAILED' as const,
+    status: TestStatus.Failed,
     result: 'Some tests failed',
     completedAt: '2026-04-16T11:00:00Z',
     fileUrl: 'https://example.com/report2.pdf',
@@ -57,18 +58,25 @@ describe('BuildDetailModal Integration Tests', () => {
       build: mockBuildData,
       loading: false,
       error: null,
+      refetch: vi.fn(),
     });
 
     vi.mocked(apolloHooks.useUpdateBuildStatus).mockReturnValue({
       updateStatus: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useAddPart).mockReturnValue({
       addPart: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useSubmitTestRun).mockReturnValue({
       submitTestRun: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
@@ -214,14 +222,15 @@ describe('BuildDetailModal Integration Tests', () => {
       // Simulate new test run added via polling
       const updatedTestRuns = [
         ...mockTestRuns,
-        {
+        createMockTestRun({
           id: '3',
-          status: 'RUNNING',
+          status: TestStatus.Running,
           result: undefined,
           completedAt: undefined,
           fileUrl: undefined,
           createdAt: '2026-04-16T11:30:00Z',
-        },
+          buildId: 'build-123',
+        }),
       ];
 
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
@@ -254,15 +263,28 @@ describe('BuildDetailModal Integration Tests', () => {
       });
 
       // Switch to different build
-      const build456Data = { ...mockBuildData, id: 'build-456', name: 'Build 456' };
+      const build456Data = createMockBuild({ 
+        id: 'build-456', 
+        name: 'Build 456',
+        status: BuildStatus.Running,
+      });
       const testRuns456 = [
-        { id: '101', status: 'PASSED', result: 'Pass', completedAt: '2026-04-16T12:00:00Z', fileUrl: '', createdAt: '' },
+        createMockTestRun({ 
+          id: '101', 
+          status: TestStatus.Passed, 
+          result: 'Pass', 
+          completedAt: '2026-04-16T12:00:00Z', 
+          fileUrl: 'https://example.com/report.pdf', 
+          createdAt: '2026-04-16T12:00:00Z',
+          buildId: 'build-456',
+        }),
       ];
 
       vi.mocked(apolloHooks.useBuildDetail).mockReturnValue({
         build: build456Data,
         loading: false,
         error: null,
+        refetch: vi.fn(),
       });
 
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
