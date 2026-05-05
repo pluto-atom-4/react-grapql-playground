@@ -69,7 +69,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   /**
    * Handles dropped files
    */
-  async function handleDrop(files: File[]) {
+  async function handleDrop(files: File[]): Promise<void> {
     await handleFileUpload(files);
   }
 
@@ -77,7 +77,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
    * Main file upload handler
    * Validates files, uploads them, and handles success/error states
    */
-  async function handleFileUpload(files: File[]) {
+  async function handleFileUpload(files: File[]): Promise<void> {
     // Validate files
     const validation = validateFiles(files, config);
     if (!validation.valid) {
