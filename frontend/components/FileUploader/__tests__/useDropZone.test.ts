@@ -27,6 +27,17 @@ class MockDragEvent extends Event {
   }
 }
 
+// Helper function to create properly typed drag events for testing
+function createMockDragEvent(
+  type: string,
+  files: File[] = []
+): React.DragEvent<HTMLDivElement> {
+  const event = new MockDragEvent(type, { dataTransfer: { files } });
+  event.preventDefault = vi.fn();
+  event.stopPropagation = vi.fn();
+  return event as unknown as React.DragEvent<HTMLDivElement>;
+}
+
 describe('useDropZone Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
