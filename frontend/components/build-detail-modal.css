@@ -129,6 +129,81 @@
   background: #f5f5f5;
 }
 
+.test-runs-table tbody tr.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.test-runs-table tbody tr.clickable:hover {
+  background: #e8f4f8;
+}
+
+.test-runs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.test-runs-header h3 {
+  margin: 0;
+}
+
+.polling-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #e3f2fd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #1976d2;
+}
+
+.polling-indicator .pulse {
+  display: inline-block;
+  animation: pulse 1.5s infinite;
+  font-size: 1rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.polling-text {
+  font-weight: 500;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alert p {
+  margin: 0;
+  flex: 1;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+}
+
+.alert-warning .btn-secondary {
+  white-space: nowrap;
+}
+
 .parts-section .btn-secondary,
 .test-runs-section .btn-secondary {
   width: 100%;
