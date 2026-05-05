@@ -7,6 +7,7 @@ import type { ReactElement } from 'react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
+import { createMockBuild, createMockTestRun } from './mocks/build';
 
 // Mock the dependencies
 vi.mock('@/lib/apollo-hooks');
@@ -20,32 +21,32 @@ vi.mock('../test-run-details-panel', () => ({
   ),
 }));
 
-const mockBuildData = {
+const mockBuildData = createMockBuild({
   id: 'build-123',
-  name: 'Test Build',
-  status: 'RUNNING',
+  status: 'RUNNING' as const,
   description: 'A test build',
-  parts: [{ id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5 }],
-  testRuns: [],
-};
+  parts: [{ id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5, buildId: 'build-123', createdAt: new Date().toISOString() }],
+});
 
 const mockTestRuns = [
-  {
+  createMockTestRun({
     id: '1',
-    status: 'PASSED',
+    status: 'PASSED' as const,
     result: 'All tests passed',
     completedAt: '2026-04-16T10:00:00Z',
     fileUrl: 'https://example.com/report.pdf',
     createdAt: '2026-04-16T09:00:00Z',
-  },
-  {
+    buildId: 'build-123',
+  }),
+  createMockTestRun({
     id: '2',
-    status: 'FAILED',
+    status: 'FAILED' as const,
     result: 'Some tests failed',
     completedAt: '2026-04-16T11:00:00Z',
     fileUrl: 'https://example.com/report2.pdf',
     createdAt: '2026-04-16T10:30:00Z',
-  },
+    buildId: 'build-123',
+  }),
 ];
 
 describe('BuildDetailModal Integration Tests', () => {
@@ -83,7 +84,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Full Workflow: Table -> Details -> Back to Table', () => {
-    it('should complete full user workflow without errors', async () => {
+    it('should complete full user workflow without errors', async (): Promise<void> => {
       const user = userEvent.setup();
       const onClose = vi.fn();
 
@@ -129,7 +130,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Polling Behavior During Workflow', () => {
-    it('should continue polling when switching between details and table', async () => {
+    it('should continue polling when switching between details and table', async (): Promise<void> => {
       const user = userEvent.setup();
       const startPolling = vi.fn();
       const stopPolling = vi.fn();
@@ -168,7 +169,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Error Recovery Workflow', () => {
-    it('should allow retry after polling error', async () => {
+    it('should allow retry after polling error', async (): Promise<void> => {
       const user = userEvent.setup();
       const refetch = vi.fn().mockResolvedValue({ data: { testRuns: mockTestRuns } });
       const mockError = new Error('Failed to fetch test runs');
@@ -202,7 +203,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Real-time Updates Simulation', () => {
-    it('should reflect new test runs when polling updates', async () => {
+    it('should reflect new test runs when polling updates', async (): Promise<void> => {
       const { rerender } = render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       // Initial render with 2 test runs
@@ -245,7 +246,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Multiple Build Navigation', () => {
-    it('should handle switching between different builds', async () => {
+    it('should handle switching between different builds', async (): Promise<void> => {
       const { rerender } = render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -286,7 +287,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Memory Leak Prevention', () => {
-    it('should cleanup polling on unmount', async () => {
+    it('should cleanup polling on unmount', async (): Promise<void> => {
       const stopPolling = vi.fn();
 
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
@@ -317,7 +318,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Auto-stop Polling on Terminal States', () => {
-    it('should stop polling when all test runs reach terminal state', async () => {
+    it('should stop polling when all test runs reach terminal state', async (): Promise<void> => {
       const startPolling = vi.fn();
       let isPollingState = true;
 
