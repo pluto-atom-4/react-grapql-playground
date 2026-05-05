@@ -8,20 +8,20 @@ import { useDropZone } from '../useDropZone';
 
 // Mock DragEvent for test environment
 class MockDragEvent extends Event {
-  dataTransfer: any;
+  dataTransfer: { files: File[] };
 
-  constructor(type: string, init?: EventInit & { dataTransfer?: any }) {
+  constructor(type: string, init?: EventInit & { dataTransfer?: { files: File[] } }) {
     super(type, init);
     this.dataTransfer = init?.dataTransfer || {
       files: [],
     };
   }
 
-  preventDefault() {
+  preventDefault(): void {
     super.preventDefault();
   }
 
-  stopPropagation() {
+  stopPropagation(): void {
     super.stopPropagation();
   }
 }
