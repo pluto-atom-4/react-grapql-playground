@@ -24,7 +24,7 @@ export const FileUploadProgress: React.FC<FileUploadProgressProps> = ({
   progress,
   startTime,
   testId = 'file-upload-progress',
-}): JSX.Element => {
+}) => {
   const metrics = useMemo(() => {
     const elapsedMs = startTime ? Date.now() - startTime : 0;
     const uploadSpeedMbps = calculateUploadSpeed(progress.loaded, elapsedMs);
