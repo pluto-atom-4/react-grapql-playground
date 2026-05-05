@@ -97,7 +97,7 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    global.XMLHttpRequest = vi.fn(() => mockXhr) as any;
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
     const formData = new FormData();
@@ -124,7 +124,7 @@ describe('useUploadFile Hook', () => {
       timeout: 0,
     };
 
-    global.XMLHttpRequest = vi.fn(() => mockXhr) as any;
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
     const formData = new FormData();
