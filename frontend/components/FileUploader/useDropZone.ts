@@ -20,7 +20,6 @@ interface UseDropZoneOptions {
  */
 export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
   const [isDragActive, setIsDragActive] = useState(false);
-  const dragCounter = useState(0)[1];
 
   /**
    * Handles drag enter event
