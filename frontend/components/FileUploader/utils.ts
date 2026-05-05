@@ -25,7 +25,7 @@ export function validateFiles(files: File[], config: FileUploadConfig): Validati
 
   const maxSize = (config.maxSizeMB || FILE_CONFIG.MAX_SIZE_MB) * 1024 * 1024;
   const maxFiles = config.maxFiles || FILE_CONFIG.MAX_FILES;
-  const acceptedTypes = config.acceptedTypes || FILE_CONFIG.ACCEPTED_TYPES;
+  const acceptedTypes: string[] = config.acceptedTypes || FILE_CONFIG.ACCEPTED_TYPES;
 
   // Check file count
   if (files.length > maxFiles) {
