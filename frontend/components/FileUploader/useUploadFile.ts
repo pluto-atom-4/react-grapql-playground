@@ -12,7 +12,7 @@ import { getUploadEndpoint, RETRY_CONFIG } from './constants';
  *
  * @returns Object with uploadFile function and loading state
  */
-export function useUploadFile() {
+export function useUploadFile(): { uploadFile: (formData: FormData, abortController: AbortController, onProgress?: (progress: ProgressEvent) => void, attempt?: number) => Promise<UploadedFile>; loading: boolean; error: Error | null } {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
