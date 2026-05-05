@@ -78,8 +78,7 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
             try {
               // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse returns any
               const errorResponse = JSON.parse(xhr.responseText);
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Accessing property of any
-              errorMessage = errorResponse.message || errorMessage;
+              errorMessage = (errorResponse as Record<string, unknown>).message as string || errorMessage;
             } catch {
               // Use default error message if response is not JSON
             }
@@ -92,6 +91,7 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
               );
 
               setTimeout(() => {
+                // eslint-disable-next-line react-hooks/immutability -- Recursive call is safe within setTimeout
                 uploadFile(formData, abortController, onProgress, attempt + 1)
                   .then(resolve)
                   .catch(reject);

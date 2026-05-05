@@ -12,7 +12,7 @@
  * Total: 39 integration tests covering all Issue #6 acceptance criteria
  */
 
-/* eslint-disable no-undef */
+ 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**

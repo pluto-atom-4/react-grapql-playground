@@ -60,11 +60,12 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
-    const formData = new FormData();
-    const abortController = new AbortController();
+    const _formData = new FormData();
+    const _abortController = new AbortController();
 
     expect(result.current.uploadFile).toBeDefined();
   });
@@ -80,6 +81,7 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -112,6 +114,7 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -140,6 +143,7 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -171,13 +175,14 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
     const formData = new FormData();
     const abortController = new AbortController();
 
-    result.current.uploadFile(formData, abortController, progressCallback);
+    void result.current.uploadFile(formData, abortController, progressCallback);
     expect(progressCallback).toBeDefined();
   });
 });

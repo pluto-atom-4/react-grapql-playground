@@ -106,7 +106,7 @@ export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
     (): InputPropsReturn => ({
       type: 'file' as const,
       multiple: true,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange: (e: React.ChangeEvent<HTMLInputElement>): void => {
         if (e.target.files) {
           const files = Array.from(e.target.files);
           const result = onDrop(files);
