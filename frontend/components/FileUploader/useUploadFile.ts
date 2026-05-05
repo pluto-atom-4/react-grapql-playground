@@ -64,10 +64,11 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
 
           if (xhr.status === 200 || xhr.status === 201) {
             try {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse returns any
               const response: UploadedFile = JSON.parse(xhr.responseText);
               setError(null);
               resolve(response);
-            } catch (err) {
+            } catch {
               const parseError = new Error('Failed to parse server response');
               setError(parseError);
               reject(parseError);
@@ -75,7 +76,9 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
           } else {
             let errorMessage = `Upload failed with status ${xhr.status}`;
             try {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse returns any
               const errorResponse = JSON.parse(xhr.responseText);
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Accessing property of any
               errorMessage = errorResponse.message || errorMessage;
             } catch {
               // Use default error message if response is not JSON
