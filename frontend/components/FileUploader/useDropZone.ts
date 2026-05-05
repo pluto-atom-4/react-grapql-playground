@@ -18,6 +18,12 @@ interface RootPropsReturn {
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
 }
 
+interface InputPropsReturn {
+  type: 'file';
+  multiple: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
 /**
  * Custom hook for drag-and-drop file handling
  * Provides drag state management and event handlers for drop zones.
