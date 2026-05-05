@@ -15,7 +15,6 @@ import {
   estimateRemainingTime,
   formatTime,
 } from '../utils';
-import { FILE_CONFIG } from '../constants';
 
 describe('FileUploader Utilities', () => {
   describe('validateFiles', () => {
