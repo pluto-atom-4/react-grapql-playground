@@ -93,7 +93,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     setStatus('uploading');
     setErrorMessage(null);
     uploadAbortControllerRef.current = new AbortController();
-    uploadStartTimeRef.current = Date.now();
+    setUploadStartTime(Date.now());
 
     const newUploadedFiles: UploadedFile[] = [];
     let hasError = false;
