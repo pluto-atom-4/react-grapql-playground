@@ -26,6 +26,7 @@ export const FileUploadProgress: React.FC<FileUploadProgressProps> = ({
   testId = 'file-upload-progress',
 }) => {
   const metrics = useMemo(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Date.now() is needed to calculate elapsed time
     const elapsedMs = startTime ? Date.now() - startTime : 0;
     const uploadSpeedMbps = calculateUploadSpeed(progress.loaded, elapsedMs);
     const remainingSeconds = estimateRemainingTime(progress.total, progress.loaded, uploadSpeedMbps);
