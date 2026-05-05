@@ -9,6 +9,7 @@
  * - Ensure tests can run in parallel without state leakage
  */
 
+import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
 import { initializeLocalStorageMock, localStorageMock } from './localStorage-mock';
 
