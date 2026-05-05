@@ -91,10 +91,10 @@ describe('useUploadFile Hook', () => {
   });
 
   it('should call XMLHttpRequest open and send', async () => {
-    const mockXhr = {
+    const mockXhr: MockXHR = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
-      send: vi.fn(function () {
+      send: vi.fn(function (this: MockXHR) {
         this.status = 200;
         this.responseText = JSON.stringify({
           fileId: 'test-123',
@@ -126,7 +126,7 @@ describe('useUploadFile Hook', () => {
   });
 
   it('should handle abort signal', () => {
-    const mockXhr = {
+    const mockXhr: MockXHR = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
       send: vi.fn(),
@@ -137,6 +137,7 @@ describe('useUploadFile Hook', () => {
       }),
       abort: vi.fn(),
       timeout: 0,
+      onload: null,
     };
 
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
@@ -151,17 +152,13 @@ describe('useUploadFile Hook', () => {
 
   it('should track progress', () => {
     const progressCallback = vi.fn();
-    const mockXhr = {
+    const mockXhr: MockXHR = {
       upload: {
-        addEventListener: vi.fn((event: string, handler: Function) => {
+        addEventListener: vi.fn((event: string, handler: () => void) => {
           if (event === 'progress') {
             // Mock progress event
             setTimeout(() => {
-              handler({
-                lengthComputable: true,
-                loaded: 512,
-                total: 1024,
-              });
+              handler();
             }, 0);
           }
         }),
@@ -171,6 +168,7 @@ describe('useUploadFile Hook', () => {
       addEventListener: vi.fn(),
       abort: vi.fn(),
       timeout: 0,
+      onload: null,
     };
 
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
