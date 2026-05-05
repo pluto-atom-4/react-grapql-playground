@@ -9,7 +9,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import FileUploadProgress from './FileUploadProgress';
 import { useUploadFile } from './useUploadFile';
 import { useDropZone } from './useDropZone';
-import { validateFiles, formatFileSize, createFormData, getErrorMessage } from './utils';
+import { validateFiles, formatFileSize, createFormData } from './utils';
 import type { FileUploaderProps, FileUploadStatus, UploadedFile, ProgressEvent } from './types';
 
 /**
