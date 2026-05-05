@@ -6,6 +6,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUploadFile } from '../useUploadFile';
 
+interface MockXHR {
+  upload: { addEventListener: ReturnType<typeof vi.fn> };
+  open: ReturnType<typeof vi.fn>;
+  send: ReturnType<typeof vi.fn>;
+  addEventListener: ReturnType<typeof vi.fn>;
+  abort: ReturnType<typeof vi.fn>;
+  timeout: number;
+  onload: (() => void) | null;
+  onerror?: (() => void) | null;
+  onabort?: (() => void) | null;
+  ontimeout?: (() => void) | null;
+  status?: number;
+  responseText?: string;
+}
+
 describe('useUploadFile Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -24,7 +39,7 @@ describe('useUploadFile Hook', () => {
   });
 
   it('should accept formData, abortController, and progress callback', () => {
-    const mockXhr = {
+    const mockXhr: MockXHR = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
       send: vi.fn(function () {
@@ -50,19 +65,19 @@ describe('useUploadFile Hook', () => {
     const { result } = renderHook(() => useUploadFile());
     const formData = new FormData();
     const abortController = new AbortController();
-    const onProgress = vi.fn();
 
     expect(result.current.uploadFile).toBeDefined();
   });
 
   it('should return a promise', () => {
-    const mockXhr = {
+    const mockXhr: MockXHR = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
       send: vi.fn(),
       addEventListener: vi.fn(),
       abort: vi.fn(),
       timeout: 0,
+      onload: null,
     };
 
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
