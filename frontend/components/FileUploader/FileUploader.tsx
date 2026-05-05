@@ -254,7 +254,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           </div>
           <FileUploadProgress
             progress={progress}
-            startTime={uploadStartTimeRef.current || undefined}
+            startTime={uploadStartTime || undefined}
             testId={`${testId}-progress`}
           />
         </div>
