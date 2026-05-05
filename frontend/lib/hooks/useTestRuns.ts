@@ -15,7 +15,7 @@
 
 'use client';
 
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TEST_RUNS_QUERY } from '../graphql-queries';
 import type { TestRun, TestStatus, GetTestRunsQuery, GetTestRunsQueryVariables } from '../generated/graphql';
@@ -98,7 +98,6 @@ export function useTestRuns(
   const defaultPollInterval = options?.pollInterval ?? 2000;
 
   // Apollo useQuery for initial data fetch
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   const { data, loading, error, refetch: apolloRefetch } = useQuery<
     GetTestRunsQuery,
     GetTestRunsQueryVariables
@@ -107,7 +106,6 @@ export function useTestRuns(
     errorPolicy: 'all', // Continue polling even if error occurs
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   const testRuns = (data?.testRuns as TestRun[]) ?? [];
 
   // Polling state management
@@ -126,13 +124,11 @@ export function useTestRuns(
   /**
    * Wraps Apollo's refetch with type safety
    */
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const refetch = useCallback(
     async (): Promise<{ data: { testRuns: TestRun[] } }> => {
       if (!apolloRefetch) {
         return { data: { testRuns: [] } };
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const result = await apolloRefetch();
       return {
         data: {
@@ -241,7 +237,6 @@ export function useTestRuns(
     };
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   return {
     testRuns,
     loading,

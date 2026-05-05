@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import {
   useBuildDetail,
@@ -10,6 +10,9 @@ import {
   BuildStatus,
   TestStatus,
 } from '@/lib/apollo-hooks';
+import { useTestRuns } from '@/lib/hooks/useTestRuns';
+import type { TestRun } from '@/lib/generated/graphql';
+import { TestRunDetailsPanel } from './test-run-details-panel';
 import { useToast } from '@/lib/error-notifier';
 import './build-detail-modal.css';
 
@@ -18,13 +21,6 @@ interface Part {
   name: string;
   sku: string;
   quantity: number;
-}
-
-interface TestRun {
-  id: string;
-  status: string;
-  result?: string;
-  completedAt?: string;
 }
 
 interface BuildData {
@@ -48,9 +44,32 @@ function BuildDetailContent({
   const { updateStatus } = useUpdateBuildStatus();
   const { addPart } = useAddPart();
   const { submitTestRun } = useSubmitTestRun();
+  
+  // Polling hook for real-time test run updates
+  const { 
+    testRuns, 
+    error: testRunsError, 
+    startPolling, 
+    stopPolling, 
+    isPolling, 
+    refetch: refetchTestRuns 
+  } = useTestRuns(buildId);
+  
+  // State for selected test run (to show details panel)
+  const [selectedTestRunId, setSelectedTestRunId] = useState<string | null>(null);
+  
   const [isAddingPart, setIsAddingPart] = useState(false);
   const [isSubmittingTestRun, setIsSubmittingTestRun] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Start polling when modal opens, stop when closes
+  useEffect(() => {
+    startPolling(2000); // Poll every 2 seconds
+
+    return () => {
+      stopPolling(); // Cleanup on unmount
+    };
+  }, [buildId, startPolling, stopPolling]);
 
   if (loading) {
     return (
@@ -161,6 +180,17 @@ function BuildDetailContent({
 
   const buildData = build as BuildData;
 
+  // Show details panel OR table view based on selectedTestRunId
+  if (selectedTestRunId) {
+    return (
+      <TestRunDetailsPanel
+        buildId={buildId}
+        testRunId={selectedTestRunId}
+        onClose={() => setSelectedTestRunId(null)}
+      />
+    );
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e): void => e.stopPropagation()}>
@@ -220,8 +250,29 @@ function BuildDetailContent({
           </section>
 
           <section className="test-runs-section">
-            <h3>Test Runs ({buildData.testRuns?.length || 0})</h3>
-            {buildData.testRuns && buildData.testRuns.length > 0 ? (
+            <div className="test-runs-header">
+              <h3>Test Runs ({testRuns?.length || 0})</h3>
+              {/* Polling indicator */}
+              {isPolling && (
+                <div className="polling-indicator" data-testid="polling-indicator">
+                  <span className="pulse">●</span>
+                  <span className="polling-text">Live Updates</span>
+                </div>
+              )}
+            </div>
+
+            {/* Show polling error if it occurs */}
+            {testRunsError && (
+              <div className="alert alert-warning" data-testid="polling-error">
+                <p>Failed to fetch test run updates. Retrying...</p>
+                <button onClick={() => void refetchTestRuns()} className="btn btn-secondary">
+                  Retry Now
+                </button>
+              </div>
+            )}
+
+            {/* Test runs table with clickable rows */}
+            {testRuns && testRuns.length > 0 ? (
               <table className="test-runs-table">
                 <thead>
                   <tr>
@@ -231,15 +282,28 @@ function BuildDetailContent({
                   </tr>
                 </thead>
                 <tbody>
-                  {buildData.testRuns.map((run: TestRun) => (
-                    <tr key={run.id}>
+                  {testRuns.map((run: TestRun) => (
+                    <tr
+                      key={run.id}
+                      onClick={() => setSelectedTestRunId(run.id)}
+                      data-testid={`test-run-${run.id}`}
+                      className="clickable"
+                      role="button"
+                      tabIndex={0}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedTestRunId(run.id);
+                        }
+                      }}
+                      aria-label={`View details for test run ${run.id}`}
+                    >
                       <td>
                         <span className={`badge status-${run.status.toLowerCase()}`}>
                           {run.status}
                         </span>
                       </td>
                       <td>{run.result || '-'}</td>
-                      <td>{run.completedAt ? new Date(run.completedAt).toLocaleString() : '-'}</td>
+                      <td>{run.completedAt ? new Date(run.completedAt as string).toLocaleString() : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -247,6 +311,7 @@ function BuildDetailContent({
             ) : (
               <p className="empty-state">No test runs yet</p>
             )}
+
             <button
               onClick={handleSubmitTestRun}
               disabled={isSubmittingTestRun}
