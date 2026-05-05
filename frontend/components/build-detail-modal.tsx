@@ -66,7 +66,7 @@ function BuildDetailContent({
   useEffect(() => {
     startPolling(2000); // Poll every 2 seconds
 
-    return () => {
+    return (): void => {
       stopPolling(); // Cleanup on unmount
     };
   }, [buildId, startPolling, stopPolling]);
