@@ -126,6 +126,7 @@ describe('useDropZone Hook', () => {
     const dragOverEvent = createMockDragEvent('dragover');
     props.onDragOver(dragOverEvent);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn().toHaveBeenCalled() requires unbound method
     expect(dragOverEvent.preventDefault).toHaveBeenCalled();
   });
 
