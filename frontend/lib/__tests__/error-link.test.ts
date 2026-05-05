@@ -7,8 +7,13 @@ vi.mock('@/components/toast-notification', () => ({
   createToast: vi.fn(),
   dismissToast: vi.fn(),
   clearAllToasts: vi.fn(),
-  ToastContainer: () => null,
-  useToast: () => ({
+  ToastContainer: (): null => null,
+  useToast: (): {
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    warning: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+  } => ({
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),

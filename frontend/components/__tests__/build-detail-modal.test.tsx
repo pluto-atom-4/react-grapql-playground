@@ -6,7 +6,9 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
+import { BuildStatus, TestStatus } from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
+import { createMockBuild, createMockTestRun } from './mocks/build';
 
 // Mock the dependencies
 vi.mock('@/lib/apollo-hooks');
@@ -20,34 +22,32 @@ vi.mock('../test-run-details-panel', () => ({
   ),
 }));
 
-const mockBuildData = {
+const mockBuildData = createMockBuild({
   id: 'build-123',
-  name: 'Test Build',
-  status: 'RUNNING',
+  status: BuildStatus.Running,
   description: 'A test build',
-  parts: [
-    { id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5 },
-  ],
-  testRuns: [],
-};
+  parts: [{ id: 'part-1', name: 'Part 1', sku: 'SKU-001', quantity: 5, buildId: 'build-123', createdAt: new Date().toISOString() }],
+});
 
 const mockTestRuns = [
-  {
+  createMockTestRun({
     id: '1',
-    status: 'PASSED',
+    status: TestStatus.Passed,
     result: 'All tests passed',
     completedAt: '2026-04-16T10:00:00Z',
     fileUrl: 'https://example.com/report.pdf',
     createdAt: '2026-04-16T09:00:00Z',
-  },
-  {
+    buildId: 'build-123',
+  }),
+  createMockTestRun({
     id: '2',
-    status: 'RUNNING',
+    status: TestStatus.Running,
     result: undefined,
     completedAt: undefined,
     fileUrl: undefined,
     createdAt: '2026-04-16T11:00:00Z',
-  },
+    buildId: 'build-123',
+  }),
 ];
 
 describe('BuildDetailModal Integration Tests', () => {
@@ -59,18 +59,25 @@ describe('BuildDetailModal Integration Tests', () => {
       build: mockBuildData,
       loading: false,
       error: null,
+      refetch: vi.fn(),
     });
 
     vi.mocked(apolloHooks.useUpdateBuildStatus).mockReturnValue({
       updateStatus: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useAddPart).mockReturnValue({
       addPart: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(apolloHooks.useSubmitTestRun).mockReturnValue({
       submitTestRun: vi.fn().mockResolvedValue({}),
+      loading: false,
+      error: null,
     });
 
     vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
@@ -86,7 +93,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Polling Lifecycle', () => {
-    it('should start polling when component mounts', async () => {
+    it('should start polling when component mounts', async (): Promise<void> => {
       const startPolling = vi.fn();
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: mockTestRuns,
@@ -106,7 +113,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should stop polling when component unmounts', async () => {
+    it('should stop polling when component unmounts', async (): Promise<void> => {
       const stopPolling = vi.fn();
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: mockTestRuns,
@@ -128,7 +135,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should call useTestRuns hook with correct buildId', () => {
+    it('should call useTestRuns hook with correct buildId', (): void => {
       render(<BuildDetailModal buildId="build-456" onClose={vi.fn()} />);
 
       expect(testRunsHook.useTestRuns).toHaveBeenCalledWith('build-456');
@@ -136,7 +143,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Test Runs Table Display', () => {
-    it('should display polling indicator when isPolling is true', async () => {
+    it('should display polling indicator when isPolling is true', async (): Promise<void> => {
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: mockTestRuns,
         loading: false,
@@ -155,7 +162,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should not display polling indicator when isPolling is false', async () => {
+    it('should not display polling indicator when isPolling is false', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -163,7 +170,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should display all test runs in table', async () => {
+    it('should display all test runs in table', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -173,7 +180,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should display correct test run count in header', async () => {
+    it('should display correct test run count in header', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -181,7 +188,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should display empty state when no test runs', async () => {
+    it('should display empty state when no test runs', async (): Promise<void> => {
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: [],
         loading: false,
@@ -202,7 +209,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Test Run Row Interactions', () => {
-    it('should open details panel when clicking on test run row', async () => {
+    it('should open details panel when clicking on test run row', async (): Promise<void> => {
       const user = userEvent.setup();
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
@@ -217,7 +224,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should open details panel for correct test run', async () => {
+    it('should open details panel for correct test run', async (): Promise<void> => {
       const user = userEvent.setup();
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
@@ -232,11 +239,10 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should open details panel on Enter key press', async () => {
+    it('should open details panel on Enter key press', async (): Promise<void> => {
       // Note: This test checks that the row has proper keyboard event handling
       // The actual keyboard navigation is tested indirectly through the click tests above
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _user = userEvent.setup();
+
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -251,11 +257,10 @@ describe('BuildDetailModal Integration Tests', () => {
       expect(row).toBeInTheDocument();
     });
 
-    it('should open details panel on Space key press', async () => {
+    it('should open details panel on Space key press', async (): Promise<void> => {
       // Note: This test checks that the row has proper keyboard event handling
       // The actual keyboard navigation is tested indirectly through the click tests above
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _user = userEvent.setup();
+
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -270,7 +275,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Details Panel Lifecycle', () => {
-    it('should return to table view when closing details panel', async () => {
+    it('should return to table view when closing details panel', async (): Promise<void> => {
       const user = userEvent.setup();
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
@@ -294,7 +299,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should continue polling after closing details panel', async () => {
+    it('should continue polling after closing details panel', async (): Promise<void> => {
       const user = userEvent.setup();
       const startPolling = vi.fn();
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
@@ -331,7 +336,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('should display polling error when testRunsError exists', async () => {
+    it('should display polling error when testRunsError exists', async (): Promise<void> => {
       const mockError = new Error('Failed to fetch test runs');
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: [],
@@ -351,7 +356,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should call refetch when retry button is clicked', async () => {
+    it('should call refetch when retry button is clicked', async (): Promise<void> => {
       const user = userEvent.setup();
       const refetch = vi.fn().mockResolvedValue({ data: { testRuns: mockTestRuns } });
       const mockError = new Error('Failed to fetch');
@@ -381,7 +386,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Accessibility', () => {
-    it('should have proper ARIA labels on test run rows', async () => {
+    it('should have proper ARIA labels on test run rows', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -391,7 +396,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should have proper tabIndex on test run rows', async () => {
+    it('should have proper tabIndex on test run rows', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
@@ -400,7 +405,7 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
 
-    it('should have aria-hidden on polling indicator icon', async () => {
+    it('should have aria-hidden on polling indicator icon', async (): Promise<void> => {
       vi.mocked(testRunsHook.useTestRuns).mockReturnValue({
         testRuns: mockTestRuns,
         loading: false,
@@ -422,7 +427,7 @@ describe('BuildDetailModal Integration Tests', () => {
   });
 
   describe('Test Runs Data Display', () => {
-    it('should display correct test run status', () => {
+    it('should display correct test run status', (): void => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       // Check for test run statuses - there may be multiple RUNNING texts
@@ -432,7 +437,7 @@ describe('BuildDetailModal Integration Tests', () => {
       expect(runningElements.length).toBeGreaterThan(0);
     });
 
-    it('should display test run result or dash', () => {
+    it('should display test run result or dash', (): void => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       expect(screen.getByText('All tests passed')).toBeInTheDocument();
@@ -442,7 +447,7 @@ describe('BuildDetailModal Integration Tests', () => {
       expect(dashes.length).toBeGreaterThan(0);
     });
 
-    it('should format completed timestamp correctly', async () => {
+    it('should format completed timestamp correctly', async (): Promise<void> => {
       render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
 
       await waitFor(() => {
