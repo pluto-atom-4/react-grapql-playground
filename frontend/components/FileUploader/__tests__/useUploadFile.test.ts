@@ -42,7 +42,7 @@ describe('useUploadFile Hook', () => {
     const mockXhr: MockXHR = {
       upload: { addEventListener: vi.fn() },
       open: vi.fn(),
-      send: vi.fn(function () {
+      send: vi.fn(function (this: MockXHR) {
         this.status = 200;
         this.responseText = JSON.stringify({
           fileId: 'test-123',
