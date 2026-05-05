@@ -155,7 +155,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       });
     } finally {
       uploadAbortControllerRef.current = null;
-      uploadStartTimeRef.current = null;
+      setUploadStartTime(null);
     }
   }
 
