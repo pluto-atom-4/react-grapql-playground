@@ -84,7 +84,7 @@ export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
    * Returns props to spread on drop zone container
    */
   const getRootProps = useCallback(
-    (): ReturnType<typeof getRootProps> => ({
+    (): RootPropsReturn => ({
       onDragEnter: handleDragEnter,
       onDragLeave: handleDragLeave,
       onDrop: handleDrop,
