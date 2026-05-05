@@ -103,7 +103,7 @@ export function useDropZone({ onDrop }: UseDropZoneOptions): DropZoneReturn {
    * Returns props to spread on file input element
    */
   const getInputProps = useCallback(
-    () => ({
+    (): InputPropsReturn => ({
       type: 'file' as const,
       multiple: true,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
