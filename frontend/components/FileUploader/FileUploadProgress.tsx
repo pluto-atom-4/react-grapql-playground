@@ -3,7 +3,7 @@
  * Displays file upload progress with percentage and formatted details.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { ProgressEvent } from './types';
 import { calculateUploadSpeed, estimateRemainingTime, formatTime } from './utils';
 
@@ -24,11 +24,14 @@ export const FileUploadProgress: React.FC<FileUploadProgressProps> = ({
   progress,
   startTime,
   testId = 'file-upload-progress',
-}) => {
-  const elapsedMs = startTime ? Date.now() - startTime : 0;
-  const uploadSpeedMbps = calculateUploadSpeed(progress.loaded, elapsedMs);
-  const remainingSeconds = estimateRemainingTime(progress.total, progress.loaded, uploadSpeedMbps);
-  const etaString = formatTime(remainingSeconds);
+}): JSX.Element => {
+  const metrics = useMemo(() => {
+    const elapsedMs = startTime ? Date.now() - startTime : 0;
+    const uploadSpeedMbps = calculateUploadSpeed(progress.loaded, elapsedMs);
+    const remainingSeconds = estimateRemainingTime(progress.total, progress.loaded, uploadSpeedMbps);
+    const etaString = formatTime(remainingSeconds);
+    return { uploadSpeedMbps, etaString };
+  }, [progress, startTime]);
 
   return (
     <div data-testid={testId} className="w-full space-y-2">
@@ -51,16 +54,16 @@ export const FileUploadProgress: React.FC<FileUploadProgressProps> = ({
           <span className="font-semibold text-gray-700">{progress.percentage}%</span>
 
           {/* Speed if available */}
-          {uploadSpeedMbps > 0 && (
+          {metrics.uploadSpeedMbps > 0 && (
             <span className="text-gray-600">
-              {uploadSpeedMbps.toFixed(2)} Mbps
+              {metrics.uploadSpeedMbps.toFixed(2)} Mbps
             </span>
           )}
 
           {/* ETA if available */}
-          {remainingSeconds > 0 && (
+          {metrics.etaString && (
             <span className="text-gray-600">
-              ETA: {etaString}
+              ETA: {metrics.etaString}
             </span>
           )}
         </div>
