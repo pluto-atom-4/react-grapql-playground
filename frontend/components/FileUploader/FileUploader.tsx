@@ -61,7 +61,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const uploadAbortControllerRef = useRef<AbortController | null>(null);
   const uploadStartTimeRef = useRef<number | null>(null);
 
-  const { uploadFile, loading } = useUploadFile();
+  const { uploadFile } = useUploadFile();
   const { isDragActive, getRootProps, getInputProps } = useDropZone({
     onDrop: handleDrop,
   });
