@@ -124,7 +124,8 @@ export function useCreateBuild(): {
             if (data?.createBuild) {
               cache.modify({
                 fields: {
-                  builds(existing = []) {
+                  builds(existing) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment
                     return [data.createBuild, ...existing];
                   },
                 },
@@ -179,10 +180,13 @@ export function useUpdateBuildStatus(): {
             if (data?.updateBuildStatus) {
               cache.modify({
                 fields: {
-                  builds(existing = []) {
-                    return existing.map((b: Build) =>
-                      b.id === id ? { ...b, status } : b
-                    );
+                  builds(existing) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+                    const result = existing.map((b: unknown) => {
+                      return (b as Build).id === id ? { ...(b as Build), status } : b;
+                    });
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                    return result;
                   },
                 },
               });
@@ -247,10 +251,11 @@ export function useAddPart(): {
               cache.modify({
                 id: cache.identify({ __typename: 'Build', id: buildId }),
                 fields: {
-                  build(existing = {}) {
+                  build(existing) {
+                    const existingAsDetail = existing as Partial<BuildDetail>;
                     return {
-                      ...existing,
-                      parts: [...(existing.parts || []), data.addPart],
+                      ...existingAsDetail,
+                      parts: [...(existingAsDetail.parts || []), data.addPart],
                     };
                   },
                 },
@@ -317,10 +322,11 @@ export function useSubmitTestRun(): {
               cache.modify({
                 id: cache.identify({ __typename: 'Build', id: buildId }),
                 fields: {
-                  build(existing = {}) {
+                  build(existing) {
+                    const existingAsDetail = existing as Partial<BuildDetail>;
                     return {
-                      ...existing,
-                      testRuns: [...(existing.testRuns || []), data.submitTestRun],
+                      ...existingAsDetail,
+                      testRuns: [...(existingAsDetail.testRuns || []), data.submitTestRun],
                     };
                   },
                 },
