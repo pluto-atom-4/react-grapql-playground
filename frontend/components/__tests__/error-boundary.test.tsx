@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 // Component that throws during render
-const ThrowError = ({ shouldThrow = true, message = 'Test error message' }) => {
+const ThrowError = ({ shouldThrow = true, message = 'Test error message' }): JSX.Element => {
   if (shouldThrow) {
     throw new Error(message);
   }
@@ -17,7 +17,7 @@ const ThrowError = ({ shouldThrow = true, message = 'Test error message' }) => {
 
 // Component that throws conditionally for reset testing
 let shouldThrowRef = { value: true };
-const ConditionalThrow = () => {
+const ConditionalThrow = (): JSX.Element => {
   if (shouldThrowRef.value) {
     throw new Error('Conditional error');
   }
@@ -25,11 +25,11 @@ const ConditionalThrow = () => {
 };
 
 describe('ErrorBoundary', () => {
-  beforeEach(() => {
+  beforeEach((): void => {
     shouldThrowRef.value = true;
   });
 
-  it('should render children when no error occurs', () => {
+  it('should render children when no error occurs', (): void => {
     render(
       <ErrorBoundary>
         <div>Child Component</div>
@@ -39,7 +39,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Child Component')).toBeInTheDocument();
   });
 
-  it('should catch errors and display fallback UI', () => {
+  it('should catch errors and display fallback UI', (): void => {
     render(
       <ErrorBoundary>
         <ThrowError />
@@ -50,7 +50,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Test error message')).toBeInTheDocument();
   });
 
-  it('should display reset button in fallback UI', () => {
+  it('should display reset button in fallback UI', (): void => {
     render(
       <ErrorBoundary>
         <ThrowError />
@@ -61,7 +61,7 @@ describe('ErrorBoundary', () => {
     expect(button).toBeInTheDocument();
   });
 
-  it('should reset error state when reset button is clicked', async () => {
+  it('should reset error state when reset button is clicked', async (): Promise<void> => {
     const user = userEvent.setup();
     const { rerender } = render(
       <ErrorBoundary>
@@ -90,8 +90,8 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Conditional Component Recovered')).toBeInTheDocument();
   });
 
-  it('should support custom fallback UI', () => {
-    const customFallback = (error: Error, reset: () => void) => (
+  it('should support custom fallback UI', (): void => {
+    const customFallback = (error: Error, reset: () => void): JSX.Element => (
       <div>
         <h2>Custom Error UI</h2>
         <p>{error.message}</p>
@@ -110,8 +110,8 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('button', { name: /custom reset/i })).toBeInTheDocument();
   });
 
-  it('should catch errors from deeply nested components', () => {
-    const NestedComponent = () => (
+  it('should catch errors from deeply nested components', (): void => {
+    const NestedComponent = (): JSX.Element => (
       <div>
         <div>
           <ThrowError message="Nested error" />
@@ -129,7 +129,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Nested error')).toBeInTheDocument();
   });
 
-  it('should preserve error message in state after catch', () => {
+  it('should preserve error message in state after catch', (): void => {
     const errorMessage = 'Specific error message';
 
     render(
@@ -141,8 +141,8 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
   });
 
-  it('should catch errors from multiple component types', () => {
-    const ChildComponent = ({ shouldFail }: { shouldFail: boolean }) => {
+  it('should catch errors from multiple component types', (): void => {
+    const ChildComponent = ({ shouldFail }: { shouldFail: boolean }): JSX.Element => {
       if (shouldFail) throw new Error('Child component error');
       return <div>Child success</div>;
     };
@@ -156,7 +156,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
 
-  it('should render default fallback when custom fallback is undefined', () => {
+  it('should render default fallback when custom fallback is undefined', (): void => {
     render(
       <ErrorBoundary fallback={undefined}>
         <ThrowError message="Default fallback test" />
@@ -167,7 +167,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Default fallback test')).toBeInTheDocument();
   });
 
-  it('should make reset button keyboard accessible', () => {
+  it('should make reset button keyboard accessible', (): void => {
     render(
       <ErrorBoundary>
         <ThrowError />
@@ -178,7 +178,7 @@ describe('ErrorBoundary', () => {
     expect(button).toHaveAttribute('type', 'button');
   });
 
-  it('should display reset button with correct class', () => {
+  it('should display reset button with correct class', (): void => {
     render(
       <ErrorBoundary>
         <ThrowError />
@@ -189,8 +189,8 @@ describe('ErrorBoundary', () => {
     expect(button).toHaveClass('error-boundary-reset-btn');
   });
 
-  it('should prevent error propagation to parent boundary', () => {
-    const OuterComponent = ({ children }: { children: React.ReactNode }) => (
+  it('should prevent error propagation to parent boundary', (): void => {
+    const OuterComponent = ({ children }: { children: React.ReactNode }): JSX.Element => (
       <div>{children}</div>
     );
 
