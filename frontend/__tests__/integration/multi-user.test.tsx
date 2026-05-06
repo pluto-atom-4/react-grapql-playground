@@ -35,9 +35,9 @@ function UserDashboard() {
   React.useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      (() => {
+      expect(() => {
         setLoading(false);
-      }, 0);
+      }).not.toThrow();
       return;
     }
 
@@ -65,7 +65,7 @@ function UserDashboard() {
       }
 
       setLoading(false);
-    }, 0);
+    })();
   }, []);
 
   if (loading) return <div>Loading...</div>;
