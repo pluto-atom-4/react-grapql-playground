@@ -151,6 +151,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
       )}
 
       <CreateBuildModal
+        key={`modal-${isCreateModalOpen}`}
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateBuild}

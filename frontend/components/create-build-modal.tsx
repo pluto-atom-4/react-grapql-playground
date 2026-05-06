@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactElement, SubmitEvent, useEffect } from "react";
+import { useState, type ReactElement, SubmitEvent } from "react";
 
 interface CreateBuildModalProps {
   isOpen: boolean;
@@ -17,13 +17,6 @@ export function CreateBuildModal({
 }: CreateBuildModalProps): ReactElement | null {
   const [buildName, setBuildName] = useState('');
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!isOpen) {
-      setBuildName('');
-      setError('');
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
