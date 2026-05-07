@@ -23,5 +23,50 @@
     ],
     "efficiency_target": "3x speedup for independent 60-minute tasks",
     "documentation": ".copilot/PARALLEL-EXECUTION-GUIDE.md"
+  },
+  "github_issue_orchestration": {
+    "enabled": true,
+    "description": "Orchestrator delegates multiple agents to GitHub issues using feature branching",
+    "workflow_type": "multi-agent-issue-parallel",
+    "feature_branch_convention": "feat/issue-#<issue-number>-<kebab-case-description>",
+    "commit_message_convention": "<type>: #<issue> <description>",
+    "agent_workflow": {
+      "step_1": "git branch feat/issue-#<N>-<name> origin/main",
+      "step_2": "git switch feat/issue-#<N>-<name>",
+      "step_3": "Implement issue solution (code, tests, docs)",
+      "step_4": "git commit -m 'type: #<N> description'",
+      "step_5": "git push -u origin feat/issue-#<N>-<name>",
+      "step_6": "gh pr create --base main --title 'feat: #<N> - Description'"
+    },
+    "orchestrator_responsibilities": [
+      "Analyze GitHub issue dependencies",
+      "Create feature branches for parallel execution",
+      "Create git worktrees for isolated agent environments",
+      "Dispatch agents with issue-specific assignments",
+      "Monitor PR creation and test status",
+      "Resolve blockers and manage merges",
+      "Optional: Create review consolidation branch for multi-PR verification"
+    ],
+    "git_worktree_setup": {
+      "command_template": "git worktree add ../feat-<N> feat/issue-#<N>-<name>",
+      "cleanup": "git worktree remove ../feat-<N> (after PR merge)",
+      "max_concurrent_worktrees": 5
+    },
+    "reviewer_pattern": {
+      "enabled": true,
+      "description": "Reviewer agent can create integration review branch to merge all feature branches",
+      "use_case": [
+        "Verify all features merge cleanly",
+        "Run full test suite on combined changes",
+        "Check cross-issue integration",
+        "Approve or request changes per PR"
+      ]
+    },
+    "merge_strategy": {
+      "blocking_dependencies": "Merge in dependency order",
+      "zero_dependencies": "Merge in any order (use --merge or --squash)",
+      "conflict_resolution": "Orchestrator investigates and notifies agent"
+    },
+    "documentation": ".copilot/orchestrator-github-issues.md"
   }
 }
