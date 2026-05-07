@@ -83,7 +83,7 @@ export function ToastContainer(): React.ReactElement {
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none"
+      className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 flex flex-col gap-2.5 max-w-[400px] sm:max-w-[400px] pointer-events-none"
       role="region"
       aria-live="polite"
       aria-label="Notifications"
@@ -110,7 +110,7 @@ function ToastItem({ id, message, type }: Toast): React.ReactElement {
     }
   };
 
-  const baseClasses = "flex items-center justify-between px-4 py-4 rounded-lg bg-white shadow-lg animate-in slide-in-from-right pointer-events-auto text-sm leading-normal max-w-full";
+  const baseClasses = "flex items-center justify-between px-3 sm:px-4 py-3 sm:py-4 rounded-lg bg-white shadow-lg animate-slide-in pointer-events-auto text-xs sm:text-sm leading-normal max-w-full";
   const typeClasses = {
     success: "border-l-4 border-l-emerald-500",
     error: "border-l-4 border-l-red-500",

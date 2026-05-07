@@ -73,7 +73,7 @@ function BuildDetailContent({
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-white rounded-lg max-w-2xl w-11/12 max-h-screen overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
+        <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
           <p>Loading build details...</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ function BuildDetailContent({
         : 'Unknown error';
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-white rounded-lg max-w-2xl w-11/12 max-h-screen overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
+        <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
           <p className="text-red-600 px-4 py-4 bg-red-100 border border-red-400 rounded">Failed to load build: {errorMessage}</p>
           <button onClick={onClose} className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800">
             Close
@@ -192,7 +192,7 @@ function BuildDetailContent({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-2xl w-11/12 max-h-screen overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
+      <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
         <div className="flex justify-between items-center px-6 py-6 border-b border-gray-200">
           <h2 className="m-0 text-2xl text-gray-800">{buildData.name}</h2>
           <button onClick={onClose} className="bg-none border-none text-2xl cursor-pointer text-gray-600 px-0 py-0 w-10 h-10 flex items-center justify-center hover:text-gray-800">

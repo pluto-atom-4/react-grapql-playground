@@ -68,7 +68,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
 
   if (shouldShowLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-8 py-8">
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
         <p>Loading builds...</p>
       </div>
     );
@@ -77,7 +77,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   const errorMessage = error instanceof Error ? error.message : String(error);
   if (error && !initialBuilds) {
     return (
-      <div className="max-w-6xl mx-auto px-8 py-8">
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
         <p className="text-red-600 px-4 py-4 bg-red-100 border border-red-400 rounded">Error: {errorMessage}</p>
       </div>
     );
@@ -196,7 +196,7 @@ export default function BuildDashboard({
   serverError,
 }: BuildDashboardProps): ReactElement {
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="max-w-[1200px] mx-auto px-8 py-8">
       {serverError && (
         <div className="flex justify-between items-center gap-4 mb-4 px-4 py-4 bg-yellow-100 border border-yellow-400 rounded">
           <p>Server error loading builds: {serverError}. Attempting to load client-side...</p>
