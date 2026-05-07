@@ -83,7 +83,7 @@ export function ToastContainer(): React.ReactElement {
 
   return (
     <div
-      className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 flex flex-col gap-2.5 max-w-[400px] sm:max-w-[400px] pointer-events-none"
+      className="fixed bottom-4 left-4 right-4 sm:bottom-5 sm:left-auto sm:right-5 z-50 flex flex-col gap-2.5 sm:max-w-[400px] pointer-events-none"
       role="region"
       aria-live="polite"
       aria-label="Notifications"
