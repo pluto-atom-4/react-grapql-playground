@@ -6,7 +6,6 @@ import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
 import BuildDetailModal from './build-detail-modal';
 import { CreateBuildModal } from './create-build-modal';
 import type { Build } from '@/lib/generated/graphql';
-import './build-dashboard.css';
 
 interface BuildItem {
   id: string;
@@ -69,7 +68,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
 
   if (shouldShowLoading) {
     return (
-      <div className="dashboard-container">
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
         <p>Loading builds...</p>
       </div>
     );
@@ -78,67 +77,81 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   const errorMessage = error instanceof Error ? error.message : String(error);
   if (error && !initialBuilds) {
     return (
-      <div className="dashboard-container">
-        <p className="error">Error: {errorMessage}</p>
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
+        <p className="text-red-600 px-4 py-4 bg-red-100 border border-red-400 rounded">Error: {errorMessage}</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="dashboard-header">
-        <h1>Build Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="m-0 text-4xl text-gray-800">Build Dashboard</h1>
         <button
           onClick={() => setIsCreateModalOpen(true)}
           disabled={isCreating}
           data-testid="create-build-button"
-          className="btn btn-primary"
+          className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isCreating ? 'Creating...' : 'Create Build'}
         </button>
       </div>
 
       {builds.length === 0 ? (
-        <p className="empty-state" data-testid="empty-state">
+        <p className="text-center py-8 text-gray-600" data-testid="empty-state">
           No builds yet. Create one to get started!
         </p>
       ) : (
-        <table className="builds-table" data-testid="builds-list">
+        <table className="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden" data-testid="builds-list">
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Action</th>
+            <tr className="bg-gray-100 border-b-2 border-gray-300">
+              <th className="px-4 py-4 text-left font-semibold text-gray-700">Name</th>
+              <th className="px-4 py-4 text-left font-semibold text-gray-700">Status</th>
+              <th className="px-4 py-4 text-left font-semibold text-gray-700">Created</th>
+              <th className="px-4 py-4 text-left font-semibold text-gray-700">Action</th>
             </tr>
           </thead>
           <tbody>
-            {builds.map((build: BuildItem) => (
-              <tr
-                key={build.id}
-                className={`status-${build.status.toLowerCase()}`}
-                data-testid={`build-${build.id}`}
-              >
-                <td data-testid="build-name">{build.name}</td>
-                <td>
-                  <span
-                    className={`badge status-${build.status.toLowerCase()}`}
-                    data-testid="build-status"
-                  >
-                    {build.status}
-                  </span>
-                </td>
-                <td>{new Date(build.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <button
-                    onClick={(): void => setSelectedBuildId(build.id)}
-                    className="btn btn-secondary"
-                  >
-                    View Details
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {builds.map((build: BuildItem) => {
+              const statusClassName = `border-l-4 ${
+                build.status.toLowerCase() === 'pending' ? 'border-l-yellow-500' :
+                build.status.toLowerCase() === 'running' ? 'border-l-cyan-600' :
+                build.status.toLowerCase() === 'complete' ? 'border-l-green-600' :
+                'border-l-red-600'
+              }`;
+              return (
+                <tr
+                  key={build.id}
+                  className={`border-b border-gray-200 hover:bg-gray-50 ${statusClassName}`}
+                  data-testid={`build-${build.id}`}
+                >
+                  <td className="px-4 py-4 border-b border-gray-100" data-testid="build-name">{build.name}</td>
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <span
+                      className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+                        build.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-900' :
+                        build.status.toLowerCase() === 'running' ? 'bg-cyan-100 text-cyan-900' :
+                        build.status.toLowerCase() === 'complete' ? 'bg-green-100 text-green-900' :
+                        build.status.toLowerCase() === 'passed' ? 'bg-green-100 text-green-900' :
+                        'bg-red-100 text-red-900'
+                      }`}
+                      data-testid="build-status"
+                    >
+                      {build.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <button
+                      onClick={(): void => setSelectedBuildId(build.id)}
+                      className="px-5 py-2.5 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
@@ -183,9 +196,9 @@ export default function BuildDashboard({
   serverError,
 }: BuildDashboardProps): ReactElement {
   return (
-    <div className="dashboard-container">
+    <div className="max-w-[1200px] mx-auto px-8 py-8">
       {serverError && (
-        <div className="alert alert-warning">
+        <div className="flex justify-between items-center gap-4 mb-4 px-4 py-4 bg-yellow-100 border border-yellow-400 rounded">
           <p>Server error loading builds: {serverError}. Attempting to load client-side...</p>
         </div>
       )}
