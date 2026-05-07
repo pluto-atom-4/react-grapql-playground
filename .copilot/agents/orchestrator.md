@@ -644,12 +644,164 @@ Timing Check:
   → Total > 30 min? ✅ Parallelization justified
 ```
 
+## GitHub Issue Orchestration (Multi-Agent Parallel Execution)
+
+### When to Use GitHub Issue Orchestration
+
+Use this pattern when:
+
+✅ **Multiple independent GitHub issues** need to be worked on in parallel  
+✅ **Zero blocking dependencies** between issues  
+✅ **Different developers** can work on each issue simultaneously  
+✅ **Time-critical delivery** (e.g., Phase 4 UX work before interview prep)  
+✅ **Clear acceptance criteria** exist for each issue  
+
+### Orchestrator's GitHub Issue Workflow
+
+**Phase 1: Preparation (Before Dispatch)**
+
+1. **Fetch and Analyze Issues**
+   ```bash
+   gh issue list --state open --json number,title,labels
+   # Review dependencies in implementation planning docs
+   ```
+
+2. **Create Feature Branches**
+   ```bash
+   git branch feat/issue-#34-pagination origin/main
+   git branch feat/issue-#35-skeletons origin/main
+   git branch feat/issue-#39-tailwind origin/main
+   git branch feat/issue-#40-accessibility origin/main
+   ```
+
+3. **Create Git Worktrees** (isolated environments per agent)
+   ```bash
+   git worktree add ../feat-34 feat/issue-#34-pagination
+   git worktree add ../feat-35 feat/issue-#35-skeletons
+   git worktree add ../feat-39 feat/issue-#39-tailwind
+   git worktree add ../feat-40 feat/issue-#40-accessibility
+   ```
+
+4. **Assign Agents and Dispatch**
+   - Agent 1 → Issue #34 (Pagination, 1.75h)
+   - Agent 2 → Issue #35 (Skeletons, 2.25h)
+   - Agent 3 → Issue #39 (Tailwind, 1.5h)
+   - Agent 4 → Issue #40 (Accessibility, 3.5h)
+
+**Phase 2: Execution (During Development)**
+
+1. **Agent Workflow (Each Agent)**
+   ```bash
+   # Step 1: Switch to feature branch
+   cd ../feat-<N>
+   git switch feat/issue-#<N>-<name>
+   
+   # Step 2: Implement solution (code, tests, docs)
+   # Reference: PHASE-4-ISSUE-BREAKDOWN.md for details
+   
+   # Step 3: Atomic commits
+   git commit -m "feat: #<N> description"
+   
+   # Step 4: Push and create PR
+   git push -u origin feat/issue-#<N>-<name>
+   gh pr create --base main --title "feat: #<N> - Description"
+   ```
+
+2. **Orchestrator Monitoring**
+   - Check PR creation progress: `gh pr list --state open`
+   - Monitor test status: `gh pr view <pr-number>`
+   - Check agent commits: `git log main..feat/issue-#<N>-* --oneline`
+   - Resolve blockers immediately
+
+**Phase 3: Review & Merge**
+
+1. **Reviewer Integration** (Optional)
+   ```bash
+   # Create review consolidation branch
+   git branch feat/phase-4-integration-review origin/main
+   git switch feat/phase-4-integration-review
+   
+   # Merge all feature branches
+   git merge feat/issue-#34-pagination
+   git merge feat/issue-#35-skeletons
+   git merge feat/issue-#39-tailwind
+   git merge feat/issue-#40-accessibility
+   
+   # Run full test suite
+   pnpm test --run
+   ```
+
+2. **Merge PRs** (Can merge in any order if zero dependencies)
+   ```bash
+   gh pr merge 34 --merge
+   gh pr merge 35 --merge
+   gh pr merge 39 --merge
+   gh pr merge 40 --merge
+   ```
+
+3. **Cleanup Worktrees**
+   ```bash
+   git worktree remove ../feat-34
+   git worktree remove ../feat-35
+   git worktree remove ../feat-39
+   git worktree remove ../feat-40
+   ```
+
+### Feature Branch Naming Convention
+
+**Pattern:** `feat/issue-#<issue-number>-<kebab-case-description>`
+
+**Examples:**
+```
+feat/issue-#34-pagination
+feat/issue-#35-skeletons
+feat/issue-#39-tailwind
+feat/issue-#40-accessibility
+feat/issue-#121-jwt-auth
+```
+
+### Commit Message Convention
+
+**Pattern:** `<type>: #<issue> <description>`
+
+**Examples:**
+```
+feat: #34 add pagination component with GraphQL support
+fix: #35 prevent CLS on skeleton animations
+refactor: #39 migrate custom CSS to Tailwind
+feat: #40 add ARIA labels and keyboard navigation
+```
+
+### Success Criteria
+
+✅ All feature branches created and isolated  
+✅ All agents dispatched to their issue worktrees  
+✅ All PRs created with comprehensive descriptions  
+✅ All tests passing (741+ for Phase 4)  
+✅ No merge conflicts  
+✅ All acceptance criteria met per issue  
+✅ All PRs merged to main  
+✅ Worktrees cleaned up  
+
+### Phase 4 Execution (Current)
+
+**Issues:** #34 (Pagination), #35 (Skeletons), #39 (Tailwind), #40 (Accessibility)  
+**Duration:** 3-4 hours parallel, 9.5 hours sequential  
+**Status:** Ready for immediate dispatch  
+**Reference:** `.copilot/phase-4-orchestration-quick-reference.md`  
+
+---
+
 ## Related Resources
 
-- `.github/copilot-instructions.md`: Build commands and architecture overview
+- `.copilot/orchestrator-github-issues.md`: Detailed GitHub issue orchestration guide
+- `.copilot/phase-4-orchestration-quick-reference.md`: Quick reference for Phase 4 execution
 - `.copilot/PARALLEL-EXECUTION-GUIDE.md`: Complete git worktree + parallel coordination guide
 - `.copilot/agents/tester.md`: Tester responsibilities and parallel test execution mode
 - `.copilot/agents/developer.md`: Developer layer responsibilities and parallel development
+- `.copilot/agents/reviewer.md`: Reviewer pattern for multi-PR consolidation
 - `DESIGN.md`: Core architecture patterns and three-layer communication
 - `CLAUDE.md`: Detailed tech stack and integration points
 - `.copilot/agents/product-manager.md`: Feature requirements and priorities
+- `docs/implementation-planning/PHASE-4-DEPENDENCIES.md`: Dependency analysis for Phase 4
+- `docs/implementation-planning/PHASE-4-ISSUE-BREAKDOWN.md`: Detailed per-issue breakdown
