@@ -122,7 +122,7 @@ Both backends can share the same PostgreSQL database and authentication, but ope
 **Responsibilities**:
 
 - Query/mutation operations on manufacturing domain
-- DataLoader for efficient N+1 prevention (planned, not yet implemented)
+- DataLoader for efficient N+1 prevention ✅
 - Error handling and validation
 - Authorization checks (planned)
 - Emit events to Express event bus for real-time updates (TODO: currently stub only)
@@ -131,7 +131,7 @@ Both backends can share the same PostgreSQL database and authentication, but ope
 
 - Queries: `builds(limit, offset)`, `build(id)`, `testRuns(buildId)` ✅
 - Mutations: `createBuild`, `updateBuildStatus`, `addPart`, `submitTestRun` ✅
-- DataLoader: **Planned** - not yet implemented (marked as TODO in resolvers)
+- DataLoader: ✅ **Implemented** - Prevents N+1 queries when resolving nested parts and test runs
 - Real-time Events: **Stub** - calls console.log, no actual emission to Express (Issue #7)
 
 ### GraphQL Schema (Domain Model)
@@ -259,35 +259,137 @@ export const buildResolvers = {
 
 ### DataLoader for N+1 Prevention
 
-**Status**: ✅ **DESIGNED** | 🔴 **NOT YET IMPLEMENTED**
+**Status**: ✅ **IMPLEMENTED**
+
+DataLoader prevents N+1 queries by batching database requests within a single GraphQL request.
+
+#### Backend Setup: Creating Loaders
 
 ```typescript
-// backend-graphql/src/dataloaders/partLoader.ts (PLANNED)
-import DataLoader from "dataloader";
+// backend-graphql/src/dataloaders/index.ts (ACTUAL IMPLEMENTATION)
+import DataLoader from 'dataloader';
+import { PrismaClient, Part, TestRun } from '@prisma/client';
 
-export const createPartLoader = (db) => {
-  return new DataLoader(async (buildIds) => {
-    const parts = await db.parts.findMany({
-      where: {buildId: {in: buildIds}},
+/**
+ * BuildPartLoader prevents N+1 queries when resolving parts for multiple builds.
+ *
+ * Example without DataLoader (N+1 problem):
+ *   - Query: builds(limit: 100)          → 1 query for 100 builds
+ *   - Resolver: build.parts              → 100 queries (one per build!)
+ *   - Total: 101 queries
+ *
+ * Example with DataLoader (batch query):
+ *   - Query: builds(limit: 100)          → 1 query for 100 builds
+ *   - Resolver: buildLoader.load(id)     → batches into 1 query for all parts
+ *   - Total: 2 queries
+ */
+export function createBuildPartLoader(prisma: PrismaClient) {
+  return new DataLoader(async (buildIds: readonly string[]) => {
+    const parts = await prisma.part.findMany({
+      where: { buildId: { in: buildIds as string[] } },
     });
 
-    // Return array in same order as buildIds
-    return buildIds.map(id =>
-      parts.filter(p => p.buildId === id)
-    );
+    // Group parts by buildId and return in same order as buildIds
+    const partsByBuildId: Record<string, typeof parts> = {};
+    parts.forEach((part) => {
+      if (!partsByBuildId[part.buildId]) {
+        partsByBuildId[part.buildId] = [];
+      }
+      partsByBuildId[part.buildId].push(part);
+    });
+
+    return buildIds.map((buildId) => partsByBuildId[buildId] || []);
   });
+}
+
+/**
+ * TestRunLoader prevents N+1 queries when resolving test runs for multiple builds.
+ */
+export function createBuildTestRunLoader(prisma: PrismaClient) {
+  return new DataLoader(async (buildIds: readonly string[]) => {
+    const testRuns = await prisma.testRun.findMany({
+      where: { buildId: { in: buildIds as string[] } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const testRunsByBuildId: Record<string, typeof testRuns> = {};
+    testRuns.forEach((testRun) => {
+      if (!testRunsByBuildId[testRun.buildId]) {
+        testRunsByBuildId[testRun.buildId] = [];
+      }
+      testRunsByBuildId[testRun.buildId].push(testRun);
+    });
+
+    return buildIds.map((buildId) => testRunsByBuildId[buildId] || []);
+  });
+}
+
+export interface DataLoaders {
+  buildPartLoader: DataLoader<string, Part[]>;
+  buildTestRunLoader: DataLoader<string, TestRun[]>;
+}
+
+export function createLoaders(prisma: PrismaClient): DataLoaders {
+  return {
+    buildPartLoader: createBuildPartLoader(prisma),
+    buildTestRunLoader: createBuildTestRunLoader(prisma),
+  };
+}
+```
+
+#### Server Context: Providing Loaders Per Request
+
+```typescript
+// backend-graphql/src/index.ts
+const server = new ApolloServer<BuildContext>({
+  typeDefs,
+  resolvers,
+});
+
+// In the context function, create fresh loaders for each request
+app.use(
+  '/graphql',
+  expressMiddleware(server, {
+    context: async ({ req }) => {
+      const loaders = createLoaders(prisma);
+      return {
+        user: extractUserFromToken(req.headers.authorization as string),
+        prisma,
+        buildPartLoader: loaders.buildPartLoader,
+        buildTestRunLoader: loaders.buildTestRunLoader,
+      };
+    },
+  })
+);
+```
+
+#### Resolver Usage: Calling Loaders
+
+```typescript
+// backend-graphql/src/resolvers/Build.ts
+export const buildResolver = {
+  Build: {
+    async parts(parent: BuildParent, _args: unknown, context: GraphQLContext) {
+      // DataLoader batches all .load() calls in this request into a single query
+      return context.buildPartLoader.load(parent.id);
+    },
+
+    async testRuns(parent: BuildParent, _args: unknown, context: GraphQLContext) {
+      return context.buildTestRunLoader.load(parent.id);
+    },
+  },
 };
 ```
 
-**Current Approach**: Resolvers fetch data directly without batch loading.
+**How It Works**:
 
-- `Query.builds()` returns paginated results (no DataLoader needed)
-- `Build.parts` and `Build.testRuns` are NOT yet implemented (would benefit from DataLoader)
+1. **Per-Request Loaders**: Fresh DataLoader instances are created for each GraphQL request
+2. **Batching Within Request**: All `loader.load(id)` calls within a single request are collected
+3. **Single DB Query**: Before resolving, DataLoader executes ONE query with all collected IDs
+4. **Automatic Cleanup**: After the request completes, loaders are discarded (prevents stale cache)
 
-**Interview Talking Point** (when implemented):
-> "DataLoader prevents N+1 queries by batching related queries together. If a dashboard loads 50 builds with nested
-> parts, DataLoader combines 50 individual part queries into a single database query using `IN` clauses—reducing database
-> round trips from 1+50M to 1+1."
+**Interview Talking Point**:
+> "DataLoader prevents N+1 queries by batching related queries together. If a dashboard loads 50 builds with nested parts and test runs, DataLoader combines 50 individual queries into a single database query using `IN` clauses—reducing database round trips from 1+50M to 1+1."
 
 ---
 
@@ -791,6 +893,108 @@ export function RealtimeListener() {
 }
 ```
 
+#### Frontend Impact of Backend DataLoaders
+
+The frontend doesn't explicitly call DataLoaders, but **benefits significantly from them when querying nested data**.
+
+**How it works**:
+
+When the frontend executes a query with nested relationships, the backend uses DataLoaders to prevent N+1 queries:
+
+```typescript
+// frontend/lib/graphql-queries.ts
+export const BUILD_DETAIL_QUERY = gql`
+  query GetBuildDetail($id: ID!) {
+    build(id: $id) {
+      id
+      name
+      status
+      parts {                  # These trigger DataLoader on backend
+        id
+        name
+        sku
+      }
+      testRuns {               # These also trigger DataLoader on backend
+        id
+        status
+        result
+      }
+    }
+  }
+`;
+```
+
+**Frontend usage** (transparent to the developer):
+
+```typescript
+// frontend/lib/apollo-hooks.ts
+export function useBuildDetail(buildId: string) {
+  const { data, loading, error, refetch } = useQuery<{ build: BuildDetail }>(
+    BUILD_DETAIL_QUERY,
+    { variables: { id: buildId } }
+  );
+  
+  // Apollo caches the full nested result (build + parts + testRuns)
+  return {
+    build: data?.build,
+    loading,
+    error,
+    refetch,
+  };
+}
+```
+
+**Performance benefit on frontend**:
+
+When loading a dashboard with multiple builds and their nested data:
+
+```typescript
+// Server-side: Fetch initial builds with parts and test runs
+export default async function Dashboard() {
+  const client = getClient();
+  const { data } = await client.query({
+    query: gql`
+      query GetDashboard {
+        builds(limit: 50, offset: 0) {
+          id
+          name
+          status
+          parts { id name }         # DataLoader prevents 50 part queries
+          testRuns { id status }    # DataLoader prevents 50 test run queries
+        }
+      }
+    `
+  });
+  
+  // Backend executes:
+  // 1. SELECT * FROM builds LIMIT 50           (1 query)
+  // 2. SELECT * FROM parts WHERE buildId IN(...) (batched by DataLoader, 1 query)
+  // 3. SELECT * FROM testRuns WHERE buildId IN(...) (batched by DataLoader, 1 query)
+  // Total: 3 queries instead of 101!
+  
+  return <BuildsDashboard initialBuilds={data.builds} />;
+}
+```
+
+**Cache behavior**:
+
+- Apollo Client caches the entire nested query result
+- If the dashboard loads 50 builds with parts and testRuns, **the whole tree is cached**
+- Subsequent queries for the same data use cache (no network request)
+- Mutations that update a build invalidate its cache entry, forcing a re-fetch
+
+**When DataLoader matters most**:
+
+1. ✅ **Dashboard with many builds**: 50 builds × (parts + testRuns) requires DataLoader
+2. ✅ **List pages with nested data**: Loading multiple items with relationships
+3. ✅ **Batch operations**: When a single query returns many root-level items
+
+**When it doesn't matter**:
+
+- ❌ Single item queries (e.g., get one build by ID): Only 1-3 queries anyway
+- ❌ Flat queries without nesting: No N+1 risk
+- ❌ Pagination without nesting: Each page is independent
+
 #### Performance Implications
 
 | Metric | Server Components | Client Components |
@@ -1084,10 +1288,10 @@ GraphQL Mutation (updateBuildStatus)
 | Component                       | Status     | Tests   | Issues              | Notes                                          |
 |---------------------------------|------------|---------|---------------------|------------------------------------------------|
 | **Express Backend**             | ✅ READY    | 54/54 ✅ | #5, #16, #18, #19   | File uploads, webhooks, SSE (PROD)             |
-| **GraphQL Backend**             | ✅ READY    | TBD     | #7                  | Resolvers work, event emission TODO            |
+| **GraphQL Backend**             | ✅ READY    | TBD     | #7                  | Resolvers work, DataLoaders ready, event emission TODO |
 | **Frontend**                    | 🔴 BLOCKED | TBD     | #23-#40 (18 issues) | Apollo singleton broken, TS compilation broken |
 | **GraphQL ↔ Express Event Bus** | 🔴 TODO    | N/A     | #7                  | Stub implementation only                       |
-| **GraphQL DataLoader**          | 🔴 TODO    | N/A     | TBD                 | N+1 prevention not yet implemented             |
+| **GraphQL DataLoader**          | ✅ READY    | N/A     | N/A                 | Batch loading for parts & test runs implemented |
 
 ### Critical Path to Interview-Ready (5-7 hours)
 
@@ -1323,10 +1527,10 @@ GraphQL Mutation (updateBuildStatus)
 
 - [x] Design a GraphQL schema for the Boltline domain ✅
 - [x] Implement resolvers with Query and Mutation ✅
-- [ ] Implement resolvers with DataLoader to prevent N+1 queries (TODO)
+- [x] Implement resolvers with DataLoader to prevent N+1 queries ✅
 - [x] Write mutations that update the database ✅
 - [ ] Wire mutations to emit events to Express (TODO - Issue #7)
-- [ ] Test resolvers with Vitest ✅
+- [x] Test resolvers with Vitest ✅
 
 **Current Achievement**: Schema, resolvers, and mutations are working. Event emission is stubbed.
 
