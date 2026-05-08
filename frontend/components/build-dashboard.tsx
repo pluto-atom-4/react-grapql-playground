@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
 import BuildDetailModal from './build-detail-modal';
 import { CreateBuildModal } from './create-build-modal';
+import { TableSkeleton } from './SkeletonLoader/TableSkeleton';
 import type { Build } from '@/lib/generated/graphql';
 
 interface BuildItem {
@@ -69,7 +70,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   if (shouldShowLoading) {
     return (
       <div className="max-w-[1200px] mx-auto px-8 py-8">
-        <p>Loading builds...</p>
+        <TableSkeleton rows={5} />
       </div>
     );
   }
