@@ -1,9 +1,144 @@
 {
-  "model": "claude-haiku-4.5",
+  "system": "GitHub Copilot CLI Co-work Session Configuration",
+  "version": "2.0",
+  "model": "gpt-4-turbo",
+  "cli_version": "copilot-cli-1.0+",
+  "target_environment": "GitHub Copilot CLI (not Claude Code)",
+
   "enforcement": {
     "agent_exclusive": true,
-    "rules_file": "rules.json"
+    "rules_file": "rules.json",
+    "description": "All operations route through approved agents defined in rules.json"
   },
+
+  "execution_planning": {
+    "enabled": true,
+    "description": "Execution planning documents guide orchestrator and agent behavior",
+    "location": "docs/implementation-planning/",
+    "file_naming": "EXECUTION-PLAN-*.md or PHASE-*-PLAN.md",
+    "required_sections": [
+      "Overview",
+      "Issues to Address",
+      "Dependencies & Parallelization Strategy",
+      "Multi-Agent Delegation Plan",
+      "Implementation Steps per Issue",
+      "Consolidation & PR Review Strategy",
+      "GitHub Actions Merge Configuration"
+    ],
+    "orchestrator_reads": true,
+    "agents_read": true,
+    "automation_trigger": "execution_plan_indicates_parallel_delegation"
+  },
+
+  "multi_agent_orchestration": {
+    "enabled": true,
+    "description": "Orchestrator agent delegates to developer agents based on execution plan",
+    "trigger_condition": "execution_plan.multi_agent_delegation == true",
+    "max_concurrent_agents": 5,
+    "agent_types": ["orchestrator", "developer"],
+    "workflow": {
+      "phase_1_planning": "Orchestrator analyzes execution plan and GitHub issues",
+      "phase_2_delegation": "Orchestrator creates branches and delegates to agents",
+      "phase_3_implementation": "Developer agents implement per execution plan",
+      "phase_4_consolidation": "Reviewer agent consolidates multiple PRs",
+      "phase_5_merge": "GitHub Actions merges PRs using gh CLI --merge"
+    }
+  },
+
+  "agent_git_workflow": {
+    "enabled": true,
+    "description": "Delegated agents follow strict git workflow before any operation",
+    "step_1_git_create": {
+      "command": "git branch feat/issue-#<N>-<kebab-case> origin/main",
+      "required": true,
+      "timing": "Before any code changes"
+    },
+    "step_2_git_switch": {
+      "command": "git switch feat/issue-#<N>-<kebab-case>",
+      "required": true,
+      "timing": "Immediately after branch creation"
+    },
+    "step_3_implementation": {
+      "task": "Implement based on execution plan",
+      "track_files": true,
+      "atomic_commits": true
+    },
+    "step_4_file_tracking": {
+      "method": "git status, git diff per commit",
+      "documentation": "Update tracking in execution plan",
+      "feature_branch_requirement": "All changes on feature branch only"
+    },
+    "step_5_commit_message": {
+      "format": "<type>(#<N>): <description>\n\n<body>\n\nCloses #<N>",
+      "examples": [
+        "feat(#35): Add loading skeleton components",
+        "fix(#40): Fix keyboard navigation in modal",
+        "refactor(#32): Optimize N+1 query with DataLoader"
+      ]
+    },
+    "step_6_push": {
+      "command": "git push -u origin feat/issue-#<N>-<kebab-case>",
+      "required": true
+    },
+    "step_7_gh_cli_pr": {
+      "command": "gh pr create --base main --title 'feat: #<N> - Description'",
+      "tool": "GitHub gh CLI",
+      "required": true
+    }
+  },
+
+  "gh_cli_integration": {
+    "enabled": true,
+    "description": "Use GitHub gh CLI for all GitHub operations",
+    "operations": {
+      "list_issues": "gh issue list --state open --json number,title",
+      "get_issue": "gh issue view <number>",
+      "create_pr": "gh pr create --base main --head <branch>",
+      "list_prs": "gh pr list --state open",
+      "view_pr": "gh pr view <number>",
+      "review_pr": "gh pr review <number> --approve / --request-changes",
+      "merge_pr": "gh pr merge <number> --merge",
+      "close_pr": "gh pr close <number>"
+    },
+    "merge_strategy": {
+      "method": "gh pr merge --merge",
+      "description": "Use --merge flag to keep commit history",
+      "automation": "GitHub Actions triggers merge"
+    }
+  },
+
+  "github_actions_automation": {
+    "enabled": true,
+    "description": "GitHub Actions automates PR merge to main",
+    "trigger": "When PR is reviewed and approved",
+    "action": "gh pr merge <pr-number> --merge",
+    "configuration_file": ".github/workflows/auto-merge.yml",
+    "workflow": {
+      "step_1": "Developer opens PR from feature branch",
+      "step_2": "Code review and approval",
+      "step_3": "GitHub Actions detected approval",
+      "step_4": "Runs: gh pr merge <pr> --merge",
+      "step_5": "PR merged to main",
+      "step_6": "Feature branch can be deleted"
+    }
+  },
+
+  "pr_consolidation": {
+    "enabled": true,
+    "description": "Reviewer creates consolidation branch to review multiple PRs together",
+    "when_used": "Multiple independent PRs need integrated testing",
+    "workflow": {
+      "step_1_create": "Reviewer creates consolidation branch: feat/phase-<N>-consolidation",
+      "step_2_merge": "Merge all feature branches into consolidation",
+      "step_3_test": "Run full test suite on consolidated changes",
+      "step_4_verify": "Verify no conflicts and all acceptance criteria met",
+      "step_5_review": "Review consolidated changes for cross-PR issues",
+      "step_6_approve": "Approve or request changes on individual PRs"
+    },
+    "consolidation_branch_convention": "feat/phase-<number>-consolidation",
+    "example": "feat/phase-4-consolidation"
+  },
+
   "parallel_execution": {
     "enabled": true,
     "description": "Support multi-agent parallel execution using git worktree",
@@ -15,58 +150,105 @@
       "branch-isolation-verification"
     ],
     "when_to_use": [
-      "Multiple issues are completely independent",
+      "Execution plan indicates multiple agent delegation",
+      "Issues are completely independent",
       "No blocking dependencies exist",
       "Different files being modified",
-      "Different types of work (code, docs, testing)",
-      "Time-critical delivery (e.g., interview prep)"
+      "Time-critical delivery needed"
     ],
-    "efficiency_target": "3x speedup for independent 60-minute tasks",
+    "efficiency_target": "3x-5x speedup for independent 60-90 minute tasks",
     "documentation": ".copilot/PARALLEL-EXECUTION-GUIDE.md"
   },
-  "github_issue_orchestration": {
-    "enabled": true,
-    "description": "Orchestrator delegates multiple agents to GitHub issues using feature branching",
-    "workflow_type": "multi-agent-issue-parallel",
-    "feature_branch_convention": "feat/issue-#<issue-number>-<kebab-case-description>",
-    "commit_message_convention": "<type>: #<issue> <description>",
-    "agent_workflow": {
-      "step_1": "git branch feat/issue-#<N>-<name> origin/main",
-      "step_2": "git switch feat/issue-#<N>-<name>",
-      "step_3": "Implement issue solution (code, tests, docs)",
-      "step_4": "git commit -m 'type: #<N> description'",
-      "step_5": "git push -u origin feat/issue-#<N>-<name>",
-      "step_6": "gh pr create --base main --title 'feat: #<N> - Description'"
-    },
-    "orchestrator_responsibilities": [
-      "Analyze GitHub issue dependencies",
-      "Create feature branches for parallel execution",
-      "Create git worktrees for isolated agent environments",
-      "Dispatch agents with issue-specific assignments",
-      "Monitor PR creation and test status",
-      "Resolve blockers and manage merges",
-      "Optional: Create review consolidation branch for multi-PR verification"
+
+  "copilot_cli_implementation_mode": {
+    "mode": "single_terminal_sequential_delegation",
+    "description": "Practical GitHub Copilot CLI with @orchestrator reading execution plans and delegating agents sequentially",
+    "advantages": [
+      "Full context preservation across agent switches",
+      "No manual copy-paste of execution plans",
+      "Natural conversation flow",
+      "Clean audit trail in single conversation",
+      "No multiple terminal windows needed",
+      "Execution plan becomes shared context for all agents"
     ],
-    "git_worktree_setup": {
-      "command_template": "git worktree add ../feat-<N> feat/issue-#<N>-<name>",
-      "cleanup": "git worktree remove ../feat-<N> (after PR merge)",
-      "max_concurrent_worktrees": 5
+    "workflow_phases": {
+      "phase_1_orchestrator_invocation": {
+        "user_prompt": "@orchestrator read docs/implementation-planning/[PLAN].md and delegate appropriate agents per execution plan",
+        "orchestrator_role": "Read plan, analyze tasks, make intelligent delegation decisions"
+      },
+      "phase_2_delegation": {
+        "orchestrator_decides": "Based on plan analysis, which agent to invoke",
+        "delegation_triggers": {
+          "to_developer": "Issues requiring code implementation (features, bug fixes)",
+          "to_tester": "Phase testing or quality validation",
+          "to_reviewer": "PR consolidation and integration review",
+          "to_quality_assurance": "Code quality or standards enforcement"
+        }
+      },
+      "phase_3_sequential_execution": {
+        "pattern": "@developer works on issue #1 → issue #2 → ... per plan",
+        "context_preservation": "Execution plan context maintained throughout",
+        "agent_sequence": "Developer → Tester → Reviewer (as per plan)"
+      },
+      "phase_4_consolidation": {
+        "agent": "@reviewer",
+        "task": "Consolidate multiple PRs, verify integration per execution plan"
+      },
+      "phase_5_automation": {
+        "agent": "GitHub Actions",
+        "task": "Auto-merge approved PRs using gh CLI --merge"
+      }
     },
-    "reviewer_pattern": {
-      "enabled": true,
-      "description": "Reviewer agent can create integration review branch to merge all feature branches",
-      "use_case": [
-        "Verify all features merge cleanly",
-        "Run full test suite on combined changes",
-        "Check cross-issue integration",
-        "Approve or request changes per PR"
-      ]
+    "key_features": [
+      "Implicit delegation (user doesn't specify agent, @orchestrator decides)",
+      "File reference triggers plan reading (user mentions @docs/path/to/plan.md)",
+      "Sequential agent execution in single terminal",
+      "Execution plan becomes shared, persistent context",
+      "Scales to 3-5 agents per phase"
+    ]
+  },
+
+  "copilot_cli_commands": {
+    "orchestrator": {
+      "read_plan_and_delegate": "Read execution plan and delegate to appropriate agents",
+      "example": "@orchestrator read docs/implementation-planning/[PLAN].md and delegate agents per plan",
+      "implicit_delegation": "Orchestrator decides which agent based on plan analysis",
+      "/plan": "Create execution plan for multi-agent delegation",
+      "/ask": "Ask clarifying questions about blockers"
     },
-    "merge_strategy": {
-      "blocking_dependencies": "Merge in dependency order",
-      "zero_dependencies": "Merge in any order (use --merge or --squash)",
-      "conflict_resolution": "Orchestrator investigates and notifies agent"
+    "developer": {
+      "implement_issue": "Implement issue per execution plan",
+      "example": "@developer implement issue #35 per execution plan; git create/switch/implement/add/commit/push/PR",
+      "file_tracking": "Track modified files during implementation",
+      "/plan": "Plan implementation approach",
+      "/diff": "Review changes before committing"
     },
-    "documentation": ".copilot/orchestrator-github-issues.md"
+    "reviewer": {
+      "consolidate_prs": "Consolidate multiple PRs and verify integration",
+      "example": "@reviewer consolidate Phase 4 PRs per execution plan; create consolidation branch, merge, test, review",
+      "/review": "Automated review of feature branches"
+    },
+    "tester": {
+      "run_tests": "Run test suite per execution plan",
+      "example": "@tester run integration tests per Phase 4 plan",
+      "/plan": "Plan test strategy"
+    }
+  },
+
+  "feature_branch_convention": "feat/issue-#<issue-number>-<kebab-case-description>",
+  "commit_message_convention": "<type>(#<issue>): <description>\n\n<body>\n\nCloses #<issue>",
+
+  "metadata": {
+    "version": "2.0",
+    "updated": "2026-05-08",
+    "purpose": "GitHub Copilot CLI co-work session with execution plans and multi-agent delegation",
+    "target_audience": "Development teams using GitHub Copilot CLI",
+    "supported_cli_version": "1.0+",
+    "related_files": [
+      "rules.json - Agent approval and routing",
+      "docs/implementation-planning/ - Execution plans",
+      ".github/workflows/ - GitHub Actions",
+      ".copilot/agents/ - Agent definitions"
+    ]
   }
 }
