@@ -64,6 +64,28 @@ type Build {
   updatedAt: DateTime!
 }
 
+type PaginatedBuilds {
+  """
+  Array of builds for the current page
+  """
+  items: [Build!]!
+
+  """
+  Total number of builds
+  """
+  totalCount: Int!
+
+  """
+  Whether there is a next page
+  """
+  hasNextPage: Boolean!
+
+  """
+  Whether there is a previous page
+  """
+  hasPreviousPage: Boolean!
+}
+
 type Part {
   """
   Part unique identifier
@@ -145,14 +167,19 @@ type Query {
   Example:
     query {
       builds(limit: 10, offset: 0) {
-        id
-        name
-        status
-        createdAt
+        items {
+          id
+          name
+          status
+          createdAt
+        }
+        totalCount
+        hasNextPage
+        hasPreviousPage
       }
     }
   """
-  builds(limit: Int!, offset: Int!): [Build!]!
+  builds(limit: Int!, offset: Int!): PaginatedBuilds!
 
   """
   Get specific build by ID.

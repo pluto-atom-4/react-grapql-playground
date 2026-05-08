@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@apollo/client/react';
+import { useState, useCallback } from 'react';
 import {
   BUILDS_QUERY,
   BUILD_DETAIL_QUERY,
@@ -25,23 +26,68 @@ interface BuildDetail extends Build {
 
 // Hook: Fetch builds with pagination
 export function useBuilds(
-  limit: number = 10,
-  offset: number = 0
-): {
-  builds: Array<{ id: string; name: string; status: BuildStatus; createdAt: string }>;
-  loading: boolean;
-  error: unknown;
-  refetch: () => void;
-} {
-  const { data, loading, error, refetch } = useQuery<{ builds: Build[] }>(BUILDS_QUERY, {
-    variables: { limit, offset },
+  initialPageSize: number = 10,
+) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [internalPageSize, setInternalPageSize] = useState(initialPageSize);
+
+  // Calculate offset from page and pageSize
+  const offset = (page - 1) * pageSize;
+
+  const { data, loading, error, refetch: apolloRefetch } = useQuery<
+    { builds: { items: Build[]; totalCount: number; hasNextPage: boolean; hasPreviousPage: boolean } }
+  >(BUILDS_QUERY, {
+    variables: { limit: pageSize, offset },
   });
 
+  const builds = data?.builds?.items || [];
+  const totalCount = data?.builds?.totalCount || 0;
+  const hasNextPage = data?.builds?.hasNextPage || false;
+  const hasPreviousPage = data?.builds?.hasPreviousPage || false;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Handle page size changes - reset to page 1
+  const handleSetPageSize = useCallback((newPageSize: number) => {
+    setInternalPageSize(newPageSize);
+    setPageSize(newPageSize);
+    setPage(1);
+  }, []);
+
+  const goToNextPage = useCallback(() => {
+    if (hasNextPage) {
+      setPage(prev => prev + 1);
+    }
+  }, [hasNextPage]);
+
+  const goToPreviousPage = useCallback(() => {
+    if (hasPreviousPage) {
+      setPage(prev => prev - 1);
+    }
+  }, [hasPreviousPage]);
+
+  const goToPage = useCallback((pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setPage(pageNumber);
+    }
+  }, [totalPages]);
+
   return {
-    builds: data?.builds || [],
+    builds,
     loading,
     error,
-    refetch: () => void refetch(),
+    refetch: () => void apolloRefetch(),
+    // Pagination controls
+    currentPage: page,
+    totalPages,
+    pageSize: internalPageSize,
+    totalCount,
+    hasNextPage,
+    hasPreviousPage,
+    goToNextPage,
+    goToPreviousPage,
+    goToPage,
+    setPageSize: handleSetPageSize,
   };
 }
 
