@@ -238,9 +238,9 @@ Total Wall-Clock Time: ~40-45 minutes (includes review + merge)
 
 **Optimal Implementation:**
 
-1. **Create two feature branches:**
-   - `fix/pr-245-pagination-integration` (Agent-1)
-   - `fix/pr-246-cls-fix` (Agent-2)
+1. **Use two feature branches used for the each of PR:**
+   - `feat/issue-34-pagination` (Agent-1)
+   - `feat/issue-35-skeletons` (Agent-2)
 
 2. **Merge order (to minimize conflicts):**
    - Merge PR #246 first (pure styling, no dependencies on Pagination)
