@@ -1,4 +1,12 @@
 {
+  "_notice": "⚠️ LEGACY REFERENCE ONLY - This file is kept for historical reference and implementation rule documentation. It provides detailed insight into project-specific orchestration patterns but is NOT used by GitHub Copilot CLI v1.0+. For active workflow guidance, see .copilot/copilot-instructions.md",
+  "_migration_date": "2026-05-10",
+  "_legacy_reason": "This file was the detailed implementation ruleset before migration to GitHub Copilot CLI v1.0+ standard structure. It contains valuable context about how agents were originally designed, approved, routed, and coordinated.",
+  "_documentation_location": "docs/copilot/ - See RESEARCH-ENHANCEMENTS.md and BEST-PRACTICES.md for context on implementation patterns",
+  "_current_active_config": ".github/copilot/settings.json (GitHub Copilot CLI standard settings)",
+  "_current_custom_instructions": ".copilot/copilot-instructions.md (GitHub Copilot CLI standard custom instructions)",
+  "_current_agents": ".copilot/agents/ (6 agent role definitions in standard format)",
+  "",
   "system": "GitHub Copilot CLI Co-work Session Rules & Agent Routing",
   "version": "2.0",
   "created": "2026-04-17",
@@ -149,7 +157,41 @@
         "Consolidation & Review: When/how to consolidate and review",
         "GitHub Actions Merge: PR merge automation"
       ],
-      "parser_hint": "@orchestrator can parse and understand markdown structure"
+      "optional_sections_for_feedback_tracking": [
+        "PR Review Feedback Cycles: Track review feedback per PR",
+        "Feature Branch Registry: Map PR numbers to feature branches",
+        "Feedback Resolution Log: Document feedback addressed per cycle"
+      ],
+      "pr_feedback_tracking_format": {
+        "description": "Track PR review feedback and fixes in execution plan",
+        "purpose": "Maintain clear record of review cycles and ensure developer reuses feature branch",
+        "structure": {
+          "pr_section": "### PR #<NUMBER>: feat/issue-#<N>-<description>",
+          "cycle_tracking": "#### Cycle 1: Initial Review / Cycle 2: Feedback Fix / Cycle 3: Re-Review",
+          "findings_format": "**Findings (Cycle N):**\n- [Status]: [File] - [Issue] - Severity: [critical/major/minor]",
+          "fixes_format": "**Fixes Applied (Cycle N):**\n- [File] (operation): Fixed [specific issue]",
+          "result_format": "**Result**: [APPROVED / NEEDS_MORE_FIXES]"
+        },
+        "example": {
+          "heading": "### PR #245: feat/issue-#35-add-skeleton-loading",
+          "cycle_1": "#### Cycle 1: Initial Review\n**Findings:**\n- FAILED: components/Modal.tsx - Missing aria-label - Severity: major\n- FAILED: hooks/useKeyboard.ts - Tab order broken - Severity: critical",
+          "cycle_2": "#### Cycle 2: Feedback Fix (REUSE feat/issue-#35-add-skeleton-loading)\n**Fixes Applied:**\n- components/Modal.tsx (MODIFY): Added aria-label='Loading...'",
+          "cycle_3": "#### Cycle 3: Re-Review\n**Result**: APPROVED ✅"
+        }
+      },
+      "feature_branch_registry": {
+        "description": "Map each PR to its feature branch (prevents branch creation confusion)",
+        "format": "| PR # | Feature Branch | Issue | Cycle Status | Next Action |",
+        "purpose": "Quick lookup; helps developer identify correct branch to check out",
+        "example_row": "| 245 | feat/issue-#35-add-skeleton-loading | #35 | Cycle 2 (Feedback Fix) | Push to same branch |"
+      },
+      "parser_hint": "@orchestrator can parse and understand markdown structure",
+      "orchestrator_uses_this_to": {
+        "identify_pr_numbers": "Read PR numbers from execution plan",
+        "map_to_branches": "Know which feature branch each PR uses (via registry)",
+        "delegate_developer": "Tell @developer: 'Check out existing feat/issue-#X-... from PR #245'",
+        "prevent_confusion": "Explicit instruction to REUSE branch, not create new one"
+      }
     },
     "file_reference_pattern": {
       "syntax": "@docs/implementation-planning/[FILENAME].md",
@@ -200,6 +242,86 @@
       ],
       "total_time": "Scales better than sequential non-parallel work",
       "context_maintenance": "All agents share execution plan context"
+    },
+    "pr_review_feedback_cycle": {
+      "description": "Handling PR review feedback in same session; fixes go to existing feature branch (NO new branch creation)",
+      "when_triggered": "PR created, reviewer provides feedback, developer implements fixes",
+      "key_principle": "REUSE EXISTING FEATURE BRANCH - avoid creating fix/pull-request-... branches",
+      "workflow_sequence": [
+        "Phase 3A: Developer creates PR from feat/issue-#<N>-... branch",
+        "Phase 3B: Reviewer reviews PR, provides feedback",
+        "Phase 3C: Developer fixes flaws in EXISTING feat/issue-#<N>-... branch (tracked from PR)",
+        "Phase 3D: Developer pushes to same branch (PR auto-updates)",
+        "Phase 3E: Reviewer re-reviews (loop to Phase 3B if more fixes needed)",
+        "Phase 3F: Reviewer approves → ready for consolidation"
+      ],
+      "phase_3b_reviewer_action": {
+        "description": "Reviewer examines PR and documents findings",
+        "outputs": [
+          "List of flaws/issues found in PR",
+          "Severity assessment (critical, major, minor)",
+          "Specific suggestions per flaw",
+          "Which files need changes"
+        ],
+        "communication": "Comments on PR with structured feedback",
+        "file_tracking": "Update execution plan with Phase 3B findings"
+      },
+      "phase_3c_developer_feedback_cycle": {
+        "description": "Developer implements fixes based on reviewer feedback in EXISTING feature branch",
+        "critical_rule": "TRACK feature branch from PR; DO NOT create new branch",
+        "steps": [
+          "1. Get PR number from reviewer feedback (e.g., PR #245)",
+          "2. Identify feature branch: gh pr view <PR-NUMBER> --json headRefName (e.g., feat/issue-#35-...)",
+          "3. Verify current branch: git branch",
+          "4. Check out EXISTING feature branch: git switch feat/issue-#<N>-... (from step 2)",
+          "5. Implement fixes based on reviewer feedback",
+          "6. Track modified files in execution plan",
+          "7. Stage tracked files: git add [file1 file2 ...]",
+          "8. Verify staged: git diff --cached",
+          "9. Commit with feedback reference: git commit -m 'fix(#<N>): Address review feedback'\n\n- Fixed issue 1\n- Fixed issue 2\n\nCo-Authored-By: Reviewer Name",
+          "10. Push to SAME branch: git push origin feat/issue-#<N>-...",
+          "11. Validate: PR auto-updates with new commits (no new PR needed)",
+          "12. Update execution plan: Log Phase 3C completion and which flaws were fixed"
+        ],
+        "branch_handling": {
+          "create_new_branch": "❌ NEVER (prevent merge complexity)",
+          "reuse_existing": "✅ YES (single branch per issue = clean merge)",
+          "branch_to_use": "feat/issue-#<N>-... (from PR, identified via gh pr view)"
+        },
+        "commit_pattern": {
+          "type": "fix (not feat, not refactor)",
+          "description": "Address review feedback (specific to this cycle)",
+          "reference": "Same issue #<N> (do NOT close it; PR will close on merge)",
+          "co_author": "Optional: Reviewer who provided feedback"
+        }
+      },
+      "phase_3d_push_and_auto_update": {
+        "description": "Push fixes to SAME feature branch; PR auto-updates",
+        "command": "git push origin feat/issue-#<N>-...",
+        "result": "PR shows new commits; GitHub marks conversation as resolved/unresolved per reviewer feedback",
+        "notification": "Reviewer is notified of new commits; can re-review without new PR",
+        "key_benefit": "Single PR per issue; all work on one branch; clean merge history"
+      },
+      "phase_3e_reviewer_re_review": {
+        "description": "Reviewer re-examines PR after developer pushes fixes",
+        "actions": [
+          "Review new commits on same PR",
+          "Verify all feedback was addressed",
+          "Check that fixes don't introduce new issues",
+          "If satisfied: approve PR (move to Phase 3F)",
+          "If more fixes needed: comment with feedback (loop back to Phase 3C)"
+        ],
+        "loop_condition": {
+          "continue_if": "Still finding issues or improvement opportunities",
+          "stop_if": "All acceptance criteria met, code is clean"
+        }
+      },
+      "phase_3f_approval_and_next": {
+        "description": "PR is approved; ready for consolidation and merge",
+        "approval_status": "✅ Approved (can proceed to Phase 4 consolidation review)",
+        "next_step": "Move to Phase 4: Reviewer creates consolidation branch, merges all feature branches, runs tests",
+        "merge_timing": "Phase 5 (GitHub Actions auto-merges after approval)"
+      }
     }
   },
 
@@ -255,18 +377,39 @@
           "safety_constraint": "Prevents accidental untracked files from being committed to feature branch"
         }
       },
+      "phase_3_feedback_cycle": {
+        "agent": "@developer (after PR created in phase 3A)",
+        "task": "Handle PR review feedback; fix flaws in EXISTING feature branch (NO new branches)",
+        "description": "When reviewer provides feedback, developer implements fixes on the same feature branch",
+        "cycle_phases": [
+          "Phase 3B: Reviewer examines PR, documents findings",
+          "Phase 3C: Developer tracks feature branch (gh pr view <PR>), fixes flaws in EXISTING branch",
+          "Phase 3D: Developer pushes fixes to same branch (PR auto-updates)",
+          "Phase 3E: Reviewer re-reviews; loop to 3C if more fixes needed",
+          "Phase 3F: When approved, move to Phase 4"
+        ],
+        "critical_rule": "REUSE feat/issue-#<N>-... branch from PR; DO NOT create fix/pull-request-... branches",
+        "steps_reference": "See developer_agent_git_workflow.pr_review_feedback_handling (steps 11-23)",
+        "key_commands": [
+          "Step 12: gh pr view <PR-NUMBER> --json headRefName (identify feature branch)",
+          "Step 14: git switch feat/issue-#<N>-... (switch to EXISTING branch)",
+          "Step 20: git push origin feat/issue-#<N>-... (push to SAME branch)"
+        ]
+      },
       "phase_4_consolidation_review": {
         "agent": "@reviewer",
-        "task": "Create consolidation branch; merge all feature branches; verify integration",
+        "task": "Create consolidation branch; merge all feature branches (after PR feedback cycles complete); verify integration",
+        "description": "Only start consolidation when all PRs have completed their feedback cycles (Phase 3 approved)",
         "required_steps": [
           "1. Check current branch: git branch (verify current state)",
-          "2. Create consolidation branch: git branch feat/phase-<N>-consolidation origin/main",
+          "2. Create consolidation branch: git branch work/phase-<N>-consolidation origin/main (use work/ prefix for temporary testing branch)",
           "3. Check current branch before switch: git branch",
-          "4. Switch to consolidation branch: git switch feat/phase-<N>-consolidation (handles switching from any branch including other feature branches)",
+          "4. Switch to consolidation branch: git switch work/phase-<N>-consolidation (handles switching from any branch including other feature branches)",
           "5. Merge all feature branches: git merge feat/issue-#<N>-* (one by one, verify no conflicts)",
           "6. Run full test suite: pnpm test --run (verify all tests pass on consolidated changes)",
           "7. List all feature branch PRs: gh pr list --state open",
-          "8. Review and approve individual PRs: gh pr review <number> --approve"
+          "8. Review and approve individual PRs: gh pr review <number> --approve",
+          "9. Delete consolidation branch: git branch -d work/phase-<N>-consolidation && git push origin --delete work/phase-<N>-consolidation (no PR created from work branch)"
         ]
       },
       "phase_5_github_actions_merge": {
@@ -338,6 +481,118 @@
       "command": "gh pr create --base main --title 'feat: #<N> - Description'",
       "tool": "GitHub gh CLI",
       "validation": "PR created and linked to GitHub issue"
+    },
+    "pr_review_feedback_handling": {
+      "description": "Developer workflow for handling PR review feedback (Cycle 2+)",
+      "critical_rule": "REUSE EXISTING FEATURE BRANCH - do NOT create new fix/pull-request-... branches",
+      "when_triggered": "Reviewer provides feedback on PR #<PR-NUMBER>",
+      "step_11_receive_feedback": {
+        "input": "Reviewer feedback/comments on PR #<PR-NUMBER>",
+        "action": "Developer reads feedback and identifies flaws to fix",
+        "note": "Feature branch already exists and is linked to this PR"
+      },
+      "step_12_identify_feature_branch": {
+        "command": "gh pr view <PR-NUMBER> --json headRefName",
+        "purpose": "Get the EXACT feature branch name from the PR",
+        "example": "gh pr view 245 --json headRefName → returns feat/issue-#35-add-skeleton-loading",
+        "critical": "Use this branch name for step 13 (NOT creating a new branch)",
+        "output_field": "Field: headRefName"
+      },
+      "step_13_check_current_state": {
+        "command": "git branch",
+        "purpose": "Verify which branch you're currently on",
+        "note": "You might be on main, feature-X, or another branch from previous work"
+      },
+      "step_14_switch_to_existing_feature_branch": {
+        "command": "git switch feat/issue-#<N>-<description> (from step 12)",
+        "critical": "ONLY switch; do NOT create new branch",
+        "validation": "git branch should show *feat/issue-#<N>-... (asterisk = current)",
+        "important": "This is the SAME branch you pushed in step 9 (phase 3A)"
+      },
+      "step_15_implement_feedback_fixes": {
+        "task": "Implement fixes based on reviewer feedback",
+        "scope": "ONLY changes needed to address feedback; do NOT refactor unrelated code",
+        "approach": "Targeted fixes, not complete rewrite",
+        "file_tracking": "Keep list of files modified for step 16"
+      },
+      "step_16_track_feedback_files": {
+        "required": true,
+        "method": "Document in execution plan under 'Cycle 2: Feedback Fix' section",
+        "format": "- [File.tsx] (MODIFY): Fixed [specific feedback item]",
+        "example": "- [components/Modal.tsx] (MODIFY): Fixed missing aria-label\n- [hooks/useKeyboard.ts] (MODIFY): Fixed tab order"
+      },
+      "step_17_stage_feedback_fixes": {
+        "command": "git add [file1 file2 ...]",
+        "critical": "ONLY add files from step 16 (files that fix feedback)",
+        "validation_before": "git status (see what changed)",
+        "validation_after": "git diff --cached (confirm only feedback-fix files are staged)"
+      },
+      "step_18_verify_feedback_fixes": {
+        "command": "git diff --cached",
+        "purpose": "Review the changes you're about to commit",
+        "check": "Do these changes address the reviewer feedback?"
+      },
+      "step_19_commit_feedback_fixes": {
+        "format": "fix(#<N>): Address review feedback\n\n- Fixed: [feedback item 1]\n- Fixed: [feedback item 2]\n\nCo-Authored-By: [Reviewer Name]",
+        "type": "fix (not feat, not refactor)",
+        "reference": "Same issue #<N> (do NOT close; PR closes on final merge)",
+        "co_author": "Optional but encouraged: Reviewer who provided feedback",
+        "example": "fix(#35): Address review feedback\n\n- Fixed missing aria-label on loading state\n- Fixed tab order in keyboard navigation\n\nCo-Authored-By: @reviewer-name"
+      },
+      "step_20_push_feedback_fixes": {
+        "command": "git push origin feat/issue-#<N>-... (SAME branch as step 14)",
+        "critical": "Push to EXISTING branch, not a new branch",
+        "result": "PR #<PR-NUMBER> auto-updates with new commits (no new PR needed)",
+        "notification": "GitHub notifies reviewer of new commits"
+      },
+      "step_21_validate_push": {
+        "command": "git branch -v",
+        "check": "Verify upstream tracking shows origin/feat/issue-#<N>-...",
+        "confirm": "Commits successfully pushed"
+      },
+      "step_22_update_execution_plan": {
+        "required": true,
+        "action": "Update execution plan with Cycle 2 results",
+        "format": "#### Cycle 2: Feedback Fix\n**Fixes Applied:**\n- [File] (operation): Fixed [issue]\n**Status**: Ready for re-review",
+        "purpose": "Track progress for orchestrator and next reviewer cycle"
+      },
+      "step_23_await_reviewer_re_review": {
+        "description": "Reviewer examines new commits on SAME PR",
+        "outcome_1": "All feedback addressed → Approve (move to consolidation)",
+        "outcome_2": "More fixes needed → New feedback (loop to step 11)"
+      }
+    },
+    "pr_review_feedback_summary": {
+      "workflow": [
+        "Step 11: Receive feedback from reviewer",
+        "Step 12: Identify feature branch from PR (gh pr view ...)",
+        "Step 13: Check current branch state",
+        "Step 14: Switch to EXISTING feature branch (NOT creating new one)",
+        "Step 15: Implement feedback fixes",
+        "Step 16: Track modified files",
+        "Step 17: Stage only fix files",
+        "Step 18: Verify staged changes",
+        "Step 19: Commit with 'fix' type",
+        "Step 20: Push to SAME branch (PR auto-updates)",
+        "Step 21: Validate push",
+        "Step 22: Update execution plan",
+        "Step 23: Await re-review (loop until approved)"
+      ],
+      "key_constraints": [
+        "✅ REUSE existing feature branch from PR",
+        "❌ DO NOT create new fix/pull-request-... branches",
+        "✅ ALL fixes go to same feat/issue-#<N>-... branch",
+        "✅ PR auto-updates with new commits",
+        "✅ Single PR per issue = clean merge history",
+        "❌ NEVER create separate PR for fixes"
+      ],
+      "benefits": [
+        "One feature branch per issue = simple merge",
+        "PR auto-updates with fixes = no tracking complexity",
+        "Clean commit history = easy to review changes",
+        "Avoids merge hell of multiple branches per issue",
+        "Clear traceability: one PR = all work for one issue"
+      ]
     }
   },
 
@@ -446,21 +701,223 @@
     "branch_switch_conflict": "@orchestrator"
   },
 
+  "specialist_agents": {
+    "enabled": true,
+    "research_source": "Industry best practice (Cloudflare 7-specialist pattern, academic research 2025-2026)",
+    "description": "Role-specific agents with focused prompts reduce noise and improve quality",
+    "pattern": "Coordinator deduplicates findings from 6+ specialists, posts single consolidated review",
+    "specialists": [
+      {
+        "id": "implementer",
+        "name": "Implementer",
+        "responsibility": "Generate syntactically valid code from specification",
+        "lookFor": ["Logic correctness", "Type safety", "API contracts", "Code patterns"],
+        "ignore": ["Security", "Performance", "Documentation"],
+        "context_tokens": "200-500",
+        "role_constraint": "DO NOT worry about security/performance/docs—other specialists handle that"
+      },
+      {
+        "id": "security-reviewer",
+        "name": "Security Reviewer",
+        "responsibility": "Audit for vulnerabilities and secrets",
+        "lookFor": ["Input validation", "Injection attacks", "Auth flows", "Hardcoded secrets", "Crypto usage"],
+        "ignore": ["Code style", "Performance", "Documentation"],
+        "context_tokens": "200-500",
+        "severity_mapping": "Only true blockers marked as blocker; most findings minor-major"
+      },
+      {
+        "id": "performance-reviewer",
+        "name": "Performance Reviewer",
+        "responsibility": "Detect algorithmic inefficiencies and resource issues",
+        "lookFor": ["N+1 queries", "Unnecessary loops", "Memory leaks", "O(n²) algorithms"],
+        "ignore": ["Security", "Correctness", "Documentation"],
+        "context_tokens": "200-500",
+        "note": "Deferred to non-blocking phase (not blocker unless catastrophic)"
+      },
+      {
+        "id": "test-writer",
+        "name": "Test Writer",
+        "responsibility": "Generate comprehensive test coverage",
+        "lookFor": ["Branch coverage", "Edge cases", "Integration scenarios"],
+        "ignore": ["Implementation details"],
+        "context_tokens": "200-500",
+        "success_criteria": "Coverage > 80%, assertions specific, edge cases covered"
+      },
+      {
+        "id": "architecture-reviewer",
+        "name": "Architecture Reviewer",
+        "responsibility": "Validate against design patterns and constraints",
+        "lookFor": ["SOLID violations", "Anti-patterns", "Dependency injection"],
+        "ignore": ["Security", "Performance", "Minor style issues"],
+        "context_tokens": "200-500",
+        "pattern": "Reads DESIGN.md as source of truth"
+      },
+      {
+        "id": "docs-agent",
+        "name": "Documentation Agent",
+        "responsibility": "Generate docstrings and API documentation",
+        "lookFor": ["Missing docstrings", "Incomplete examples", "README updates"],
+        "ignore": ["Code correctness"],
+        "context_tokens": "200-500",
+        "note": "Runs after implementation passes all reviews"
+      }
+    ],
+    "coordinator_pattern": {
+      "description": "Synthesizes 6+ specialist outputs into single consolidated review",
+      "responsibilities": [
+        "Deduplication (same issue flagged by multiple agents)",
+        "Severity judgment (junior agents over-report)",
+        "Single structured comment (no noise, clear priorities)"
+      ],
+      "algorithm": "Keep highest-severity per location, merge evidence, judge actual impact"
+    }
+  },
+
+  "state_management": {
+    "enabled": true,
+    "research_source": "Multi-agent AI systems research (token efficiency, state synchronization)",
+    "description": "Structured state objects (200-500 tokens) instead of full context passing",
+    "pattern": "SharedState → AgentContext → minimal relevant fields only",
+    "token_efficiency": {
+      "naive_approach": "Full conversation history = 5,000-20,000 tokens per agent ❌",
+      "best_practice": "Structured state object = 200-500 tokens per agent ✅",
+      "savings": "20x token reduction, faster execution, better cache hits"
+    },
+    "event_driven_synchronization": {
+      "enabled": true,
+      "description": "Immutable event log prevents stale assumptions between parallel agents",
+      "pattern": "Every agent action logged → state updates based on log → agents always see latest",
+      "benefit": "No stale context; audit trail; resumable from last event"
+    }
+  },
+
+  "spec_driven_development": {
+    "enabled": true,
+    "research_source": "Spec-Driven Development 2025, GitHub Spec Kit, Intent.ai",
+    "description": "Shared specification as single source of truth reduces agent drift",
+    "pattern": "Specification evolves → agents reference spec → spec tracks progress",
+    "benefits": [
+      "No agent interprets requirements differently",
+      "Explicit handoffs when agent needs work outside scope",
+      "Spec becomes self-documenting progress log"
+    ],
+    "implementation": "Update execution plan with progress log; agents read spec before action"
+  },
+
+  "conflict_resolution": {
+    "enabled": true,
+    "research_source": "Parallel code change patterns, git merge best practices",
+    "strategy": "File ownership + sequential merging + spec-based resolution",
+    "upfront_file_ownership": {
+      "criticality": "MOST IMPORTANT STEP (prevents 90% of conflicts)",
+      "pattern": "Directory-level ownership matrix (backend agent owns api/, frontend owns components/)",
+      "validation": "Before parallel dispatch, verify no two agents touch same file"
+    },
+    "sequential_merging": {
+      "pattern": "Merge 1st agent → rebase others on updated base → merge sequentially",
+      "benefit": "Each merge only conflicts with directly preceding changes",
+      "reason": "Preserves intent; easier to resolve N conflicts than N² conflicts"
+    },
+    "ai_conflict_resolution": {
+      "simple_conflicts": "AI can resolve (two agents both added list entries)",
+      "complex_conflicts": "Orchestrator applies spec intent to resolve",
+      "unresolvable": "Escalate to human review with full context"
+    }
+  },
+
+  "parallel_execution_safety": {
+    "enabled": true,
+    "research_source": "LangGraph, Replit Agent 4, Windsurf Wave 13",
+    "max_concurrent_agents": 5,
+    "preconditions": [
+      "CRITICAL: Zero blocking dependencies between tasks",
+      "CRITICAL: File ownership mapped (no overlap)",
+      "Different types of work (code, tests, docs)",
+      "Each agent gets isolated context window"
+    ],
+    "safety_checks": [
+      "dependency-analysis (list all blockers)",
+      "file-overlap-detection (verify no same-file modifications)",
+      "context-isolation-verification (each agent has <1k tokens state)"
+    ],
+    "when_to_use": [
+      "3+ independent issues (each takes >15 min)",
+      "Confirmed zero dependencies",
+      "Time-critical delivery",
+      "Different files modified per agent"
+    ],
+    "when_to_avoid": [
+      "Uncertain about isolation",
+      "Quick tasks (<15 min each)",
+      "High integration risk",
+      "Shared hotspot files (routes, config)"
+    ]
+  },
+
+  "error_recovery": {
+    "enabled": true,
+    "research_source": "Multi-agent failure recovery, self-healing agent pattern, FAILURE.md",
+    "description": "Classify errors, map to recovery strategies, retry with exponential backoff",
+    "error_categories": [
+      "syntax_error → retry_generation",
+      "test_failure → debug_and_fix",
+      "logic_error → trace_logic_flow",
+      "performance → suggest_optimization",
+      "security → escalate_to_human",
+      "architecture → redesign_component",
+      "integration → rebase_and_merge"
+    ],
+    "retry_logic": "Attempt up to 3x with exponential backoff; escalate after 3 failures",
+    "memory_system": "Track success patterns, failure patterns, learn from past attempts",
+    "self_validation": "Agent validates outputs against explicit success criteria before returning"
+  },
+
+  "communication_protocol": {
+    "enabled": true,
+    "a2a_protocol": {
+      "name": "Agent2Agent (A2A) Protocol",
+      "status": "Linux Foundation standard (April 2025, 150+ organizations)",
+      "spec_url": "https://a2a-protocol.org/latest/specification/",
+      "purpose": "Interoperability between AI agents across frameworks and vendors",
+      "features": [
+        "Capability discovery via Agent Card (JSON)",
+        "Task management with lifecycle tracking",
+        "HTTPS transport with JSON-RPC 2.0",
+        "Security via API keys, OAuth 2.0, OpenID Connect"
+      ],
+      "when_to_use": "Multi-vendor agent coordination (Claude Code + GitHub Copilot + custom)"
+    }
+  },
+
   "metadata": {
-    "version": "2.0",
+    "version": "2.1",
     "created": "2026-04-17",
-    "updated": "2026-05-08",
+    "updated": "2026-05-10",
     "project": "react-grapql-playground",
     "total_agents": 6,
     "environment": "GitHub Copilot CLI",
-    "feature": "Multi-agent orchestration with execution plans and robust git workflow",
-    "key_improvements": [
-      "Explicit git add [tracked files] step",
-      "Robust git switch handling (from any branch)",
-      "File tracking validation before commit",
-      "git diff --cached verification",
-      "Execution plan integration for file tracking"
+    "feature": "Multi-agent orchestration with execution plans and parallel execution best practices",
+    "research_applied": [
+      "Cloudflare 7-specialist architecture",
+      "Spec-driven development (GitHub Spec Kit, Intent.ai)",
+      "Token-efficient state management (200-500 tokens per agent)",
+      "LangGraph parallel execution patterns",
+      "A2A protocol for agent interoperability",
+      "Sequential merging with file ownership",
+      "Event-driven state synchronization",
+      "Error classification and recovery"
     ],
-    "related_config": "config.json (execution_planning, multi_agent_orchestration, gh_cli_integration)"
+    "key_improvements": [
+      "Specialist agent roles with focused prompts",
+      "Coordinator pattern for deduplication",
+      "Structured state objects (token efficiency)",
+      "Event-driven synchronization (no stale context)",
+      "Spec-driven development (single source of truth)",
+      "File ownership validation (conflict prevention)",
+      "Sequential merging strategy (intent preservation)",
+      "Error recovery with retry and escalation",
+      "A2A protocol support for multi-vendor"
+    ],
+    "related_config": "config.json, PARALLEL-MULTI-AGENT-WORKFLOWS.md"
   }
 }

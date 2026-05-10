@@ -1,4 +1,11 @@
 {
+  "_notice": "⚠️ LEGACY REFERENCE ONLY - This file is kept for historical reference and detailed configuration documentation. It is NOT used by GitHub Copilot CLI v1.0+. For active configuration, see .github/copilot/settings.json",
+  "_migration_date": "2026-05-10",
+  "_legacy_reason": "This file was the project-specific orchestration configuration before migration to GitHub Copilot CLI v1.0+ standard structure. It contains valuable context about how the multi-agent system was designed and evolved.",
+  "_documentation_location": "docs/copilot/ - See ENHANCEMENT-SUMMARY.md and RESEARCH-ENHANCEMENTS.md for context on how this configuration evolved",
+  "_current_active_config": ".github/copilot/settings.json (GitHub Copilot CLI standard)",
+  "_current_custom_instructions": ".copilot/copilot-instructions.md (GitHub Copilot CLI standard)",
+  "",
   "system": "GitHub Copilot CLI Co-work Session Configuration",
   "version": "2.0",
   "model": "gpt-4-turbo",
@@ -25,6 +32,18 @@
       "Consolidation & PR Review Strategy",
       "GitHub Actions Merge Configuration"
     ],
+    "optional_sections_for_feedback_tracking": [
+      "PR Review Feedback Cycles: Track feedback per PR across phases 3B-3F",
+      "Feature Branch Registry: Map PR numbers to feature branches",
+      "Feedback Resolution Log: Document feedback addressed per cycle"
+    ],
+    "feedback_tracking_format": {
+      "description": "Structure for tracking PR feedback cycles in execution plan",
+      "pr_section_example": "### PR #245: feat/issue-#35-add-skeleton-loading",
+      "cycle_tracking": "#### Cycle 1: Initial Review | Cycle 2: Feedback Fix | Cycle 3: Re-Review",
+      "findings_format": "**Findings (Cycle N):**\n- [File] - [Issue] - Severity: [critical/major/minor]",
+      "registry_format": "| PR # | Feature Branch | Issue | Cycle Status | Next Action |"
+    },
     "orchestrator_reads": true,
     "agents_read": true,
     "automation_trigger": "execution_plan_indicates_parallel_delegation"
@@ -35,55 +54,140 @@
     "description": "Orchestrator agent delegates to developer agents based on execution plan",
     "trigger_condition": "execution_plan.multi_agent_delegation == true",
     "max_concurrent_agents": 5,
-    "agent_types": ["orchestrator", "developer"],
+    "agent_types": ["orchestrator", "developer", "reviewer", "tester"],
     "workflow": {
       "phase_1_planning": "Orchestrator analyzes execution plan and GitHub issues",
       "phase_2_delegation": "Orchestrator creates branches and delegates to agents",
-      "phase_3_implementation": "Developer agents implement per execution plan",
-      "phase_4_consolidation": "Reviewer agent consolidates multiple PRs",
-      "phase_5_merge": "GitHub Actions merges PRs using gh CLI --merge"
+      "phase_3a_initial_implementation": "Developer agents implement features per execution plan on feature branches",
+      "phase_3b_reviewer_examines": "Reviewer examines PR, documents findings, provides feedback",
+      "phase_3c_developer_feedback_cycle": "Developer tracks EXISTING feature branch from PR, implements fixes (steps 11-23 in rules.json)",
+      "phase_3d_pr_auto_update": "Developer pushes fixes to same branch; PR auto-updates with new commits",
+      "phase_3e_reviewer_re_reviews": "Reviewer re-examines same PR; loop to 3C if more fixes needed, or approve",
+      "phase_3f_approval_consolidation_ready": "PR approved; ready to move to Phase 4 consolidation",
+      "phase_4_consolidation": "Reviewer agent creates work/phase-<N>-consolidation, merges all approved feature branches, runs tests",
+      "phase_5_merge": "GitHub Actions merges approved PRs using gh CLI --merge"
+    },
+    "feedback_cycle_handling": {
+      "description": "Explicit handling of PR review feedback in existing feature branches",
+      "phases_3b_to_3f": "Sub-phases within implementation phase for feedback handling",
+      "critical_principle": "Reuse EXISTING feature branch linked to PR; NO new branch creation",
+      "key_command": "gh pr view <PR-NUMBER> --json headRefName (identifies feature branch)",
+      "workflow_pattern": "Phase 3B → 3C → 3D → 3E (loop 3C-3E until approved) → 3F"
     }
   },
 
   "agent_git_workflow": {
     "enabled": true,
     "description": "Delegated agents follow strict git workflow before any operation",
-    "step_1_git_create": {
-      "command": "git branch feat/issue-#<N>-<kebab-case> origin/main",
-      "required": true,
-      "timing": "Before any code changes"
-    },
-    "step_2_git_switch": {
-      "command": "git switch feat/issue-#<N>-<kebab-case>",
-      "required": true,
-      "timing": "Immediately after branch creation"
-    },
-    "step_3_implementation": {
-      "task": "Implement based on execution plan",
-      "track_files": true,
-      "atomic_commits": true
-    },
-    "step_4_file_tracking": {
-      "method": "git status, git diff per commit",
-      "documentation": "Update tracking in execution plan",
-      "feature_branch_requirement": "All changes on feature branch only"
-    },
-    "step_5_commit_message": {
-      "format": "<type>(#<N>): <description>\n\n<body>\n\nCloses #<N>",
-      "examples": [
-        "feat(#35): Add loading skeleton components",
-        "fix(#40): Fix keyboard navigation in modal",
-        "refactor(#32): Optimize N+1 query with DataLoader"
+    "phase_3a_initial_implementation": {
+      "description": "Steps 1-10: Initial feature implementation workflow",
+      "step_1_git_create": {
+        "command": "git branch feat/issue-#<N>-<kebab-case> origin/main",
+        "required": true,
+        "timing": "Before any code changes"
+      },
+      "step_2_git_switch": {
+        "command": "git switch feat/issue-#<N>-<kebab-case>",
+        "required": true,
+        "timing": "Immediately after branch creation"
+      },
+      "step_3_implementation": {
+        "task": "Implement based on execution plan",
+        "track_files": true,
+        "atomic_commits": true
+      },
+      "step_4_file_tracking": {
+        "method": "git status, git diff per commit",
+        "documentation": "Update tracking in execution plan",
+        "feature_branch_requirement": "All changes on feature branch only"
+      },
+      "step_5_commit_message": {
+        "format": "<type>(#<N>): <description>\n\n<body>\n\nCloses #<N>",
+        "examples": [
+          "feat(#35): Add loading skeleton components",
+          "fix(#40): Fix keyboard navigation in modal",
+          "refactor(#32): Optimize N+1 query with DataLoader"
+        ]
+      },
+      "step_6_push": {
+        "command": "git push -u origin feat/issue-#<N>-<kebab-case>",
+        "required": true
+      },
+      "step_7_gh_cli_pr": {
+        "command": "gh pr create --base main --title 'feat: #<N> - Description'",
+        "tool": "GitHub gh CLI",
+        "required": true
+      }
+    }
+  },
+
+  "pr_feedback_cycle_configuration": {
+    "enabled": true,
+    "description": "Configuration for handling PR review feedback while reusing existing feature branches",
+    "version": "1.0",
+    "phase_3b_reviewer_examines": {
+      "description": "Reviewer examines PR and documents findings",
+      "agent": "reviewer",
+      "outputs": [
+        "List of flaws/issues found",
+        "Severity assessment (critical, major, minor)",
+        "Specific file/line suggestions",
+        "Feedback comments on PR"
       ]
     },
-    "step_6_push": {
-      "command": "git push -u origin feat/issue-#<N>-<kebab-case>",
-      "required": true
+    "phase_3c_developer_feedback_handling": {
+      "description": "Developer implements fixes on EXISTING feature branch (steps 11-23)",
+      "agent": "developer",
+      "critical_rule": "REUSE feature branch from PR; DO NOT create new branch",
+      "workflow_steps": {
+        "step_11": "Receive feedback from reviewer",
+        "step_12": "Identify feature branch: gh pr view <PR-NUMBER> --json headRefName",
+        "step_13": "Check current state: git branch",
+        "step_14": "Switch to EXISTING: git switch feat/issue-#<N>-... (🔴 CRITICAL)",
+        "step_15": "Implement feedback fixes",
+        "step_16": "Track modified files",
+        "step_17": "Stage tracked files: git add [files]",
+        "step_18": "Verify: git diff --cached",
+        "step_19": "Commit: git commit -m 'fix(#<N>): Address review feedback'",
+        "step_20": "Push to SAME branch: git push origin feat/issue-#<N>-...",
+        "step_21": "Validate push: git branch -v",
+        "step_22": "Update execution plan with Cycle progress",
+        "step_23": "Await reviewer re-review"
+      },
+      "commit_type": "fix (not feat, not refactor)",
+      "co_author": "Encouraged: Reviewer who provided feedback",
+      "key_commands": [
+        "gh pr view <PR> --json headRefName (get exact branch)",
+        "git switch feat/issue-#<N>-... (reuse existing)",
+        "git push origin feat/issue-#<N>-... (push to same branch)"
+      ]
     },
-    "step_7_gh_cli_pr": {
-      "command": "gh pr create --base main --title 'feat: #<N> - Description'",
-      "tool": "GitHub gh CLI",
-      "required": true
+    "phase_3d_pr_auto_update": {
+      "description": "PR automatically updates with new commits",
+      "notification": "Reviewer is notified of new commits",
+      "no_new_pr": "Same PR #, no duplicate PR created"
+    },
+    "phase_3e_reviewer_re_reviews": {
+      "description": "Reviewer examines new commits on same PR",
+      "actions": [
+        "Review new commits",
+        "Verify all feedback addressed",
+        "Check for new issues",
+        "Outcome: Approve or request more fixes"
+      ],
+      "loop_condition": "If more fixes needed, loop back to phase_3c"
+    },
+    "branch_registry_pattern": {
+      "description": "Track PR numbers and feature branches in execution plan",
+      "format": "| PR # | Feature Branch | Issue | Cycle Status | Next Action |",
+      "purpose": "Quick lookup for orchestrator and developer",
+      "prevents": "Branch confusion; enforces branch reuse"
+    },
+    "consolidation_after_feedback": {
+      "description": "Only start Phase 4 consolidation after all PRs complete feedback cycles",
+      "precondition": "All open PRs must have Phase 3F status (Approved)",
+      "consolidation_branch": "work/phase-<N>-consolidation (work/ prefix for temporary)",
+      "cleanup": "Delete consolidation branch after testing (no PR created from work branch)"
     }
   },
 
@@ -95,15 +199,38 @@
       "get_issue": "gh issue view <number>",
       "create_pr": "gh pr create --base main --head <branch>",
       "list_prs": "gh pr list --state open",
-      "view_pr": "gh pr view <number>",
-      "review_pr": "gh pr review <number> --approve / --request-changes",
-      "merge_pr": "gh pr merge <number> --merge",
-      "close_pr": "gh pr close <number>"
+      "view_pr": "gh pr view <number>"
+    },
+    "pr_feedback_operations": {
+      "description": "GitHub CLI operations for handling PR feedback cycles",
+      "identify_feature_branch": {
+        "command": "gh pr view <PR-NUMBER> --json headRefName",
+        "purpose": "Get exact feature branch from PR (Phase 3C Step 12)",
+        "critical": "Used to identify which branch to switch to for fixes",
+        "example": "gh pr view 245 --json headRefName → feat/issue-#35-add-skeleton-loading"
+      },
+      "view_pr_details": {
+        "command": "gh pr view <PR-NUMBER> --json headRefName,body,comments",
+        "purpose": "Get full PR context including feedback comments"
+      },
+      "review_pr": {
+        "command": "gh pr review <number> --approve / --request-changes",
+        "reviewer_phase": "Phase 3E: After developer pushes fixes"
+      },
+      "merge_pr": {
+        "command": "gh pr merge <number> --merge",
+        "timing": "Phase 5: After consolidation approval"
+      },
+      "close_pr": {
+        "command": "gh pr close <number>",
+        "use_case": "Rarely used; PRs auto-close on merge"
+      }
     },
     "merge_strategy": {
       "method": "gh pr merge --merge",
       "description": "Use --merge flag to keep commit history",
-      "automation": "GitHub Actions triggers merge"
+      "automation": "GitHub Actions triggers merge",
+      "single_branch_benefit": "Clean merge of single feature branch per issue (no multiple branches)"
     }
   },
 
@@ -213,24 +340,36 @@
       "read_plan_and_delegate": "Read execution plan and delegate to appropriate agents",
       "example": "@orchestrator read docs/implementation-planning/[PLAN].md and delegate agents per plan",
       "implicit_delegation": "Orchestrator decides which agent based on plan analysis",
+      "feedback_cycle_monitoring": "Monitor PR feedback cycles; check execution plan for Phase 3B-3F status",
+      "feature_branch_registry": "Reference PR registry in execution plan to understand PR → branch mapping",
       "/plan": "Create execution plan for multi-agent delegation",
       "/ask": "Ask clarifying questions about blockers"
     },
     "developer": {
-      "implement_issue": "Implement issue per execution plan",
+      "implement_issue": "Implement issue per execution plan (Phase 3A: Steps 1-10)",
       "example": "@developer implement issue #35 per execution plan; git create/switch/implement/add/commit/push/PR",
       "file_tracking": "Track modified files during implementation",
+      "handle_pr_feedback": "Handle PR review feedback (Phase 3C: Steps 11-23)",
+      "feedback_workflow": "Track feature branch from PR, switch to EXISTING branch, fix on same branch, push to same branch",
+      "feedback_example": "@developer handle feedback on PR #245: identify branch (gh pr view 245), switch to existing branch, implement fixes (steps 11-23), push to same branch",
+      "critical_instruction": "DO NOT create new branch (e.g., fix/pull-request-245-...). Reuse existing feature branch from PR.",
+      "reference": "See .copilot/PR_FEEDBACK_QUICK_REFERENCE.md for 9-step workflow or rules.json steps 11-23",
       "/plan": "Plan implementation approach",
       "/diff": "Review changes before committing"
     },
     "reviewer": {
-      "consolidate_prs": "Consolidate multiple PRs and verify integration",
-      "example": "@reviewer consolidate Phase 4 PRs per execution plan; create consolidation branch, merge, test, review",
+      "consolidate_prs": "Consolidate multiple PRs and verify integration (Phase 4: after all feedback cycles complete)",
+      "examine_pr": "Examine PR and document findings (Phase 3B)",
+      "re_review_pr": "Re-examine PR after developer pushes fixes (Phase 3E)",
+      "example_consolidate": "@reviewer consolidate Phase 4 PRs per execution plan; create work/phase-<N>-consolidation, merge, test, review, delete work branch",
+      "example_examine": "@reviewer examine PR #245: document findings, provide feedback comments",
+      "example_re_review": "@reviewer re-review PR #245 after developer fixes: check if all feedback addressed, approve or request more",
       "/review": "Automated review of feature branches"
     },
     "tester": {
       "run_tests": "Run test suite per execution plan",
-      "example": "@tester run integration tests per Phase 4 plan",
+      "consolidation_tests": "Run tests on consolidation branch (Phase 4)",
+      "example": "@tester run integration tests on work/phase-4-consolidation branch",
       "/plan": "Plan test strategy"
     }
   },
@@ -238,16 +377,237 @@
   "feature_branch_convention": "feat/issue-#<issue-number>-<kebab-case-description>",
   "commit_message_convention": "<type>(#<issue>): <description>\n\n<body>\n\nCloses #<issue>",
 
+  "specialist_agents_config": {
+    "enabled": true,
+    "coordinator_agent": {
+      "enabled": true,
+      "role": "Synthesize specialist findings into single consolidated review",
+      "responsibilities": [
+        "Deduplicate findings (same issue flagged by multiple agents)",
+        "Judge severity (over-reporting vs missed issues)",
+        "Consolidate into single structured comment"
+      ],
+      "input_sources": [
+        "implementer_review",
+        "security_review",
+        "performance_review",
+        "test_coverage_report",
+        "architecture_review",
+        "documentation_review"
+      ],
+      "output_format": "Single GitHub comment with sections: Blockers | Major Issues | Minor Issues | Documentation",
+      "deduplication_algorithm": "Group by file+line, keep highest severity, merge evidence"
+    }
+  },
+
+  "state_management_config": {
+    "enabled": true,
+    "context_model": "structured_state_objects",
+    "shared_state_object": {
+      "specification": "Source of truth (1-2k tokens)",
+      "implementation_status": "Phase tracking (blocker/in_progress/complete)",
+      "review_findings": "Deduplicated issues (file, line, severity, suggestion)",
+      "error_log": "Immutable record of failures and recoveries",
+      "event_log": "Immutable stream of all agent actions"
+    },
+    "agent_context_per_role": {
+      "max_tokens": 500,
+      "includes": ["specification", "relevant_files", "role_instructions", "recent_errors"],
+      "excludes": ["full_conversation_history", "all_code_files", "unrelated_PRs"]
+    },
+    "token_budget": {
+      "total_context_window": 200000,
+      "reserved_for_response": "50000 (25%)",
+      "available_for_context": 150000,
+      "allocation": {
+        "specification": "1-2k",
+        "relevant_code": "30-50k",
+        "shared_state": "0.5-1k",
+        "role_instructions": "2-5k",
+        "tool_outputs": "10-20k",
+        "buffer": "10-20k"
+      }
+    },
+    "synchronization": {
+      "pattern": "event_driven",
+      "mechanism": "Immutable event log applied to state",
+      "benefit": "Agents always see latest state, no stale assumptions",
+      "audit_trail": "Every change is logged and traceable"
+    }
+  },
+
+  "spec_driven_development_config": {
+    "enabled": true,
+    "source_of_truth": "Execution plan markdown file",
+    "location": "docs/implementation-planning/EXECUTION-PLAN-*.md",
+    "required_sections": [
+      "Overview & Goals",
+      "Specification (Machine-readable requirements)",
+      "Agent Assignments (Who does what)",
+      "File Ownership Map (Prevent conflicts)",
+      "Progress Log (Updated by agents)",
+      "Blockers & Handoffs (Track dependencies)"
+    ],
+    "workflow": {
+      "1_agents_read_spec": "Before starting work, agent reads spec for context and constraints",
+      "2_agents_execute": "Implement to spec; if need outside scope, create handoff request",
+      "3_spec_updates": "Progress logged in spec; blockers documented immediately",
+      "4_feedback_loop": "When spec unclear, agents request clarification via handoff",
+      "5_evolved_spec": "Spec evolves with learnings; becomes self-documenting history"
+    },
+    "benefits": [
+      "Single interpretation (all agents reading same spec, not repeating via prompt)",
+      "Explicit handoffs (trackable dependencies)",
+      "Self-documenting (spec IS the progress report)"
+    ]
+  },
+
+  "parallel_execution_config_enhanced": {
+    "enabled": true,
+    "max_concurrent_agents": 5,
+    "preconditions": [
+      {
+        "check": "zero_blocking_dependencies",
+        "criticality": "CRITICAL",
+        "validation": "List all dependencies; mark as blocking or informational; only proceed if zero blocking"
+      },
+      {
+        "check": "file_ownership_mapped",
+        "criticality": "CRITICAL (prevents 90% of conflicts)",
+        "validation": "Create ownership matrix; verify no two agents touch same file; document handoffs"
+      },
+      {
+        "check": "context_isolated",
+        "criticality": "HIGH",
+        "validation": "Each agent gets <1k tokens shared state, not 20k conversation"
+      },
+      {
+        "check": "independent_types",
+        "criticality": "HIGH",
+        "validation": "Different work types (code, tests, docs) can run in parallel safely"
+      }
+    ],
+    "efficiency_targets": {
+      "speedup_multiplier": "2.5-3.5x for 3-5 independent tasks",
+      "example": "3 tasks × 60 min = 180 min sequential → 50-60 min parallel (72% reduction)",
+      "scaling": "Up to 5 agents sustainable; beyond requires careful governance"
+    },
+    "conflict_prevention": {
+      "strategy_1_upfront_planning": "HIGHEST ROI (prevents 90% of conflicts)",
+      "strategy_2_sequential_merging": "Merge agent 1 → rebase others → merge agent 2 → rebase agent 3",
+      "strategy_3_ai_resolution": "AI can resolve simple conflicts (list merges); human for complex"
+    },
+    "safety_checks": [
+      "dependency_analysis (blocking vs informational)",
+      "file_overlap_detection (no same-file mods)",
+      "git_worktree_isolation (each agent isolated)",
+      "context_window_budget (per-agent <1k tokens)",
+      "spec_drift_prevention (single source of truth)"
+    ]
+  },
+
+  "error_recovery_config": {
+    "enabled": true,
+    "error_classification": {
+      "syntax_error": { "agent": "implementer", "action": "retry_generation", "max_retries": 3 },
+      "test_failure": { "agent": "implementer", "action": "debug_and_fix", "max_retries": 3 },
+      "type_mismatch": { "agent": "implementer", "action": "type_correction", "max_retries": 2 },
+      "logic_error": { "agent": "implementer", "action": "trace_logic", "max_retries": 2 },
+      "performance": { "agent": "performance_reviewer", "action": "optimization_suggestion", "severity": "minor" },
+      "security": { "agent": "security_reviewer", "action": "escalate_to_human", "severity": "blocker" },
+      "architecture": { "agent": "architecture_reviewer", "action": "redesign", "severity": "major" },
+      "integration": { "agent": "orchestrator", "action": "rebase_and_merge", "max_retries": 2 }
+    },
+    "retry_strategy": {
+      "pattern": "Exponential backoff: 2^n seconds between retries",
+      "max_attempts": 3,
+      "escalation": "After 3 failures, escalate to human with full context"
+    },
+    "memory_system": {
+      "success_patterns": "Track what worked (for future similar tasks)",
+      "failure_patterns": "Track what didn't work (avoid repeat mistakes)",
+      "continuous_improvement": "Each failure makes system smarter"
+    },
+    "self_validation": "Agent validates output against explicit success criteria before returning"
+  },
+
+  "feedback_handling_best_practices": {
+    "enabled": true,
+    "description": "Best practices for handling PR review feedback efficiently and cleanly",
+    "core_principle": "One issue = One feature branch = One PR = Clean merge",
+    "critical_constraints": {
+      "reuse_existing_branch": {
+        "rule": "REUSE existing feature branch from PR for feedback fixes",
+        "example_correct": "git switch feat/issue-#35-add-skeleton-loading (identified via gh pr view)",
+        "example_wrong": "git branch fix/pull-request-245-skeleton (NEVER create new branch)",
+        "reason": "Prevents merge complexity of multiple branches per issue"
+      },
+      "no_new_pr_for_fixes": {
+        "rule": "DO NOT create new PR for feedback fixes",
+        "mechanism": "Push to existing branch; PR auto-updates",
+        "benefit": "Single PR per issue = clear history"
+      },
+      "stage_only_fix_files": {
+        "rule": "Only stage files modified for feedback fixes",
+        "correct": "git add [file1] [file2] (specific files)",
+        "wrong": "git add . or git add -A (stages everything)",
+        "verification": "git diff --cached (verify before commit)"
+      }
+    },
+    "feedback_cycle_loop": {
+      "description": "Handle multiple feedback cycles until approved",
+      "cycle_structure": [
+        "Phase 3B: Reviewer examines PR, documents findings",
+        "Phase 3C: Developer implements fixes on existing branch (steps 11-23)",
+        "Phase 3D: Developer pushes to same branch (PR auto-updates)",
+        "Phase 3E: Reviewer re-reviews; loop to 3C if more fixes needed, else approve",
+        "Phase 3F: Approved; ready for consolidation (Phase 4)"
+      ],
+      "loop_indicator": "Tracking in execution plan shows which cycle (Cycle 1, 2, 3, ...)"
+    },
+    "execution_plan_tracking": {
+      "pr_registry": "Maintain table: PR # → Feature Branch → Issue → Cycle Status",
+      "feedback_log": "For each PR, document: what feedback was received, what was fixed per cycle",
+      "progress_visibility": "Clear audit trail of feedback addressed per cycle"
+    },
+    "commit_semantics_for_feedback": {
+      "type": "fix (not feat, not refactor)",
+      "example": "fix(#35): Address review feedback",
+      "body": "- Fixed: [specific item 1]\n- Fixed: [specific item 2]",
+      "co_author": "Optional: Reviewer who provided feedback",
+      "reason": "Semantic clarity in commit history"
+    },
+    "when_to_consolidate": {
+      "precondition": "All PRs must complete feedback cycles (Phase 3F: Approved)",
+      "consolidation_branch": "work/phase-<N>-consolidation (work/ = temporary, no PR)",
+      "testing": "Merge all approved feature branches, run tests",
+      "verification": "Verify integration, then approve individual PRs for merge"
+    }
+  },
+
   "metadata": {
-    "version": "2.0",
-    "updated": "2026-05-08",
-    "purpose": "GitHub Copilot CLI co-work session with execution plans and multi-agent delegation",
-    "target_audience": "Development teams using GitHub Copilot CLI",
+    "version": "2.2",
+    "updated": "2026-05-10",
+    "purpose": "GitHub Copilot CLI with PR feedback cycle handling and parallel multi-agent execution",
+    "target_audience": "Development teams implementing parallel AI workflows with PR feedback cycles",
     "supported_cli_version": "1.0+",
+    "enhancement_date": "2026-05-10",
+    "enhancement_focus": "PR Feedback Cycle (Phases 3B-3F) with existing feature branch reuse",
+    "research_sources": [
+      "Cloudflare AI Code Review (7-specialist architecture)",
+      "Spec-Driven Development (GitHub Spec Kit)",
+      "LangGraph Documentation (parallel execution patterns)",
+      "A2A Protocol (agent interoperability)",
+      "Multi-Agent AI Research (2025-2026 arXiv papers)",
+      "GitHub PR Feedback Best Practices (2025)"
+    ],
     "related_files": [
-      "rules.json - Agent approval and routing",
-      "docs/implementation-planning/ - Execution plans",
-      ".github/workflows/ - GitHub Actions",
+      "rules.json - Agent approval, specialist roles, PR feedback steps (11-23)",
+      "docs/PARALLEL-MULTI-AGENT-WORKFLOWS.md - Complete research synthesis",
+      "docs/RULES_JSON_ENHANCEMENT_PR_FEEDBACK_CYCLE.md - Detailed enhancement guide",
+      "docs/implementation-planning/ - Execution plans with feedback tracking",
+      ".copilot/PR_FEEDBACK_QUICK_REFERENCE.md - 9-step developer quick guide",
+      ".github/workflows/ - GitHub Actions for auto-merge",
       ".copilot/agents/ - Agent definitions"
     ]
   }

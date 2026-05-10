@@ -1,0 +1,24 @@
+{
+  "model": "claude-opus-4-7",
+  "theme": "auto",
+  "custom-instructions-enabled": true,
+  "execution-planning-enabled": true,
+  "multi-agent-orchestration": {
+    "enabled": true,
+    "max-concurrent-agents": 5,
+    "orchestrator-role": "Analyzes execution plans and delegates to specialized agents"
+  },
+  "pr-feedback-cycle": {
+    "enabled": true,
+    "feature-branch-reuse": "REQUIRED - Never create new branches for feedback fixes",
+    "phase-workflow": "3B (review) → 3C (fix on existing branch) → 3D (push) → 3E (re-review) → 3F (approve)"
+  },
+  "copilot-instructions": ".copilot/copilot-instructions.md",
+  "agents-directory": ".copilot/agents/",
+  "rules-reference": ".copilot/rules.json",
+  "documentation": {
+    "execution-plans": "docs/implementation-planning/",
+    "quick-reference": ".copilot/PR_FEEDBACK_QUICK_REFERENCE.md",
+    "orchestration-guide": ".copilot/PARALLEL-EXECUTION-GUIDE.md"
+  }
+}

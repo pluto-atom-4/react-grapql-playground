@@ -1,0 +1,82 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "enabled": true,
+      "description": "Browser automation and E2E testing for React frontend",
+      "capabilities": [
+        "page creation and navigation",
+        "element interaction and assertions",
+        "screenshot capture",
+        "network monitoring",
+        "performance metrics"
+      ],
+      "config": {
+        "headless": true,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "timeout": 30000,
+        "slowMo": 0,
+        "recordVideo": false
+      },
+      "useCase": "E2E testing dashboard features, form submissions, real-time updates, API integration flows"
+    },
+    "postgresql": {
+      "enabled": true,
+      "description": "PostgreSQL database inspection and query execution",
+      "capabilities": [
+        "schema inspection",
+        "query execution",
+        "table browsing",
+        "data analysis",
+        "migration inspection"
+      ],
+      "config": {
+        "connectionString": "postgresql://user:password@localhost:5432/boltline",
+        "timeout": 5000,
+        "maxConnections": 5
+      },
+      "useCase": "Inspect Build/Part/TestRun tables, debug migrations, analyze query performance, validate data integrity"
+    },
+    "git": {
+      "enabled": true,
+      "description": "Git repository analysis and history inspection",
+      "capabilities": [
+        "commit history analysis",
+        "branch tracking",
+        "blame and code origin",
+        "diff analysis",
+        "tag management"
+      ],
+      "config": {
+        "depth": 100,
+        "includeRemotes": true
+      },
+      "useCase": "Understand codebase evolution, trace feature development, analyze commit patterns, investigate bug origins"
+    },
+    "apiTesting": {
+      "enabled": true,
+      "description": "GraphQL and REST API testing, validation, and integration",
+      "capabilities": [
+        "GraphQL query/mutation execution",
+        "REST endpoint testing",
+        "schema validation",
+        "response mocking",
+        "webhook simulation"
+      ],
+      "config": {
+        "graphqlEndpoint": "http://localhost:4000/graphql",
+        "expressEndpoint": "http://localhost:5000",
+        "timeout": 10000,
+        "retries": 2
+      },
+      "useCase": "Test GraphQL queries/mutations in Apollo, validate resolver logic, simulate CI/CD webhooks, test file upload endpoints"
+    }
+  },
+  "notes": {
+    "setup": "Ensure PostgreSQL container is running: docker-compose up -d",
+    "services": "All three services must be running: pnpm dev (or individual dev:frontend, dev:graphql, dev:express)",
+    "envVars": ".env.local should contain POSTGRES_* and API endpoint configs (see .env.example if available)"
+  }
+}
