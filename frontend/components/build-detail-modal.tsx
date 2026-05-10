@@ -14,6 +14,7 @@ import { useTestRuns } from '@/lib/hooks/useTestRuns';
 import type { TestRun } from '@/lib/generated/graphql';
 import { TestRunDetailsPanel } from './test-run-details-panel';
 import { useToast } from '@/lib/error-notifier';
+import { ModalSkeleton } from './SkeletonLoader/ModalSkeleton';
 
 interface Part {
   id: string;
@@ -71,13 +72,7 @@ function BuildDetailContent({
   }, [buildId, startPolling, stopPolling]);
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
-          <p>Loading build details...</p>
-        </div>
-      </div>
-    );
+    return <ModalSkeleton />;
   }
 
   if (error || !build) {
