@@ -6,6 +6,7 @@ import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
 import BuildDetailModal from './build-detail-modal';
 import { CreateBuildModal } from './create-build-modal';
 import { TableSkeleton } from './SkeletonLoader/TableSkeleton';
+import Pagination from './Pagination';
 import type { Build } from '@/lib/generated/graphql';
 
 interface BuildItem {
@@ -27,7 +28,20 @@ interface BuildsTableProps {
  * - Cache-first strategy when initialBuilds provided prevents unnecessary queries
  */
 function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
-  const { builds: fetchedBuilds, loading, error } = useBuilds();
+  const {
+    builds: fetchedBuilds,
+    loading,
+    error,
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    hasNextPage,
+    hasPreviousPage,
+    goToNextPage,
+    goToPreviousPage,
+    setPageSize,
+  } = useBuilds();
   const { createBuild } = useCreateBuild();
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -157,7 +171,17 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
         </table>
       )}
 
-      {selectedBuildId && (
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onNextPage={goToNextPage}
+        onPreviousPage={goToPreviousPage}
+        onPageSizeChange={setPageSize}
+        isNextDisabled={!hasNextPage}
+        isPrevDisabled={!hasPreviousPage}
+      />
         <BuildDetailModal
           buildId={selectedBuildId}
           onClose={(): void => setSelectedBuildId(null)}
