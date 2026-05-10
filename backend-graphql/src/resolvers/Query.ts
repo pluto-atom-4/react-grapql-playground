@@ -6,7 +6,7 @@ export const queryResolver = {
     /**
      * List all builds with pagination.
      * Requires authentication.
-     * Does NOT use DataLoader (already paginated at DB level).
+     * Returns pagination metadata along with builds.
      */
     async builds(
       _parent: unknown,
@@ -26,11 +26,26 @@ export const queryResolver = {
         throw new Error('offset must be >= 0');
       }
 
-      return context.prisma.build.findMany({
+      // Get total count for pagination metadata
+      const totalCount = await context.prisma.build.count();
+
+      // Fetch builds for current page
+      const items = await context.prisma.build.findMany({
         take: args.limit,
         skip: args.offset,
         orderBy: { createdAt: 'desc' },
       });
+
+      // Calculate pagination flags
+      const hasNextPage = args.offset + args.limit < totalCount;
+      const hasPreviousPage = args.offset > 0;
+
+      return {
+        items,
+        totalCount,
+        hasNextPage,
+        hasPreviousPage,
+      };
     },
 
     /**

@@ -62,7 +62,12 @@ export const TEST_RUN_FRAGMENT = gql`
 export const BUILDS_QUERY = gql`
   query GetBuilds($limit: Int!, $offset: Int!) {
     builds(limit: $limit, offset: $offset) {
-      ...BuildInfo
+      items {
+        ...BuildInfo
+      }
+      totalCount
+      hasNextPage
+      hasPreviousPage
     }
   }
   ${BUILD_FRAGMENT}

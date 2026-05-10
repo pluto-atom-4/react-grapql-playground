@@ -47,6 +47,7 @@ describe('Resolver Authentication', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         }),
+        count: async () => 42,
       },
       part: {
         create: async () => ({
