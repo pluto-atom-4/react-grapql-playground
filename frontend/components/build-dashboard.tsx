@@ -182,6 +182,8 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
         isNextDisabled={!hasNextPage}
         isPrevDisabled={!hasPreviousPage}
       />
+
+      {selectedBuildId && (
         <BuildDetailModal
           buildId={selectedBuildId}
           onClose={(): void => setSelectedBuildId(null)}
