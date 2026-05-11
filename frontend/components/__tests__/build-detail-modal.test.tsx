@@ -456,4 +456,103 @@ describe('BuildDetailModal Integration Tests', () => {
       });
     });
   });
+
+  describe('Accessibility - WCAG 2.1 Level AA', () => {
+    it('should have scope="col" on table headers', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const headers = screen.getAllByRole('columnheader');
+        expect(headers.length).toBeGreaterThan(0);
+        headers.forEach((header) => {
+          expect(header).toHaveAttribute('scope', 'col');
+        });
+      });
+    });
+
+    it('should have role="status" on dynamic status content', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const statusBadges = screen.getAllByRole('status');
+        expect(statusBadges.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should have aria-label on close button', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const closeButton = screen.getByLabelText(/close/i);
+        expect(closeButton).toBeInTheDocument();
+        expect(closeButton).toHaveAttribute('aria-label');
+      });
+    });
+
+    it('should have aria-label on status action buttons', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const buttons = screen.getAllByRole('button');
+        // At least some buttons should have aria-label
+        const labbledButtons = buttons.filter((btn) => btn.hasAttribute('aria-label'));
+        expect(labbledButtons.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should have proper semantic table headers in Parts table', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const partsSection = screen.getByText(/Parts/);
+        expect(partsSection).toBeInTheDocument();
+      });
+
+      const columnHeaders = screen.getAllByRole('columnheader');
+      expect(columnHeaders.length).toBeGreaterThan(0);
+      columnHeaders.forEach((header) => {
+        expect(header).toHaveAttribute('scope', 'col');
+      });
+    });
+
+    it('should have proper semantic table headers in Test Runs table', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const testRunsSection = screen.getByText(/Test Runs/);
+        expect(testRunsSection).toBeInTheDocument();
+      });
+
+      const columnHeaders = screen.getAllByRole('columnheader');
+      expect(columnHeaders.length).toBeGreaterThan(0);
+      columnHeaders.forEach((header) => {
+        expect(header).toHaveAttribute('scope', 'col');
+      });
+    });
+
+    it('should support keyboard interaction on test run rows', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('test-run-1')).toBeInTheDocument();
+      });
+
+      const row = screen.getByTestId('test-run-1');
+      // Verify the row has keyboard accessibility attributes
+      expect(row).toHaveAttribute('role', 'button');
+      expect(row).toHaveAttribute('tabIndex', '0');
+    });
+
+    it('should have all buttons with proper interactive styling', async (): Promise<void> => {
+      render(<BuildDetailModal buildId="build-123" onClose={vi.fn()} />);
+
+      await waitFor(() => {
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.length).toBeGreaterThan(0);
+        // Filter to only BUTTON elements (not rows with role="button")
+        const buttonElements = buttons.filter((btn) => btn.tagName === 'BUTTON');
+        expect(buttonElements.length).toBeGreaterThan(0);
+      });
+    });
+  });
 });

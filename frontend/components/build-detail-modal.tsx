@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ReactElement } from 'react';
 import {
   useBuildDetail,
@@ -61,6 +61,63 @@ function BuildDetailContent({
   const [isAddingPart, setIsAddingPart] = useState(false);
   const [isSubmittingTestRun, setIsSubmittingTestRun] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  
+  // Modal ref for focus management and trap
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Escape key handler to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  // Focus trap: keep Tab inside modal
+  useEffect(() => {
+    if (!modalRef.current) return;
+    
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      
+      const focusableElements = modalRef.current!.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      
+      if (focusableElements.length === 0) return;
+      
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleTabKey);
+    return () => window.removeEventListener('keydown', handleTabKey);
+  }, []);
+
+  // Focus first element when modal opens
+  useEffect(() => {
+    if (!modalRef.current) return;
+    const firstButton = modalRef.current.querySelector('button');
+    if (firstButton) {
+      setTimeout(() => firstButton.focus(), 0);
+    }
+  }, []);
 
   // Start polling when modal opens, stop when closes
   useEffect(() => {
@@ -187,10 +244,21 @@ function BuildDetailContent({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
+      <div 
+        ref={modalRef}
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="build-detail-title"
+        className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" 
+        onClick={(e): void => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center px-6 py-6 border-b border-gray-200">
-          <h2 className="m-0 text-2xl text-gray-800">{buildData.name}</h2>
-          <button onClick={onClose} className="bg-none border-none text-2xl cursor-pointer text-gray-600 px-0 py-0 w-10 h-10 flex items-center justify-center hover:text-gray-800">
+          <h2 id="build-detail-title" className="m-0 text-2xl text-gray-800">{buildData.name}</h2>
+          <button 
+            onClick={onClose} 
+            aria-label="Close build details modal"
+            className="bg-none border-none text-2xl cursor-pointer text-gray-600 px-0 py-0 w-10 h-10 flex items-center justify-center hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+          >
             ×
           </button>
         </div>
@@ -198,12 +266,18 @@ function BuildDetailContent({
         <div className="px-6 py-6">
           <section className="pb-4 border-b border-gray-200">
             <h3 className="mt-0 mb-4 text-lg text-gray-800">Build Status</h3>
-            <p className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
-              buildData.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-900' :
-              buildData.status.toLowerCase() === 'running' ? 'bg-cyan-100 text-cyan-900' :
-              buildData.status.toLowerCase() === 'complete' ? 'bg-green-100 text-green-900' :
-              'bg-red-100 text-red-900'
-            }`}>{buildData.status}</p>
+            <p 
+              role="status" 
+              aria-label={`Current build status is ${buildData.status}`}
+              className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+                buildData.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-900' :
+                buildData.status.toLowerCase() === 'running' ? 'bg-cyan-100 text-cyan-900' :
+                buildData.status.toLowerCase() === 'complete' ? 'bg-green-100 text-green-900' :
+                'bg-red-100 text-red-900'
+              }`}
+            >
+              {buildData.status}
+            </p>
             {buildData.description && <p>{buildData.description}</p>}
             <div className="flex gap-2 mt-4 flex-wrap">
               {['PENDING', 'RUNNING', 'COMPLETE', 'FAILED'].map((status) => (
@@ -211,7 +285,8 @@ function BuildDetailContent({
                   key={status}
                   onClick={(): void => handleStatusChange(status)}
                   disabled={isUpdatingStatus || buildData.status === status}
-                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label={`Change build status to ${status}`}
+                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {status}
                 </button>
@@ -225,9 +300,9 @@ function BuildDetailContent({
               <table className="w-full border-collapse mb-4 bg-gray-50 rounded overflow-hidden">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Name</th>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">SKU</th>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Qty</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Name</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">SKU</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Qty</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -243,7 +318,12 @@ function BuildDetailContent({
             ) : (
               <p className="text-center py-8 text-gray-600">No parts added yet</p>
             )}
-            <button onClick={handleAddPart} disabled={isAddingPart} className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed">
+            <button 
+              onClick={handleAddPart} 
+              disabled={isAddingPart} 
+              aria-label="Add new part to build"
+              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               {isAddingPart ? 'Adding...' : 'Add Part'}
             </button>
           </section>
@@ -253,7 +333,12 @@ function BuildDetailContent({
               <h3 className="m-0">Test Runs ({testRuns?.length || 0})</h3>
               {/* Polling indicator */}
               {isPolling && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded text-sm text-blue-700" data-testid="polling-indicator">
+                <div 
+                  role="status" 
+                  aria-live="polite"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded text-sm text-blue-700" 
+                  data-testid="polling-indicator"
+                >
                   <span className="inline-block animate-pulse text-base">●</span>
                   <span className="font-medium">Live Updates</span>
                 </div>
@@ -262,9 +347,18 @@ function BuildDetailContent({
 
             {/* Show polling error if it occurs */}
             {testRunsError && (
-              <div className="flex justify-between items-center gap-4 mb-4 px-4 py-4 bg-yellow-100 border border-yellow-400 rounded" data-testid="polling-error">
+              <div 
+                role="alert" 
+                aria-live="assertive"
+                className="flex justify-between items-center gap-4 mb-4 px-4 py-4 bg-yellow-100 border border-yellow-400 rounded" 
+                data-testid="polling-error"
+              >
                 <p>Failed to fetch test run updates. Retrying...</p>
-                <button onClick={() => void refetchTestRuns()} className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap">
+                <button 
+                  onClick={() => void refetchTestRuns()} 
+                  aria-label="Retry fetching test run updates"
+                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
                   Retry Now
                 </button>
               </div>
@@ -275,9 +369,9 @@ function BuildDetailContent({
               <table className="w-full border-collapse mb-4 bg-gray-50 rounded overflow-hidden">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Status</th>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Result</th>
-                    <th className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Completed</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Status</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Result</th>
+                    <th scope="col" className="px-3 py-3 text-left font-semibold text-gray-700 text-sm border-b border-gray-300">Completed</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -289,8 +383,9 @@ function BuildDetailContent({
                       className="cursor-pointer transition-colors duration-200 hover:bg-cyan-50"
                       role="button"
                       tabIndex={0}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           setSelectedTestRunId(run.id);
                         }
                       }}
@@ -319,7 +414,8 @@ function BuildDetailContent({
             <button
               onClick={handleSubmitTestRun}
               disabled={isSubmittingTestRun}
-              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Submit new test run"
+              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {isSubmittingTestRun ? 'Submitting...' : 'Submit Test Run'}
             </button>

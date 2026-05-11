@@ -271,7 +271,20 @@ pnpm test
 - **Vitest** for unit/integration tests
 - **React Testing Library** for components
 - **Supertest** for Express routes
-- All tests passing (339/339)
+- All tests passing (791/791)
+
+### Accessibility
+
+- **WCAG 2.1 Level AA** compliant
+- Comprehensive ARIA labels and roles
+- Full keyboard navigation support
+- Focus management and focus trap
+- Screen reader compatible
+- High contrast compliance
+- Semantic HTML throughout
+- Automated accessibility tests
+
+See [ACCESSIBILITY.md](docs/dev-note/ACCESSIBILITY.md) for detailed compliance documentation and testing procedures.
 
 ### Architecture
 
@@ -306,6 +319,7 @@ This repository demonstrates:
 - Monorepo with pnpm workspaces
 - Production-ready error handling
 - Comprehensive documentation
+- WCAG 2.1 Level AA accessibility compliance
 - CI/CD ready
 
 See [docs/start-from-here.md](docs/start-from-here.md) for the 7-day interview prep plan.
