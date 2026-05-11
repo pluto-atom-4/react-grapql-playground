@@ -383,8 +383,9 @@ function BuildDetailContent({
                       className="cursor-pointer transition-colors duration-200 hover:bg-cyan-50"
                       role="button"
                       tabIndex={0}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           setSelectedTestRunId(run.id);
                         }
                       }}
