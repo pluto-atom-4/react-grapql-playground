@@ -115,7 +115,7 @@ export default function Pagination({
         <button
           onClick={onPreviousPage}
           disabled={isPrevDisabled}
-          className="px-4 py-2 rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+          className="px-4 py-2 rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Previous page"
           data-testid="pagination-prev-button"
         >
@@ -125,7 +125,7 @@ export default function Pagination({
         <button
           onClick={onNextPage}
           disabled={isNextDisabled}
-          className="px-4 py-2 rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+          className="px-4 py-2 rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Next page"
           data-testid="pagination-next-button"
         >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { ReactElement } from 'react';
 import { useBuilds, useCreateBuild } from '@/lib/apollo-hooks';
 import BuildDetailModal from './build-detail-modal';
@@ -46,6 +46,22 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   const [selectedBuildId, setSelectedBuildId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  // Focus management: store focus when opening modal, restore when closing
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  
+  const handleOpenModal = (buildId: string) => {
+    previousActiveElementRef.current = document.activeElement as HTMLElement;
+    setSelectedBuildId(buildId);
+  };
+  
+  const handleCloseModal = () => {
+    setSelectedBuildId(null);
+    // Restore focus to button that opened modal
+    setTimeout(() => {
+      previousActiveElementRef.current?.focus();
+    }, 0);
+  };
 
   // Prefer fresh client-fetched data over stale server-provided initial data.
   // This ensures mutations that call refetch() show new data immediately.
@@ -103,10 +119,14 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
       <div className="flex justify-between items-center mb-8">
         <h1 className="m-0 text-4xl text-gray-800">Build Dashboard</h1>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            previousActiveElementRef.current = document.activeElement as HTMLElement;
+            setIsCreateModalOpen(true);
+          }}
           disabled={isCreating}
           data-testid="create-build-button"
-          className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed"
+          aria-label="Create new build"
+          className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {isCreating ? 'Creating...' : 'Create Build'}
         </button>
@@ -159,8 +179,9 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
                   <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-4 border-b border-gray-100">
                     <button
-                      onClick={(): void => setSelectedBuildId(build.id)}
-                      className="px-5 py-2.5 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={(): void => handleOpenModal(build.id)}
+                      aria-label={`View details for build ${build.name}`}
+                      className="px-5 py-2.5 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       View Details
                     </button>
@@ -187,14 +208,20 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
       {selectedBuildId && (
         <BuildDetailModal
           buildId={selectedBuildId}
-          onClose={(): void => setSelectedBuildId(null)}
+          onClose={handleCloseModal}
         />
       )}
 
       <CreateBuildModal
         key={`modal-${isCreateModalOpen}`}
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          // Restore focus to button that opened modal
+          setTimeout(() => {
+            previousActiveElementRef.current?.focus();
+          }, 0);
+        }}
         onSubmit={handleCreateBuild}
         isLoading={isCreating}
       />
