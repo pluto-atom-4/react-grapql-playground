@@ -173,7 +173,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
                   <td className="px-4 py-4 border-b border-gray-100" data-testid="build-name">{build.name}</td>
                   <td className="px-4 py-4 border-b border-gray-100">
                     <StatusBadge 
-                      status={(build.status?.toUpperCase() as BuildStatus) || 'PENDING'} 
+                      status={build.status || 'PENDING'} 
                     />
                   </td>
                   <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt).toLocaleDateString()}</td>
