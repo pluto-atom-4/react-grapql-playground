@@ -8,15 +8,8 @@ import { CreateBuildModal } from './create-build-modal';
 import { TableSkeleton } from './SkeletonLoader/TableSkeleton';
 import Pagination from './Pagination';
 import { EmptyState } from './EmptyState';
-import { StatusBadge, type BuildStatus } from './StatusBadge';
+import { StatusBadge } from './StatusBadge';
 import type { Build } from '@/lib/generated/graphql';
-
-interface BuildItem {
-  id: string;
-  name: string;
-  status: string;
-  createdAt: string;
-}
 
 interface BuildsTableProps {
   initialBuilds?: Build[];
@@ -156,7 +149,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
             </tr>
           </thead>
           <tbody>
-            {builds.map((build: BuildItem) => {
+            {builds.map((build: Build) => {
               const statusClassName = `border-l-4 ${
                 build.status.toLowerCase() === 'pending' ? 'border-l-yellow-400' :
                 build.status.toLowerCase() === 'running' ? 'border-l-blue-400' :
