@@ -18,7 +18,7 @@ type Documents = {
   '\n  fragment BuildInfo on Build {\n    id\n    name\n    description\n    status\n    createdAt\n    updatedAt\n  }\n': typeof types.BuildInfoFragmentDoc;
   '\n  fragment PartInfo on Part {\n    id\n    buildId\n    name\n    sku\n    quantity\n    createdAt\n  }\n': typeof types.PartInfoFragmentDoc;
   '\n  fragment TestRunInfo on TestRun {\n    id\n    buildId\n    status\n    result\n    fileUrl\n    completedAt\n    createdAt\n    updatedAt\n  }\n': typeof types.TestRunInfoFragmentDoc;
-  '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      ...BuildInfo\n    }\n  }\n  \n': typeof types.GetBuildsDocument;
+  '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        ...BuildInfo\n      }\n      totalCount\n      hasNextPage\n      hasPreviousPage\n    }\n  }\n  \n': typeof types.GetBuildsDocument;
   '\n  query GetBuildDetail($id: ID!) {\n    build(id: $id) {\n      ...BuildInfo\n      parts {\n        ...PartInfo\n      }\n      testRuns {\n        ...TestRunInfo\n      }\n    }\n  }\n  \n  \n  \n': typeof types.GetBuildDetailDocument;
   '\n  query GetTestRuns($buildId: ID!) {\n    testRuns(buildId: $buildId) {\n      ...TestRunInfo\n    }\n  }\n  \n': typeof types.GetTestRunsDocument;
   '\n  mutation CreateBuild($name: String!, $description: String) {\n    createBuild(name: $name, description: $description) {\n      ...BuildInfo\n    }\n  }\n  \n': typeof types.CreateBuildDocument;
@@ -35,7 +35,7 @@ const documents: Documents = {
     types.PartInfoFragmentDoc,
   '\n  fragment TestRunInfo on TestRun {\n    id\n    buildId\n    status\n    result\n    fileUrl\n    completedAt\n    createdAt\n    updatedAt\n  }\n':
     types.TestRunInfoFragmentDoc,
-  '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      ...BuildInfo\n    }\n  }\n  \n':
+  '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        ...BuildInfo\n      }\n      totalCount\n      hasNextPage\n      hasPreviousPage\n    }\n  }\n  \n':
     types.GetBuildsDocument,
   '\n  query GetBuildDetail($id: ID!) {\n    build(id: $id) {\n      ...BuildInfo\n      parts {\n        ...PartInfo\n      }\n      testRuns {\n        ...TestRunInfo\n      }\n    }\n  }\n  \n  \n  \n':
     types.GetBuildDetailDocument,
@@ -93,8 +93,8 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      ...BuildInfo\n    }\n  }\n  \n'
-): (typeof documents)['\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      ...BuildInfo\n    }\n  }\n  \n'];
+  source: '\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        ...BuildInfo\n      }\n      totalCount\n      hasNextPage\n      hasPreviousPage\n    }\n  }\n  \n'
+): (typeof documents)['\n  query GetBuilds($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        ...BuildInfo\n      }\n      totalCount\n      hasNextPage\n      hasPreviousPage\n    }\n  }\n  \n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
