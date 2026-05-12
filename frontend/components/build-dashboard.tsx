@@ -126,7 +126,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
           disabled={isCreating}
           data-testid="create-build-button"
           aria-label="Create new build"
-          className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
         >
           {isCreating ? 'Creating...' : 'Create Build'}
         </button>
@@ -157,7 +157,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
               return (
                 <tr
                   key={build.id}
-                  className={`border-b border-gray-200 hover:bg-gray-50 ${statusClassName}`}
+                  className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 ${statusClassName}`}
                   style={{ minHeight: '56px' }}
                   data-testid={`build-${build.id}`}
                 >
@@ -181,7 +181,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
                     <button
                       onClick={(): void => handleOpenModal(build.id)}
                       aria-label={`View details for build ${build.name}`}
-                      className="px-5 py-2.5 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-5 py-2.5 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
                     >
                       View Details
                     </button>

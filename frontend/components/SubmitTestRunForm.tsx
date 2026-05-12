@@ -183,7 +183,7 @@ export const SubmitTestRunForm: React.FC<SubmitTestRunFormProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">Submit Test Run</h2>
           <button
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 active:scale-95 rounded p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close form"
             disabled={isDisabled}
           >
@@ -240,7 +240,7 @@ export const SubmitTestRunForm: React.FC<SubmitTestRunFormProps> = ({
               value={formState.status || ''}
               onChange={handleStatusChange}
               disabled={isDisabled}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 transition-all duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible:ring-offset-2"
               aria-label="Test result status"
               aria-required="true"
             >
@@ -265,7 +265,7 @@ export const SubmitTestRunForm: React.FC<SubmitTestRunFormProps> = ({
               placeholder="Optional: Describe test results, observations, or findings..."
               maxLength={500}
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-all duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus-visible:ring-offset-2 resize-none"
               aria-label="Test result summary"
             />
             <p className="text-xs text-gray-500 mt-2">
@@ -279,14 +279,14 @@ export const SubmitTestRunForm: React.FC<SubmitTestRunFormProps> = ({
               type="button"
               onClick={onCancel}
               disabled={isDisabled}
-              className="px-6 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="px-6 py-2.5 text-gray-700 border border-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!formState.status || !formState.fileUrl || isDisabled}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg transition-all duration-200 hover:bg-blue-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2 font-medium flex items-center gap-2"
               aria-busy={isDisabled}
             >
               {formState.isSubmitting || loading ? (

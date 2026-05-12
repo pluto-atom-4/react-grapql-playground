@@ -152,7 +152,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
             <h2 className="text-lg font-bold">Test Run Details</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-md transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Close panel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +180,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
             <h2 className="text-lg font-bold">Test Run Details</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-md transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Close panel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+            className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md transition-all duration-200 hover:bg-gray-300 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             Close
           </button>
@@ -214,7 +214,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
             <h2 className="text-lg font-bold">Test Run Details</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-md transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Close panel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,7 +230,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+            className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md transition-all duration-200 hover:bg-gray-300 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             Close
           </button>
@@ -248,7 +248,7 @@ export const TestRunDetailsPanel: React.FC<TestRunDetailsPanelProps> = ({
           <h2 className="text-lg font-bold">Test Run Details</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-md transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close panel"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

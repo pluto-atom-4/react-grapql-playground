@@ -56,7 +56,7 @@ export function CreateBuildModal({
               value={buildName}
               onChange={(e) => setBuildName(e.target.value)}
               placeholder="Enter build name (e.g., Platform v2.1)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
               disabled={isLoading}
               autoFocus
             />
@@ -67,7 +67,7 @@ export function CreateBuildModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -75,7 +75,7 @@ export function CreateBuildModal({
               type="submit"
               data-testid="create-build-submit"
               disabled={isLoading || !buildName.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md transition-all duration-200 hover:bg-blue-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating...' : 'Create'}
             </button>

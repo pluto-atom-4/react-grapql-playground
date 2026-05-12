@@ -141,7 +141,7 @@ function BuildDetailContent({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
         <div className="bg-white rounded-lg max-w-[700px] w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e): void => e.stopPropagation()}>
           <p className="text-red-600 px-4 py-4 bg-red-100 border border-red-400 rounded">Failed to load build: {errorMessage}</p>
-          <button onClick={onClose} className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800">
+          <button onClick={onClose} className="px-5 py-2.5 border-0 rounded bg-blue-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-blue-800 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2">
             Close
           </button>
         </div>
@@ -257,7 +257,7 @@ function BuildDetailContent({
           <button 
             onClick={onClose} 
             aria-label="Close build details modal"
-            className="bg-none border-none text-2xl cursor-pointer text-gray-600 px-0 py-0 w-10 h-10 flex items-center justify-center hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="bg-none border-none text-2xl cursor-pointer text-gray-600 px-0 py-0 w-10 h-10 flex items-center justify-center transition-all duration-200 hover:text-gray-800 hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2 rounded"
           >
             ×
           </button>
@@ -286,7 +286,7 @@ function BuildDetailContent({
                   onClick={(): void => handleStatusChange(status)}
                   disabled={isUpdatingStatus || buildData.status === status}
                   aria-label={`Change build status to ${status}`}
-                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   {status}
                 </button>
@@ -322,7 +322,7 @@ function BuildDetailContent({
               onClick={handleAddPart} 
               disabled={isAddingPart} 
               aria-label="Add new part to build"
-              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
             >
               {isAddingPart ? 'Adding...' : 'Add Part'}
             </button>
@@ -357,7 +357,7 @@ function BuildDetailContent({
                 <button 
                   onClick={() => void refetchTestRuns()} 
                   aria-label="Retry fetching test run updates"
-                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium text-sm cursor-pointer transition-all duration-200 hover:bg-gray-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   Retry Now
                 </button>
@@ -380,7 +380,7 @@ function BuildDetailContent({
                       key={run.id}
                       onClick={() => setSelectedTestRunId(run.id)}
                       data-testid={`test-run-${run.id}`}
-                      className="cursor-pointer transition-colors duration-200 hover:bg-cyan-50"
+                      className="cursor-pointer transition-all duration-150 hover:bg-cyan-50"
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
@@ -415,7 +415,7 @@ function BuildDetailContent({
               onClick={handleSubmitTestRun}
               disabled={isSubmittingTestRun}
               aria-label="Submit new test run"
-              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2"
             >
               {isSubmittingTestRun ? 'Submitting...' : 'Submit Test Run'}
             </button>
