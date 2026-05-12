@@ -246,7 +246,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
             <h4 className="text-sm font-medium text-gray-700">Uploading: {currentFileName}</h4>
             <button
               onClick={handleCancel}
-              className="text-xs text-red-600 hover:text-red-700 font-medium"
+              className="text-xs text-red-600 hover:text-red-700 font-medium transition-colors duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500"
               aria-label="Cancel upload"
             >
               Cancel
@@ -342,7 +342,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                   </svg>
                   <a
                     href={f.fileUrl}
-                    className="text-blue-600 hover:text-blue-800 underline truncate"
+                    className="text-blue-600 hover:text-blue-800 underline truncate transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -358,7 +358,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           {uploadedFiles.length > 0 && (
             <button
               onClick={handleReset}
-              className="mt-4 w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+              className="mt-4 w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:scale-95 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
               Clear & Upload More
             </button>

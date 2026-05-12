@@ -193,7 +193,7 @@ export default function LoginForm(): JSX.Element {
           onChange={handleChange}
           onBlur={handleBlur}
           disabled={loading}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+          className={`w-full px-3 py-2 border rounded-md transition-all duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus-visible:ring-offset-2 ${
             validationErrors.email
               ? 'border-red-300 focus:ring-red-500'
               : 'border-gray-300 focus:ring-blue-500'
@@ -218,7 +218,7 @@ export default function LoginForm(): JSX.Element {
           onChange={handleChange}
           onBlur={handleBlur}
           disabled={loading}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+          className={`w-full px-3 py-2 border rounded-md transition-all duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus-visible:ring-offset-2 ${
             validationErrors.password
               ? 'border-red-300 focus:ring-red-500'
               : 'border-gray-300 focus:ring-blue-500'
@@ -234,7 +234,7 @@ export default function LoginForm(): JSX.Element {
         type="submit"
         data-testid="submit-button"
         disabled={!isFormValid || loading}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md font-medium transition-all duration-200 hover:bg-blue-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus-visible:ring-offset-2 flex items-center justify-center gap-2"
       >
         {loading ? (
           <>
