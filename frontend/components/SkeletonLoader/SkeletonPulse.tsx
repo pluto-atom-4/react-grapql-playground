@@ -15,6 +15,8 @@ interface SkeletonPulseProps {
  * - Smooth shimmer animation using CSS gradient
  * - Prevents CLS by matching exact content dimensions
  * - Accessibility: aria-hidden to hide from screen readers
+ * - Enhanced visibility: opacity increased from 0.6 to 0.8
+ * - Smooth animation: timing increased from 1.5s to 2s for professional effect
  */
 export function SkeletonPulse({
   width = 'w-full',

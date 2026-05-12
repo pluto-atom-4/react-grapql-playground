@@ -7,6 +7,8 @@ import BuildDetailModal from './build-detail-modal';
 import { CreateBuildModal } from './create-build-modal';
 import { TableSkeleton } from './SkeletonLoader/TableSkeleton';
 import Pagination from './Pagination';
+import { EmptyState } from './EmptyState';
+import { StatusBadge, type BuildStatus } from './StatusBadge';
 import type { Build } from '@/lib/generated/graphql';
 
 interface BuildItem {
@@ -133,9 +135,16 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
       </div>
 
       {builds.length === 0 ? (
-        <p className="text-center py-8 text-gray-600" data-testid="empty-state">
-          No builds yet. Create one to get started!
-        </p>
+        <EmptyState
+          title="No builds yet"
+          description="Create your first build to get started"
+          ctaText="Create Build"
+          onCTA={() => {
+            previousActiveElementRef.current = document.activeElement as HTMLElement;
+            setIsCreateModalOpen(true);
+          }}
+          className="border border-gray-200 rounded-lg bg-white shadow-md"
+        />
       ) : (
         <table className="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden" data-testid="builds-list">
           <thead>
@@ -149,32 +158,23 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
           <tbody>
             {builds.map((build: BuildItem) => {
               const statusClassName = `border-l-4 ${
-                build.status.toLowerCase() === 'pending' ? 'border-l-yellow-500' :
-                build.status.toLowerCase() === 'running' ? 'border-l-cyan-600' :
-                build.status.toLowerCase() === 'complete' ? 'border-l-green-600' :
-                'border-l-red-600'
+                build.status.toLowerCase() === 'pending' ? 'border-l-yellow-400' :
+                build.status.toLowerCase() === 'running' ? 'border-l-blue-400' :
+                build.status.toLowerCase() === 'complete' ? 'border-l-green-400' :
+                'border-l-red-400'
               }`;
               return (
                 <tr
                   key={build.id}
-                  className={`border-b border-gray-200 hover:bg-gray-50 ${statusClassName}`}
+                  className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 ${statusClassName}`}
                   style={{ minHeight: '56px' }}
                   data-testid={`build-${build.id}`}
                 >
                   <td className="px-4 py-4 border-b border-gray-100" data-testid="build-name">{build.name}</td>
                   <td className="px-4 py-4 border-b border-gray-100">
-                    <span
-                      className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
-                        build.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-900' :
-                        build.status.toLowerCase() === 'running' ? 'bg-cyan-100 text-cyan-900' :
-                        build.status.toLowerCase() === 'complete' ? 'bg-green-100 text-green-900' :
-                        build.status.toLowerCase() === 'passed' ? 'bg-green-100 text-green-900' :
-                        'bg-red-100 text-red-900'
-                      }`}
-                      data-testid="build-status"
-                    >
-                      {build.status}
-                    </span>
+                    <StatusBadge 
+                      status={(build.status?.toUpperCase() as BuildStatus) || 'PENDING'} 
+                    />
                   </td>
                   <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-4 border-b border-gray-100">

@@ -15,6 +15,7 @@ import type { TestRun } from '@/lib/generated/graphql';
 import { TestRunDetailsPanel } from './test-run-details-panel';
 import { useToast } from '@/lib/error-notifier';
 import { ModalSkeleton } from './SkeletonLoader/ModalSkeleton';
+import { EmptyState } from './EmptyState';
 
 interface Part {
   id: string;
@@ -307,7 +308,7 @@ function BuildDetailContent({
                 </thead>
                 <tbody>
                   {buildData.parts.map((part: Part) => (
-                    <tr key={part.id} className="hover:bg-gray-100">
+                    <tr key={part.id} className="hover:bg-gray-100 transition-colors duration-150">
                       <td className="px-3 py-3 border-b border-gray-200 text-sm">{part.name}</td>
                       <td className="px-3 py-3 border-b border-gray-200 text-sm">{part.sku}</td>
                       <td className="px-3 py-3 border-b border-gray-200 text-sm">{part.quantity}</td>
@@ -316,7 +317,12 @@ function BuildDetailContent({
                 </tbody>
               </table>
             ) : (
-              <p className="text-center py-8 text-gray-600">No parts added yet</p>
+              <EmptyState
+                title="No parts yet"
+                description="Add parts to your build to get started"
+                ctaText="Add Part"
+                onCTA={handleAddPart}
+              />
             )}
             <button 
               onClick={handleAddPart} 
@@ -380,7 +386,7 @@ function BuildDetailContent({
                       key={run.id}
                       onClick={() => setSelectedTestRunId(run.id)}
                       data-testid={`test-run-${run.id}`}
-                      className="cursor-pointer transition-colors duration-200 hover:bg-cyan-50"
+                      className="cursor-pointer transition-colors duration-150 hover:bg-gray-100"
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
@@ -408,7 +414,12 @@ function BuildDetailContent({
                 </tbody>
               </table>
             ) : (
-              <p className="text-center py-8 text-gray-600">No test runs yet</p>
+              <EmptyState
+                title="No test runs yet"
+                description="Submit your first test run to track results"
+                ctaText="Submit Test Run"
+                onCTA={handleSubmitTestRun}
+              />
             )}
 
             <button
