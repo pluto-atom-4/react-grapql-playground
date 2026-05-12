@@ -177,6 +177,18 @@ export type MutationUpdateBuildStatusArgs = {
   status: BuildStatus;
 };
 
+export type PaginatedBuilds = {
+  __typename?: 'PaginatedBuilds';
+  /** Whether there is a next page */
+  hasNextPage: Scalars['Boolean']['output'];
+  /** Whether there is a previous page */
+  hasPreviousPage: Scalars['Boolean']['output'];
+  /** Array of builds for the current page */
+  items: Array<Build>;
+  /** Total number of builds */
+  totalCount: Scalars['Int']['output'];
+};
+
 export type Part = {
   __typename?: 'Part';
   /** Build this part belongs to */
@@ -218,14 +230,19 @@ export type Query = {
    * Example:
    *   query {
    *     builds(limit: 10, offset: 0) {
-   *       id
-   *       name
-   *       status
-   *       createdAt
+   *       items {
+   *         id
+   *         name
+   *         status
+   *         createdAt
+   *       }
+   *       totalCount
+   *       hasNextPage
+   *       hasPreviousPage
    *     }
    *   }
    */
-  builds: Array<Build>;
+  builds: PaginatedBuilds;
   /**
    * List test runs for a specific build.
    *
@@ -335,9 +352,15 @@ export type GetBuildsQueryVariables = Exact<{
 
 export type GetBuildsQuery = {
   __typename?: 'Query';
-  builds: Array<
-    { __typename?: 'Build' } & { ' $fragmentRefs'?: { BuildInfoFragment: BuildInfoFragment } }
-  >;
+  builds: {
+    __typename?: 'PaginatedBuilds';
+    totalCount: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    items: Array<
+      { __typename?: 'Build' } & { ' $fragmentRefs'?: { BuildInfoFragment: BuildInfoFragment } }
+    >;
+  };
 };
 
 export type GetBuildDetailQueryVariables = Exact<{
@@ -598,7 +621,21 @@ export const GetBuildsDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'BuildInfo' } }],
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'items' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'BuildInfo' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'hasNextPage' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'hasPreviousPage' } },
+              ],
             },
           },
         ],
