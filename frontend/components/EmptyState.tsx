@@ -12,6 +12,7 @@ interface EmptyStateProps {
   isLoading?: boolean;
   isDisabled?: boolean;
   loadingText?: string;
+  ariaLabel?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export function EmptyState({
   isLoading = false,
   isDisabled = false,
   loadingText,
+  ariaLabel,
 }: EmptyStateProps): ReactElement {
   return (
     <div
@@ -61,12 +63,13 @@ export function EmptyState({
         <button
           onClick={onCTA}
           disabled={isLoading || isDisabled}
+          aria-label={ariaLabel}
           className={`bg-blue-600 hover:bg-blue-700 active:scale-95 focus:ring-2 focus:ring-blue-500 focus:outline-none text-white px-6 py-2 rounded-lg transition-all duration-150 ease-out font-medium ${
             (isLoading || isDisabled) ? 'opacity-60 cursor-not-allowed hover:bg-blue-600' : ''
           }`}
           type="button"
         >
-          {isLoading && loadingText ? loadingText : ctaText}
+          {isLoading ? (loadingText || `${ctaText}...`) : ctaText}
         </button>
       )}
     </div>

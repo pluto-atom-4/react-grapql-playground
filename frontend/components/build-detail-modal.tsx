@@ -324,6 +324,7 @@ function BuildDetailContent({
                 onCTA={handleAddPart}
                 isLoading={isAddingPart}
                 loadingText="Adding Part..."
+                ariaLabel="Add new part to build"
               />
             )}
           </section>
@@ -415,6 +416,7 @@ function BuildDetailContent({
                 onCTA={handleSubmitTestRun}
                 isLoading={isSubmittingTestRun}
                 loadingText="Submitting Test Run..."
+                ariaLabel="Submit new test run"
               />
             )}
           </section>

@@ -296,4 +296,154 @@ describe('EmptyState', () => {
       expect(button).not.toBeDisabled();
     });
   });
+
+  describe('ARIA labels accessibility', () => {
+    it('renders with ariaLabel when provided', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Test Button"
+          onCTA={vi.fn()}
+          ariaLabel="Test label"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute('aria-label', 'Test label');
+    });
+
+    it('renders without aria-label when not provided', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Test Button"
+          onCTA={vi.fn()}
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).not.toHaveAttribute('aria-label');
+    });
+
+    it('aria-label persists when isLoading is true', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Test Button"
+          onCTA={vi.fn()}
+          ariaLabel="Accessible action"
+          isLoading={true}
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute('aria-label', 'Accessible action');
+    });
+  });
+
+  describe('loading text default fallback', () => {
+    it('shows ctaText with ellipsis when isLoading without loadingText', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Save"
+          onCTA={vi.fn()}
+          isLoading={true}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /Save\.\.\./ })).toBeInTheDocument();
+    });
+
+    it('shows loadingText when both isLoading and loadingText provided', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Save"
+          loadingText="Saving..."
+          onCTA={vi.fn()}
+          isLoading={true}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /Saving\.\.\./ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Save\.\.\./ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('integration with build-detail-modal', () => {
+    it('correctly receives and renders ariaLabel for Add Part action', () => {
+      render(
+        <EmptyState
+          title="No parts yet"
+          description="Add parts to your build to get started"
+          ctaText="Add Part"
+          onCTA={vi.fn()}
+          isLoading={false}
+          loadingText="Adding Part..."
+          ariaLabel="Add new part to build"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute('aria-label', 'Add new part to build');
+      expect(screen.getByText('Add Part')).toBeInTheDocument();
+    });
+
+    it('correctly receives and renders ariaLabel for Submit Test Run action', () => {
+      render(
+        <EmptyState
+          title="No test runs yet"
+          description="Submit your first test run to track results"
+          ctaText="Submit Test Run"
+          onCTA={vi.fn()}
+          isLoading={false}
+          loadingText="Submitting Test Run..."
+          ariaLabel="Submit new test run"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute('aria-label', 'Submit new test run');
+      expect(screen.getByText('Submit Test Run')).toBeInTheDocument();
+    });
+  });
+
+  describe('accessibility compliance', () => {
+    it('button has aria-disabled when isDisabled is true', () => {
+      const { container } = render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Test Button"
+          onCTA={vi.fn()}
+          isDisabled={true}
+        />
+      );
+
+      const button = container.querySelector('button');
+      expect(button).toHaveAttribute('disabled');
+    });
+
+    it('button aria-label is accessible to screen readers', () => {
+      render(
+        <EmptyState
+          title="Test title"
+          description="Test description"
+          ctaText="Action Button"
+          onCTA={vi.fn()}
+          ariaLabel="Screen reader text"
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Screen reader text/ });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveAttribute('aria-label', 'Screen reader text');
+    });
+  });
 });
