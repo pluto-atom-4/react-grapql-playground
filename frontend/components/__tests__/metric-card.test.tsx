@@ -197,7 +197,7 @@ describe('MetricCard Component', () => {
     let renderCount = 0;
 
     // Wrap MetricCard to count renders
-    const TestComponent = () => {
+    const TestComponent = (): React.ReactElement => {
       renderCount++;
       return (
         <MetricCard

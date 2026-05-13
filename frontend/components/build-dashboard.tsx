@@ -101,7 +101,8 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
     );
   }
 
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage =
+    error instanceof Error ? error.message : 'An unexpected error occurred';
   if (error && !initialBuilds) {
     return (
       <div className="max-w-[1200px] mx-auto px-8 py-8">
@@ -173,7 +174,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
                       status={build.status || 'PENDING'} 
                     />
                   </td>
-                  <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-4 border-b border-gray-100">{new Date(build.createdAt as string | number).toLocaleDateString()}</td>
                   <td className="px-4 py-4 border-b border-gray-100">
                     <button
                       onClick={(): void => handleOpenModal(build.id)}
