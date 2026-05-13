@@ -215,4 +215,85 @@ describe('EmptyState', () => {
     expect(screen.getByText('Create your first build')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /new build/i })).toBeInTheDocument();
   });
+
+  describe('loading state behavior', () => {
+    it('disables button when isLoading is true', () => {
+      render(
+        <EmptyState
+          title="Loading Test"
+          description="Test description"
+          ctaText="Click Me"
+          onCTA={vi.fn()}
+          isLoading={true}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Click Me/i });
+      expect(button).toBeDisabled();
+    });
+
+    it('shows loadingText instead of ctaText when isLoading is true', () => {
+      render(
+        <EmptyState
+          title="Loading Test"
+          description="Test description"
+          ctaText="Add Part"
+          loadingText="Adding Part..."
+          onCTA={vi.fn()}
+          isLoading={true}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /Adding Part\.\.\./i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Add Part$/i })).not.toBeInTheDocument();
+    });
+
+    it('applies opacity-60 class when isLoading is true', () => {
+      render(
+        <EmptyState
+          title="Loading Test"
+          description="Test description"
+          ctaText="Click Me"
+          onCTA={vi.fn()}
+          isLoading={true}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Click Me/i });
+      expect(button).toHaveClass('opacity-60');
+    });
+
+    it('disables button when isDisabled is true (without loading)', () => {
+      render(
+        <EmptyState
+          title="Disabled Test"
+          description="Test description"
+          ctaText="Click Me"
+          onCTA={vi.fn()}
+          isDisabled={true}
+          isLoading={false}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Click Me/i });
+      expect(button).toBeDisabled();
+    });
+
+    it('does not apply opacity when loading/disabled props are false', () => {
+      render(
+        <EmptyState
+          title="Normal Test"
+          description="Test description"
+          ctaText="Click Me"
+          onCTA={vi.fn()}
+          isLoading={false}
+          isDisabled={false}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Click Me/i });
+      expect(button).not.toHaveClass('opacity-60');
+      expect(button).not.toBeDisabled();
+    });
+  });
 });
