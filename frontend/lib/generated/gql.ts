@@ -25,6 +25,7 @@ type Documents = {
   '\n  mutation UpdateBuildStatus($id: ID!, $status: BuildStatus!) {\n    updateBuildStatus(id: $id, status: $status) {\n      ...BuildInfo\n    }\n  }\n  \n': typeof types.UpdateBuildStatusDocument;
   '\n  mutation AddPart($buildId: ID!, $name: String!, $sku: String!, $quantity: Int!) {\n    addPart(buildId: $buildId, name: $name, sku: $sku, quantity: $quantity) {\n      ...PartInfo\n    }\n  }\n  \n': typeof types.AddPartDocument;
   '\n  mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String, $fileUrl: String) {\n    submitTestRun(buildId: $buildId, status: $status, result: $result, fileUrl: $fileUrl) {\n      ...TestRunInfo\n    }\n  }\n  \n': typeof types.SubmitTestRunDocument;
+  '\n  query GetDashboardMetrics($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        id\n        name\n        status\n        createdAt\n        updatedAt\n      }\n      totalCount\n    }\n  }\n': typeof types.GetDashboardMetricsDocument;
 };
 const documents: Documents = {
   '\n  mutation Login($email: String!, $password: String!) {\n    login(email: $email, password: $password) {\n      token\n      user {\n        id\n        email\n      }\n    }\n  }\n':
@@ -49,6 +50,8 @@ const documents: Documents = {
     types.AddPartDocument,
   '\n  mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String, $fileUrl: String) {\n    submitTestRun(buildId: $buildId, status: $status, result: $result, fileUrl: $fileUrl) {\n      ...TestRunInfo\n    }\n  }\n  \n':
     types.SubmitTestRunDocument,
+  '\n  query GetDashboardMetrics($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        id\n        name\n        status\n        createdAt\n        updatedAt\n      }\n      totalCount\n    }\n  }\n':
+    types.GetDashboardMetricsDocument,
 };
 
 /**
@@ -131,6 +134,12 @@ export function graphql(
 export function graphql(
   source: '\n  mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String, $fileUrl: String) {\n    submitTestRun(buildId: $buildId, status: $status, result: $result, fileUrl: $fileUrl) {\n      ...TestRunInfo\n    }\n  }\n  \n'
 ): (typeof documents)['\n  mutation SubmitTestRun($buildId: ID!, $status: TestStatus!, $result: String, $fileUrl: String) {\n    submitTestRun(buildId: $buildId, status: $status, result: $result, fileUrl: $fileUrl) {\n      ...TestRunInfo\n    }\n  }\n  \n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetDashboardMetrics($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        id\n        name\n        status\n        createdAt\n        updatedAt\n      }\n      totalCount\n    }\n  }\n'
+): (typeof documents)['\n  query GetDashboardMetrics($limit: Int!, $offset: Int!) {\n    builds(limit: $limit, offset: $offset) {\n      items {\n        id\n        name\n        status\n        createdAt\n        updatedAt\n      }\n      totalCount\n    }\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

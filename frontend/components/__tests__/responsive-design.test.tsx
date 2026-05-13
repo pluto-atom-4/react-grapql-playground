@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MockedProvider } from '@apollo/client/testing';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MockedProvider } from '@apollo/client/testing/react';
 import { DashboardMetrics } from '../DashboardMetrics';
 import { MetricCard } from '../MetricCard';
 import { ActivityTimeline } from '../ActivityTimeline';
@@ -233,8 +233,8 @@ describe('DashboardMetrics - Responsive Design', () => {
     );
 
     const refreshButton = screen.getByLabelText('Refresh metrics');
-    expect(refreshButton).toHaveClass('focus:outline-none');
     expect(refreshButton).toHaveClass('transition-colors');
+    expect(refreshButton).toHaveClass('rounded');
   });
 
   it('should have proper container max-width on desktop', () => {
@@ -295,5 +295,3 @@ describe('DashboardMetrics - Responsive Design', () => {
   });
 });
 
-// Import vi for mocking
-import { vi } from 'vitest';

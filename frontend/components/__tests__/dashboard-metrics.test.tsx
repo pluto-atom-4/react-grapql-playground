@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MockedProvider } from '@apollo/client/testing';
+import { MockedProvider } from '@apollo/client/testing/react';
 import { DashboardMetrics } from '../DashboardMetrics';
 import { DASHBOARD_METRICS_QUERY } from '../../lib/graphql-queries';
 import { BuildStatus } from '../../lib/generated/graphql';
@@ -364,9 +364,9 @@ describe('DashboardMetrics Component', () => {
 
     await waitFor(() => {
       const metricsContainer = screen.getByText('Metrics & Overview').closest('div')?.nextElementSibling;
-      expect(metricsContainer?.parentElement).toHaveClass('grid');
-      expect(metricsContainer?.parentElement).toHaveClass('md:grid-cols-2');
-      expect(metricsContainer?.parentElement).toHaveClass('lg:grid-cols-4');
+      expect(metricsContainer).toHaveClass('grid');
+      expect(metricsContainer).toHaveClass('md:grid-cols-2');
+      expect(metricsContainer).toHaveClass('lg:grid-cols-4');
     });
   });
 });

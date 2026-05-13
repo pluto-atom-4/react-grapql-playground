@@ -77,7 +77,7 @@ function ActivityTimelineComponent({
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className={`space-y-4 ${className}`} aria-busy={true}>
+      <div className={`space-y-4 ${className}`} role="log" aria-label="Recent build activity" aria-busy={true}>
         {Array.from({ length: 3 }).map((_, index) => (
           <div key={index} className="flex gap-4 animate-pulse">
             <div className="flex-shrink-0">

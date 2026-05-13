@@ -222,7 +222,7 @@ export function formatDateShort(date: string | Date): string {
  * @returns Array of activity entries
  */
 export function getRecentActivity(builds: BuildData[], limit: number = 10): ActivityEntry[] {
-  return builds
+  return [...builds]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, limit)
     .map(build => ({
