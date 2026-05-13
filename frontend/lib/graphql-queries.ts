@@ -140,3 +140,19 @@ export const SUBMIT_TEST_RUN_MUTATION = gql`
   }
   ${TEST_RUN_FRAGMENT}
 `;
+
+// Query: Get dashboard metrics (uses existing BUILDS_QUERY structure)
+export const DASHBOARD_METRICS_QUERY = gql`
+  query GetDashboardMetrics($limit: Int!, $offset: Int!) {
+    builds(limit: $limit, offset: $offset) {
+      items {
+        id
+        name
+        status
+        createdAt
+        updatedAt
+      }
+      totalCount
+    }
+  }
+`;
