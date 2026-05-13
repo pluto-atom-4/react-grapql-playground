@@ -3424,6 +3424,153 @@ For this project, 24-hour token is appropriate given manufacturing use case (8-h
 
 ---
 
+## Dashboard Metrics & Statistics (Phase 2 - Issue #258)
+
+### Overview
+
+Dashboard metrics provide at-a-glance visibility into build status and health. The metrics system calculates aggregated statistics from builds and displays them in an interactive dashboard.
+
+### Architecture
+
+**Client-Side Metrics Calculation**:
+- Metrics are derived from existing `BUILDS_QUERY` response
+- No backend changes needed (uses existing GraphQL API)
+- Frontend calculates: Total Builds, In Progress, Completed, Failed, Completion Rate
+- Real-time updates via Apollo cache invalidation on mutations
+
+```typescript
+// frontend/lib/hooks/useDashboardMetrics.ts
+export function useDashboardMetrics(limit: number = 1000): UseDashboardMetricsReturn {
+  const { data, loading, error, refetch } = useQuery(DASHBOARD_METRICS_QUERY);
+  
+  // Memoize calculations to prevent unnecessary recalculations
+  const metrics = useMemo(() => calculateMetrics(builds), [builds]);
+  const statusDistribution = useMemo(() => calculateStatusDistribution(builds), [builds]);
+  const recentActivity = useMemo(() => getRecentActivity(builds, 10), [builds]);
+  
+  return { metrics, statusDistribution, recentActivity, isLoading: loading, error, refetch };
+}
+```
+
+### Components
+
+**DashboardMetrics** (Container):
+- Fetches metrics via `useDashboardMetrics` hook
+- Renders 4 metric cards (Total, In Progress, Completed, Failed)
+- Displays completion rate percentage
+- Shows recent activity timeline
+- Responsive grid: 1 col mobile, 2 cols tablet, 4 cols desktop
+- Error handling with retry capability
+
+**MetricCard** (Reusable):
+- Icon + label + value layout
+- Optional subtext and trend indicators (↑ ↓)
+- Clickable variant with keyboard navigation
+- Memoized for performance
+- Accessibility: ARIA labels, semantic HTML
+
+**ActivityTimeline** (Reusable):
+- Vertical timeline of recent builds
+- Status badges with semantic color coding
+- Relative timestamps ("2 hours ago")
+- Truncates long build names
+- Loading skeleton state
+- Empty state message
+
+### Metrics Calculation
+
+```typescript
+// frontend/lib/dashboard-utils.ts
+export function calculateMetrics(builds: BuildData[]): DashboardMetrics {
+  // Count builds by status
+  const total = builds.length;
+  const completed = builds.filter(b => b.status === 'COMPLETE').length;
+  const inProgress = builds.filter(b => b.status === 'RUNNING').length;
+  const failed = builds.filter(b => b.status === 'FAILED').length;
+  
+  // Calculate completion rate
+  const finishedBuilds = completed + failed;
+  const completionRate = total > 0 ? Math.round((finishedBuilds / total) * 100) : 0;
+  
+  return { totalBuilds: total, completed, inProgress, failed, completionRate };
+}
+```
+
+### Real-Time Updates
+
+Metrics automatically update when builds are created or mutated:
+
+1. **User creates build** → Apollo cache updates optimistically
+2. **Apollo cache changes** → `useDashboardMetrics` hook detects change
+3. **Metrics recalculated** → `useMemo` dependencies trigger new calculation
+4. **UI updates** → MetricCard and ActivityTimeline re-render with new values
+
+**No manual refetch needed** — Apollo handles cache invalidation automatically.
+
+### Performance Optimizations
+
+- **Memoized calculations**: `useMemo` prevents recalculation on parent re-renders
+- **Memoized components**: `React.memo` on MetricCard and ActivityTimeline
+- **Limited query size**: Default limit 1000 builds (configurable)
+- **Recent activity truncated**: Only shows 10 most recent builds
+- **Target load time**: <500ms for typical dataset (10-50 builds)
+
+### Testing Strategy
+
+**Unit Tests** (61 tests):
+- MetricCard: rendering, click handlers, accessibility (15 tests)
+- ActivityTimeline: status display, truncation, loading state (15 tests)
+- Responsive design: grid layout, touch targets, font sizes (18 tests)
+- Utils: metric calculations, date formatting (13 tests)
+
+**Integration Tests** (11 tests):
+- Full data fetch and display
+- Metrics calculation correctness
+- Apollo cache updates on mutations
+- Error handling and recovery
+- Performance with large datasets
+- Loading and empty state transitions
+
+**Coverage Target**: >80% line coverage, >75% branch coverage
+
+### Usage
+
+```tsx
+// In your dashboard component
+import { DashboardMetrics } from '@/components/DashboardMetrics';
+
+export default function Dashboard() {
+  return (
+    <div>
+      <DashboardMetrics onMetricsRefresh={() => console.log('Metrics updated')} />
+      {/* Other dashboard content */}
+    </div>
+  );
+}
+```
+
+### Styling
+
+- Tailwind CSS utility classes (no new CSS files)
+- Responsive breakpoints: `md:` (tablet), `lg:` (desktop)
+- Color-coded status badges: green (complete), blue (running), red (failed), yellow (pending)
+- Dark mode support via CSS variables (prepared for Issue #264)
+
+### Known Limitations & Future Improvements
+
+1. **Metrics recalculated client-side**: For very large datasets (1000+ builds), consider backend aggregation endpoint
+2. **Pie chart not implemented**: CSS-based visualization used instead of heavyweight chart library
+3. **No caching layer**: Each component mount fetches fresh data (Apollo cache mitigates this)
+4. **Manual refresh only**: No auto-refresh polling (can be added in future)
+
+### Related Issues
+
+- **#259**: Status Visualization (uses MetricCard component pattern)
+- **#260**: Tab Organization (may reuse metric components)
+- **#264**: Dark Mode (CSS variables already in place)
+
+---
+
 ## Environment & Startup
 
 ### .env (shared across backends)

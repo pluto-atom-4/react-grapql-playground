@@ -9,6 +9,7 @@ import { TableSkeleton } from './SkeletonLoader/TableSkeleton';
 import Pagination from './Pagination';
 import { EmptyState } from './EmptyState';
 import { StatusBadge } from './StatusBadge';
+import { DashboardMetrics } from './DashboardMetrics';
 import type { Build } from '@/lib/generated/graphql';
 
 interface BuildsTableProps {
@@ -111,6 +112,9 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
 
   return (
     <>
+      {/* Dashboard Metrics Section */}
+      <DashboardMetrics />
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="m-0 text-4xl text-gray-800">Build Dashboard</h1>
         <button
