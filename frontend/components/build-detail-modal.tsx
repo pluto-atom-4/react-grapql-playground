@@ -322,16 +322,11 @@ function BuildDetailContent({
                 description="Add parts to your build to get started"
                 ctaText="Add Part"
                 onCTA={handleAddPart}
+                isLoading={isAddingPart}
+                loadingText="Adding Part..."
+                ariaLabel="Add new part to build"
               />
             )}
-            <button 
-              onClick={handleAddPart} 
-              disabled={isAddingPart} 
-              aria-label="Add new part to build"
-              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {isAddingPart ? 'Adding...' : 'Add Part'}
-            </button>
           </section>
 
           <section className="mb-8">
@@ -419,17 +414,11 @@ function BuildDetailContent({
                 description="Submit your first test run to track results"
                 ctaText="Submit Test Run"
                 onCTA={handleSubmitTestRun}
+                isLoading={isSubmittingTestRun}
+                loadingText="Submitting Test Run..."
+                ariaLabel="Submit new test run"
               />
             )}
-
-            <button
-              onClick={handleSubmitTestRun}
-              disabled={isSubmittingTestRun}
-              aria-label="Submit new test run"
-              className="w-full text-center px-4 py-2 border-0 rounded bg-gray-600 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {isSubmittingTestRun ? 'Submitting...' : 'Submit Test Run'}
-            </button>
           </section>
         </div>
       </div>
