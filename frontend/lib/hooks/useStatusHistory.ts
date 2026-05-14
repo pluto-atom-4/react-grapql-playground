@@ -61,7 +61,7 @@ export function useStatusHistory(buildId: string): UseStatusHistoryReturn {
   }, [buildId]);
 
   useEffect(() => {
-    fetchStatusHistory();
+    void fetchStatusHistory();
   }, [fetchStatusHistory]);
 
   return {

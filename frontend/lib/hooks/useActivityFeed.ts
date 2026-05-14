@@ -102,7 +102,7 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
   }, [buildId]);
 
   useEffect(() => {
-    fetchActivityFeed();
+    void fetchActivityFeed();
   }, [fetchActivityFeed]);
 
   return {

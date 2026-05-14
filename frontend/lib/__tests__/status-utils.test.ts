@@ -15,6 +15,7 @@ import {
   STATUS_NODE_COLORS,
 } from '../status-utils';
 import { BuildStatus } from '../generated/graphql';
+import type { BuildEvent } from '../types/activity-types';
 
 describe('Status Utilities', () => {
   describe('formatStatusTransition', () => {
@@ -178,34 +179,34 @@ describe('Status Utilities', () => {
 
   describe('filterEventsByType', () => {
     it('should filter events by single type', () => {
-      const events = [
-        { eventType: 'status_change' },
-        { eventType: 'test_run' },
-        { eventType: 'status_change' },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date(), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date(), description: 'Test run' },
+        { id: '3', buildId: 'b1', eventType: 'status_change', timestamp: new Date(), description: 'Status changed' },
       ];
 
-      const filtered = filterEventsByType(events as any, ['status_change']);
+      const filtered = filterEventsByType(events, ['status_change']);
       expect(filtered).toHaveLength(2);
     });
 
     it('should filter events by multiple types', () => {
-      const events = [
-        { eventType: 'status_change' },
-        { eventType: 'test_run' },
-        { eventType: 'manual_update' },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date(), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date(), description: 'Test run' },
+        { id: '3', buildId: 'b1', eventType: 'manual_update', timestamp: new Date(), description: 'Manual update' },
       ];
 
-      const filtered = filterEventsByType(events as any, ['status_change', 'test_run']);
+      const filtered = filterEventsByType(events, ['status_change', 'test_run']);
       expect(filtered).toHaveLength(2);
     });
 
     it('should return all events if no filter specified', () => {
-      const events = [
-        { eventType: 'status_change' },
-        { eventType: 'test_run' },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date(), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date(), description: 'Test run' },
       ];
 
-      const filtered = filterEventsByType(events as any, []);
+      const filtered = filterEventsByType(events, []);
       expect(filtered).toHaveLength(2);
     });
   });
@@ -215,39 +216,39 @@ describe('Status Utilities', () => {
       const start = new Date('2026-01-10');
       const end = new Date('2026-01-20');
 
-      const events = [
-        { timestamp: new Date('2026-01-05') },
-        { timestamp: new Date('2026-01-15') },
-        { timestamp: new Date('2026-01-25') },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-05'), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date('2026-01-15'), description: 'Test run' },
+        { id: '3', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-25'), description: 'Status changed' },
       ];
 
-      const filtered = filterEventsByDateRange(events as any, start, end);
+      const filtered = filterEventsByDateRange(events, start, end);
       expect(filtered).toHaveLength(1);
     });
   });
 
   describe('sortEventsByDate', () => {
     it('should sort events newest first by default', () => {
-      const events = [
-        { timestamp: new Date('2026-01-10'), id: '1' },
-        { timestamp: new Date('2026-01-15'), id: '2' },
-        { timestamp: new Date('2026-01-05'), id: '3' },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-10'), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date('2026-01-15'), description: 'Test run' },
+        { id: '3', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-05'), description: 'Status changed' },
       ];
 
-      const sorted = sortEventsByDate(events as any);
+      const sorted = sortEventsByDate(events);
       expect(sorted[0].id).toBe('2');
       expect(sorted[1].id).toBe('1');
       expect(sorted[2].id).toBe('3');
     });
 
     it('should sort events oldest first when ascending is true', () => {
-      const events = [
-        { timestamp: new Date('2026-01-10'), id: '1' },
-        { timestamp: new Date('2026-01-15'), id: '2' },
-        { timestamp: new Date('2026-01-05'), id: '3' },
+      const events: BuildEvent[] = [
+        { id: '1', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-10'), description: 'Status changed' },
+        { id: '2', buildId: 'b1', eventType: 'test_run', timestamp: new Date('2026-01-15'), description: 'Test run' },
+        { id: '3', buildId: 'b1', eventType: 'status_change', timestamp: new Date('2026-01-05'), description: 'Status changed' },
       ];
 
-      const sorted = sortEventsByDate(events as any, true);
+      const sorted = sortEventsByDate(events, true);
       expect(sorted[0].id).toBe('3');
       expect(sorted[1].id).toBe('1');
       expect(sorted[2].id).toBe('2');

@@ -15,6 +15,44 @@
   },
   "copilot-instructions": ".copilot/copilot-instructions.md",
   "agents-directory": ".copilot/agents/",
+  "agents": {
+    "orchestrator": {
+      "config-file": ".copilot/agents/orchestrator.md",
+      "invocation": "@orchestrator [task]",
+      "auto-load": true,
+      "description": "Coordinates multi-layer development, breaks down features, manages dependencies"
+    },
+    "developer": {
+      "config-file": ".copilot/agents/developer.md",
+      "invocation": "@developer [task]",
+      "auto-load": true,
+      "description": "Implements features, bug fixes, writes code across all three layers"
+    },
+    "reviewer": {
+      "config-file": ".copilot/agents/reviewer.md",
+      "invocation": "@reviewer [task]",
+      "auto-load": true,
+      "description": "Reviews code, validates architecture, provides quality feedback"
+    },
+    "tester": {
+      "config-file": ".copilot/agents/tester.md",
+      "invocation": "@tester [task]",
+      "auto-load": true,
+      "description": "Tests strategies, debugging, validates coverage, parallel test execution"
+    },
+    "product-manager": {
+      "config-file": ".copilot/agents/product-manager.md",
+      "invocation": "@product-manager [task]",
+      "auto-load": true,
+      "description": "Defines requirements, acceptance criteria, validates business alignment"
+    }
+  },
+  "agent-context-loading": {
+    "enabled": true,
+    "trigger": "When user invokes agent with @agent-name syntax or 'let @agent-name delegate...'",
+    "behavior": "Automatically loads agent config file into context, injecting agent-specific knowledge and responsibilities",
+    "priority": "Agent config > main instructions > project CLAUDE.md"
+  },
   "rules-reference": ".copilot/rules.json",
   "documentation": {
     "execution-plans": "docs/implementation-planning/",

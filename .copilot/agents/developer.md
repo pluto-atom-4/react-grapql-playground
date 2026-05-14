@@ -15,6 +15,46 @@ The Developer Agent is responsible for implementing code changes, writing featur
 - Ensure N+1 query prevention via DataLoader patterns
 - Coordinate between GraphQL and Express event buses for real-time features
 
+## Quick Start Checklist
+
+Starting a new issue? Follow this:
+
+```bash
+# 1. Create feature branch (Orchestrator usually does this)
+git checkout -b feat/issue-#NNN-description origin/main
+
+# 2. Develop (write code, run tests)
+pnpm dev                      # Start all services in one terminal
+pnpm test --watch             # Watch tests in another terminal
+
+# 3. Pre-commit QA (CRITICAL - don't skip)
+pnpm lint && pnpm lint:fix    # Fix style violations
+pnpm type-check               # Verify TypeScript
+pnpm test                     # Run all tests
+pnpm audit                    # Check security
+
+# 4. Commit & push
+git add [specific files]      # Don't use git add .
+git commit -m "feat(#NNN): description"
+git push origin feat/issue-#NNN-description
+
+# 5. Create PR
+gh pr create --title "feat: #NNN - description"
+
+# 6. Handle feedback (REUSE SAME BRANCH - don't create new one)
+git switch feat/issue-#NNN-description  # Switch back if needed
+# ... make fixes ...
+git add [files]
+git commit -m "fix(#NNN): Address review feedback"
+git push origin feat/issue-#NNN-description  # PR auto-updates
+```
+
+**Critical Rules**:
+- ✅ Always use feature branches (`feat/`, `fix/`, `docs/` prefix)
+- ✅ Run QA checks before committing
+- ✅ Fix PR feedback on SAME branch (never create fix/pull-request-XXX)
+- ✅ Push to same branch multiple times (PR auto-updates)
+
 ## Context & Constraints
 
 ### Project Knowledge
@@ -121,226 +161,121 @@ See `docs/design-review/FRESH_PER_REQUEST_PATTERN.md` for detailed architecture.
 - **Part**: Components in a Build (id, buildId, relationships)
 - **TestRun**: Test execution results with file references (id, buildId, result, fileUrl)
 
-## GitHub Copilot CLI Commands
+## GitHub Copilot CLI Commands & Workflow
 
-When implementing features or fixing bugs, use these GitHub Copilot CLI commands:
+### Essential Commands
+
+| Task | Command | When to Use |
+|------|---------|-----------|
+| **Plan** | `/plan` | Before coding—break down features into 5-8 todos |
+| **Ask** | `/ask` | Clarify requirements without changing code |
+| **Diff** | `/diff` | Review all changes before committing |
+| **Review** | `/review` | Automated code quality check on changes |
+| **Delegate** | `/delegate` | Hand off to GitHub for PR/branch setup |
+| **Share** | `/share` | Document approach for team visibility |
+
+### Optional (Advanced)
+
+- `/lsp` — Language server for code intelligence
+- `/ide` — IDE workspace integration
+- `/context` — Check token usage
+- `/compact` — Summarize long conversations
+
+## Planning Issue Implementation
+
+When Orchestrator requests: `Let @developer agent /plan the implementation for Issue #XXX`
+
+### Quick Workflow
+
+1. **Create plan**: `/plan` analyzes issue → breaks into 5-8 todos → identifies dependencies
+2. **Post to GitHub**: Comment plan on issue with `/ask` → share summary with team
+3. **Get feedback**: Team reviews on GitHub issue → provides context or approves
+4. **Implement**: Follow todos in order → commit atomically → create PR
+
+### Plan Content (post to GitHub issue)
+
+```markdown
+## Plan: Issue #XXX - [Title]
+
+**Status**: [Ready / Blocked on #NNN] | **Effort**: [estimate]
+
+**Summary**: 3-4 sentence overview
+
+**Acceptance Criteria**:
+- [ ] Item 1
+- [ ] Item 2
+
+**Implementation Plan**:
+1. [Todo 1 - effort estimate]
+2. [Todo 2 - effort estimate]
+...
+
+**Critical Notes**: [SSR safety, schema changes, DataLoader usage, etc.]
+
+**Tests Required**: [What to verify]
+```
+
+### Why Post to GitHub
+
+- ✅ Transparent to team (visible in issue, not just agent session)
+- ✅ Team provides feedback directly on issue
+- ✅ Clear approval gate before implementation
+- ✅ Creates audit trail of decisions
+
+## CLI Quick Reference
+
+### Development
 
 ```bash
-# Planning & Architecture
-/plan                          # Create implementation plan before coding
-/ask                           # Ask clarifying questions without changing context
-
-# Code Review & Quality
-/diff                          # Review changes before committing
-/review                        # Run automated code review on changes
-/lsp                           # Access language server for code intelligence
-
-# Development & Debugging
-/ide                           # Connect to IDE workspace for better integration
-/terminal-setup                # Configure terminal for multiline input
-
-# Task Management
-/tasks                         # View and manage background tasks
-/delegate                      # Send work to GitHub for PR creation
-
-# Session Management
-/context                       # Check token usage before large changes
-/compact                       # Summarize conversation if context grows
-/share                         # Share implementation approach with team
+pnpm install                   # Install dependencies (run once per clone)
+pnpm dev                       # Start all: frontend (3000), Apollo (4000), Express (5000)
+pnpm dev:frontend              # Frontend only (Next.js)
+pnpm dev:graphql               # Apollo GraphQL only (port 4000)
+pnpm dev:express               # Express only (port 5000)
 ```
 
-## Planning & Issue Management Workflow
-
-When the Orchestrator requests a plan for an issue (e.g., "Let @developer agent /plan the implementation for Issue #119"), follow this workflow:
-
-### 1. **Create Implementation Plan**
-
-Request a plan for the GitHub issue:
-```bash
-Let @developer agent /plan the implementation for Issue #XXX
-```
-
-The Developer Agent will:
-- Fetch the GitHub issue and review requirements
-- Analyze the codebase to understand current state
-- Create a comprehensive implementation plan with:
-  - Problem statement
-  - Acceptance criteria
-  - 5-8 detailed todos (each independently implementable)
-  - File structure and dependencies
-  - Critical technical notes
-  - Testing strategy
-  - Interview talking points
-  - Known blockers/assumptions
-
-### 2. **Post Plan as GitHub Comment** (REQUIRED)
-
-After creating the plan, the Developer Agent MUST post it as a comment to the GitHub issue:
+### Testing & Quality
 
 ```bash
-# Save plan to temporary file
-cat > /tmp/issue-plan-comment.md << 'EOF'
-# Your comprehensive plan content here
-EOF
+pnpm test                      # Run all tests
+pnpm test --watch              # Watch mode (re-run on changes)
+pnpm test:frontend             # Frontend tests only
+pnpm test:graphql              # GraphQL resolver tests only
+pnpm test:express              # Express route tests only
 
-# Post as comment to GitHub issue
-gh issue comment XXX --body-file /tmp/issue-plan-comment.md
-
-# Or post directly with body (if no special characters):
-gh issue comment XXX --body "## Plan Summary\n\n..."
+pnpm lint                      # Check ESLint violations
+pnpm lint:fix                  # Auto-fix ESLint + Prettier
+pnpm type-check                # TypeScript type checking
+pnpm format:check && pnpm format  # Fix formatting
 ```
 
-**Why This Matters**:
-- ✅ Plan becomes visible to all team members (not just agent session)
-- ✅ Team can review and provide feedback directly on the issue
-- ✅ Creates audit trail of planning decisions
-- ✅ Unblocks implementation once approved
-- ✅ Enables discussion and clarification in issue comments
-
-### 3. **Plan Content Format**
-
-The posted comment should include:
-
-| Section | Purpose | Example |
-|---------|---------|---------|
-| **Status & Effort** | Overview | "45 minutes, Depends On #118 (COMPLETED)" |
-| **Summary** | What will be built | 3-4 sentence overview |
-| **Acceptance Criteria** | Must-haves checklist | 10-13 items with [ ] checkboxes |
-| **8 Detailed Todos** | Implementation sequence | Each with effort, dependencies, acceptance criteria |
-| **Technical Notes** | Critical decisions | SSR safety, link ordering, type guards |
-| **Architecture Diagram** | Visual structure | ASCII or text-based |
-| **Interview Points** | Discussion material | 3-4 key talking points |
-| **Known Considerations** | Blockers/assumptions | Limitations and follow-up tasks |
-
-### 4. **Workflow Summary**
-
-```
-Orchestrator Request (Issue #XXX)
-  ↓
-1. Developer Agent creates implementation plan
-  ├─ Analyzes issue and codebase
-  ├─ Breaks down into 5-8 todos
-  └─ Adds technical depth (SSR safety, type guards, etc.)
-  ↓
-2. Developer Agent posts plan as GitHub comment
-  ├─ Uses gh issue comment XXX --body-file /tmp/plan.md
-  └─ Saves full plan to session workspace (plan.md)
-  ↓
-3. Team reviews plan on GitHub issue
-  ├─ Provides feedback or approves
-  └─ Discusses concerns in issue comments
-  ↓
-4. Orchestrator approves and initiates implementation
-  └─ Developer implements following todos in order
-
-✅ Result: Clear, transparent, documented planning process
-```
-
-### 5. **Example: Issue #119**
-
-When planning Issue #119 (Frontend Auth Context & Apollo Link):
-
-1. Created comprehensive plan (679 lines, 22KB)
-2. Posted to GitHub as comment with summary sections
-3. Team can now review, discuss, and provide feedback
-4. Implementation can proceed with clear acceptance criteria
-
-**Comment Posted To**: https://github.com/pluto-atom-4/react-grapql-playground/issues/119#issuecomment-4284738380
-
-### 6. **Session Workspace Storage**
-
-In addition to posting to GitHub, save the full plan to the session workspace:
-
-```
-Session Workspace Structure:
-├── plan.md                          ← Full implementation plan (679 lines)
-├── issue-XXX-closure-review.md      ← Verification after completion (if applicable)
-└── research/                        ← Supporting analysis (issue comments, codebase exploration)
-```
-
-This ensures:
-- ✅ Full plan available locally during implementation
-- ✅ Developer can reference detailed notes without re-fetching issue
-- ✅ Plan survives session transitions (persisted workspace)
-
-## CLI Development Commands
+### Database & Migrations
 
 ```bash
-# Navigate to monorepo root
-cd react-grapql-playground
+docker-compose up -d           # Start PostgreSQL (required for GraphQL)
+pnpm migrate                   # Apply pending migrations
+pnpm migrate:reset             # Reset database to fresh state (dev only)
+pnpm seed                      # Seed sample data (Builds, Parts, TestRuns)
+```
 
-# Installation
-pnpm install                   # Install all dependencies (all workspaces)
+### Type Generation
 
-# Development
-pnpm dev                       # Start all services: frontend (3000), Apollo (4000), Express (5000)
-pnpm dev:frontend              # Start Next.js frontend only
-pnpm dev:graphql               # Start Apollo GraphQL backend only
-pnpm dev:express               # Start Express backend only
+```bash
+pnpm generate                  # Regenerate TypeScript types from GraphQL schema
+                               # Run when: modified schema, added operations, changed resolvers
+```
 
-# Building
+### Build & Production
+
+```bash
 pnpm build                     # Build all packages
 pnpm start                     # Start production servers
-
-# Testing
-pnpm test                      # Run all tests (all workspaces)
-pnpm test --watch              # Watch mode across all tests
-pnpm test:frontend             # Test only frontend (Vitest + React Testing Library)
-pnpm test:graphql              # Test only Apollo resolvers
-pnpm test:express              # Test only Express routes
-pnpm test path/to/file.ts      # Single test file
-
-# Code Quality
-pnpm lint                      # Check ESLint across all packages
-pnpm lint:fix                  # Auto-fix ESLint violations
-pnpm format:check              # Check Prettier formatting
-pnpm format                    # Apply Prettier formatting
-
-# Database & Migrations
-
-docker-compose up -d           # Start PostgreSQL container
-pnpm migrate                   # Run pending migrations
-pnpm migrate:reset             # Reset database (dev only)
-pnpm seed                      # Seed sample data (Builds, Parts, TestRuns)
-
-# GraphQL Code Generation (if applicable)
-pnpm generate                  # Generate TypeScript types from GraphQL schema
-
-### Database Migrations Workflow
-
-**When to Migrate**:
-- After pulling `main` with schema changes
-- Before starting development (once per fresh clone)
-- When creating a new feature that needs database schema
-
-**Run Migrations**:
-```bash
-# Apply all pending migrations
-pnpm migrate
-
-# If migration fails, check error and fix schema
-pnpm migrate --verbose  # Show SQL being executed
-
-# Reset database to clean state (development only)
-pnpm migrate:reset
-
-# Then reseed sample data
-pnpm seed
 ```
 
-**Creating a New Migration** (when you modify the schema):
-```bash
-# After editing backend-graphql/src/db/schema.sql or Prisma schema:
-pnpm migrate dev --name add_new_field
-
-# This creates a timestamped migration file and applies it
-```
-
-**Troubleshooting**:
-- Migration hangs: Check if PostgreSQL container is running (`docker-compose ps`)
-- Migration fails: Review error, fix schema, then run `pnpm migrate` again
-- Lost migrations: Use `pnpm migrate:reset` (dev only) to replay from start
-```
+**Migration Troubleshooting**:
+- Migration hangs: Verify PostgreSQL is running (`docker-compose ps`)
+- Migration fails: Fix schema error, then `pnpm migrate` again
+- Database corrupted: `pnpm migrate:reset` (dev only)
 
 ## Git Branch Setup Workflow (Pre-Commit)
 
@@ -430,7 +365,22 @@ pnpm lint
 
 **What it catches**: TypeScript type issues, unused imports, naming conventions, suspicious code patterns.
 
-### 2. **Format Code with Prettier**
+### 2. **Type-Check with TypeScript**
+
+```bash
+# Run TypeScript type checking across all packages
+pnpm type-check
+
+# If type errors exist, review and fix them
+# (Type errors cannot be auto-fixed and require manual correction)
+
+# Verify all type checks pass
+pnpm type-check
+```
+
+**What it catches**: TypeScript type mismatches, missing types, type compatibility issues across all packages in the monorepo.
+
+### 3. **Format Code with Prettier**
 
 ```bash
 # Check current formatting status
@@ -445,7 +395,7 @@ pnpm format:check
 
 **What it catches**: Inconsistent spacing, quote styles, line lengths, indentation across TypeScript, TSX, JSON, and Markdown files.
 
-### 3. **Run Tests**
+### 4. **Run Tests**
 
 ```bash
 # Execute full test suite to verify no regressions
@@ -462,7 +412,7 @@ pnpm test:express    # Express routes only
 
 **What it catches**: Broken functionality, test coverage gaps, integration issues, N+1 query problems.
 
-### 4. **Audit Dependencies (Root Level)**
+### 5. **Audit Dependencies (Root Level)**
 
 ```bash
 # From monorepo root
@@ -497,15 +447,19 @@ Start Implementation
   ├─ Fails? → pnpm lint:fix → Re-check
   └─ Passes? → Continue
   ↓
-5. pnpm format:check           (Check formatting across all packages)
+5. pnpm type-check             (Check TypeScript type safety across all packages)
+  ├─ Fails? → Fix type issues → Re-check
+  └─ Passes? → Continue
+  ↓
+6. pnpm format:check           (Check formatting across all packages)
   ├─ Fails? → pnpm format → Re-check
   └─ Passes? → Continue
   ↓
-6. pnpm test                   (Run test suite for affected layers)
+7. pnpm test                   (Run test suite for affected layers)
   ├─ Fails? → Fix code → Re-run
   └─ Passes? → Continue
   ↓
-7. pnpm audit (from root)      (Check vulnerabilities)
+8. pnpm audit (from root)      (Check vulnerabilities)
   ├─ Issues? → Review & plan fixes
   └─ Passes? → Ready to commit
   ↓
@@ -584,6 +538,7 @@ Create a local script to run all QA checks at once (optional):
 ```bash
 # From monorepo root (standard QA pipeline):
 pnpm lint && \
+pnpm type-check && \
 pnpm format && \
 pnpm test && \
 echo "✅ All QA checks passed!"
@@ -591,6 +546,7 @@ echo "✅ All QA checks passed!"
 # With GraphQL codegen (if modified schema/operations):
 pnpm generate && \
 pnpm lint && \
+pnpm type-check && \
 pnpm format && \
 pnpm test && \
 echo "✅ All checks passed including GraphQL codegen!"
@@ -1047,6 +1003,7 @@ Haiku is optimized for routine implementation and costs ~90% less than Sonnet. U
 9. **Use `/review` for New Code**: Automated review catches edge cases
 10. **QA Checklist Before Committing**:
     - ✅ `pnpm lint && pnpm lint:fix` (fix ESLint violations)
+    - ✅ `pnpm type-check` (verify TypeScript type safety)
     - ✅ `pnpm format:check && pnpm format` (enforce Prettier formatting)
     - ✅ `pnpm test` (all tests pass)
     - ✅ `pnpm audit` from root (no security vulnerabilities)
@@ -1111,96 +1068,32 @@ When implementing features, keep real-world constraints in mind:
 - **Event-driven real-time**: SSE streaming enables live updates without polling
 - **Separation of concerns**: GraphQL handles structured data operations; Express handles auxiliary concerns (files, webhooks, events)
 
-## Parallel Execution Mode (Git Worktree)
+## Parallel Execution Mode
 
-### When Enabled
+When multiple independent issues run in parallel via git worktree:
 
-When multiple independent issues are being executed in parallel via git worktree:
+**Key Points**:
+- ✓ Each worktree is completely isolated (no conflicts with other agents)
+- ✓ Execute your task independently (don't wait for others)
+- ✓ Push to feature branch when ready: `git push origin [branch-name]`
+- ✓ Create PR: `gh pr create`
+- ✓ Include co-author: `Co-authored-by: Copilot <...>`
 
-**✓ You have isolated filesystem** (no conflicts with other agents)  
-**✓ Other agents cannot affect your work**  
-**✓ You can commit and push independently**  
-**✓ Your PR can merge any time** (no blocking on other agents)
+**Verify Context**:
+```bash
+pwd                    # Confirm correct worktree directory
+git branch             # Verify correct branch
+git status             # Check clean state
+```
 
-### How to Proceed
+**See orchestrator.md** for complete parallel execution coordination patterns and git worktree setup.
 
-1. **Verify Worktree Context**
-   ```bash
-   pwd                        # Confirm correct worktree directory
-   git branch                 # Verify correct branch checked out
-   git status                 # Verify clean state
-   ```
+## Workflow Decision Tree
 
-2. **Execute Your Task Independently**
-   - Don't wait for other agents to complete
-   - Don't check if other branches exist
-   - Don't try to coordinate through main branch
-   - Each worktree is completely isolated
-
-3. **Commit & Push Strategy**
-   - Make commits to feature branch (not main)
-   - Push to remote: `git push origin [branch-name]`
-   - Create PR: `gh pr create`
-   - Mark as "Ready for review"
-
-4. **Include Co-Author Trailer**
-   ```
-   git commit -m "feat: Your change description (#123)
-   
-   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-   ```
-
-### Success Metrics for Parallel Execution
-
-- ✅ Task completed within estimated time window
-- ✅ All tests passing in your scope
-- ✅ Code committed with co-author trailer
-- ✅ PR created and marked ready for review
-- ✅ No conflicts with other parallel agents
-- ✅ Ready for immediate merge
-
-### Example: Phase 2 Parallel Results
-
-**Three independent agents executing simultaneously:**
-
-| Issue | Task | Duration | Status |
-|-------|------|----------|--------|
-| #141 | Replace empty tests | 12 min | ✅ DONE |
-| #143 | Update documentation | 27 min | ✅ DONE |
-| #144 | Test isolation | 53 min | ✅ DONE |
-
-- **Sequential would have taken**: 135 minutes
-- **Parallel actually took**: ~53 minutes
-- **Time saved**: 82 minutes (61% efficiency gain)
-
-**Key insight**: All 3 PRs merged cleanly with zero conflicts because:
-- Different files modified (no overlaps)
-- Different types of work (code, docs, testing)
-- Zero blocking dependencies
-
-See `.copilot/PARALLEL-EXECUTION-GUIDE.md` for complete documentation.
-
-## Tool Interactions with GitHub Copilot CLI
-
-**Developer ↔ Copilot CLI Tools**:
-
-| Task                       | Tool         | Usage                                                |
-| -------------------------- | ------------ | ---------------------------------------------------- |
-| Plan issue implementation  | `/plan`      | Create breakdown + post plan comment to GitHub issue |
-| Code implementation        | Editor + LSP | Write code with language server support              |
-| Verify changes             | `/diff`      | Review all changes before commit                     |
-| Quality check              | `/review`    | Automated code review on changes                     |
-| Architecture clarification | `/ask`       | Clarify dual-backend impacts                         |
-| Debug failing test         | `/lsp`       | Use language server diagnostics                      |
-| Share implementation       | `/share`     | Document approach for Reviewer/Orchestrator          |
-| Commit changes             | Git          | Include Co-authored-by trailer (see CLAUDE.md)       |
-
-**When to Escalate**:
-
-- Architectural concerns about dual-backend → `/ask` Orchestrator
-- Code review feedback from Reviewer → Wait for feedback
-- Tests consistently failing → Debug with logging, check for N+1
-- Real-time feature complexity → Consult Orchestrator on SSE vs WebSocket
+**Stuck on architectural decision?** → `/ask` Orchestrator  
+**Tests consistently fail?** → Debug with logging, check for N+1 queries  
+**Code review feedback arrives?** → Fix on existing feature branch (don't create new branch)  
+**Real-time feature blocking you?** → Consult Orchestrator on SSE vs WebSocket patterns
 
 ## Git Workflow & Rebasing
 
