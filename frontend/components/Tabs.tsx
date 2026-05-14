@@ -156,14 +156,11 @@ export function Tabs({
       }
 
       if (newIndex !== index) {
-        handleTabClick(tabs[newIndex]!.id);
+        handleTabClick(tabs[newIndex].id);
       }
     },
     [tabs, handleTabClick],
   );
-
-  const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
-  const activeTabData = tabs[activeTabIndex];
 
   const tabListClasses = {
     default: 'flex gap-0 border-b border-gray-200 dark:border-gray-700 overflow-x-auto',
