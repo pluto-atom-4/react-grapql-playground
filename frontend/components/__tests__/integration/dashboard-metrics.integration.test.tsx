@@ -72,7 +72,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: mockInitialBuilds,
@@ -98,7 +98,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: mockInitialBuilds,
@@ -107,7 +107,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: mockUpdatedBuilds,
@@ -142,7 +142,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         error: new Error('Network error'),
       },
@@ -181,7 +181,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: mixedStatusBuilds,
@@ -237,7 +237,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: builtAtDifferentTimes,
@@ -265,7 +265,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: {
@@ -315,7 +315,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: largeDataset,
@@ -345,7 +345,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         delay: 100,
         result: {
@@ -374,7 +374,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: mockInitialBuilds,
@@ -450,7 +450,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: initialData,
@@ -459,7 +459,7 @@ describe('DashboardMetrics - Integration Tests', () => {
       {
         request: {
           query: DASHBOARD_METRICS_QUERY,
-          variables: { limit: 1000, offset: 0 },
+          variables: { limit: 50, offset: 0 },
         },
         result: {
           data: updatedData,
