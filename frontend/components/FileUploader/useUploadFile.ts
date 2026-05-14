@@ -40,12 +40,14 @@ export function useUploadFile(): { uploadFile: (formData: FormData, abortControl
 
         // Track upload progress
         if (onProgress) {
-          xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
+          xhr.upload.addEventListener('progress', (e: ProgressEvent | Event | undefined) => {
+            // Defensive check: ensure event exists and has lengthComputable property
+            if (e && 'lengthComputable' in e && e.lengthComputable) {
+              const event = e as ProgressEvent;
               onProgress({
-                loaded: e.loaded,
-                total: e.total,
-                percentage: Math.round((e.loaded / e.total) * 100),
+                loaded: event.loaded,
+                total: event.total,
+                percentage: Math.round((event.loaded / event.total) * 100),
               });
             }
           });
