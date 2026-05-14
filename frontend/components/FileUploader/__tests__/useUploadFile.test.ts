@@ -154,15 +154,24 @@ describe('useUploadFile Hook', () => {
     expect(uploadPromise).toBeInstanceOf(Promise);
   });
 
-  it('should track progress', () => {
+  it('should track progress', async () => {
     const progressCallback = vi.fn();
+    
+    // Create mock ProgressEvent with proper properties
+    const mockProgressEvent = {
+      lengthComputable: true,
+      loaded: 512,
+      total: 1024,
+      type: 'progress',
+    } as unknown as ProgressEvent;
+
     const mockXhr: MockXHR = {
       upload: {
-        addEventListener: vi.fn((event: string, handler: () => void) => {
+        addEventListener: vi.fn((event: string, handler: (e?: ProgressEvent | Event) => void) => {
           if (event === 'progress') {
-            // Mock progress event
+            // Simulate progress event asynchronously
             setTimeout(() => {
-              handler();
+              handler(mockProgressEvent);
             }, 0);
           }
         }),
@@ -182,7 +191,235 @@ describe('useUploadFile Hook', () => {
     const formData = new FormData();
     const abortController = new AbortController();
 
-    void result.current.uploadFile(formData, abortController, progressCallback);
-    expect(progressCallback).toBeDefined();
+    const uploadPromise = result.current.uploadFile(formData, abortController, progressCallback);
+    
+    // Wait for async operations to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Verify callback was invoked with correct progress
+    expect(progressCallback).toHaveBeenCalled();
+    expect(progressCallback).toHaveBeenCalledWith({
+      loaded: 512,
+      total: 1024,
+      percentage: 50,
+    });
+    
+    // Cleanup
+    delete (global as Record<string, unknown>).XMLHttpRequest;
+  });
+
+  it('should handle undefined ProgressEvent gracefully', async () => {
+    const progressCallback = vi.fn();
+    
+    const mockXhr: MockXHR = {
+      upload: {
+        addEventListener: vi.fn((event: string, handler: (e?: ProgressEvent | Event) => void) => {
+          if (event === 'progress') {
+            setTimeout(() => {
+              handler(undefined);
+            }, 0);
+          }
+        }),
+      },
+      open: vi.fn(),
+      send: vi.fn(function (this: MockXHR) {
+        this.status = 200;
+        this.responseText = JSON.stringify({
+          fileId: 'test-123',
+          fileName: 'test.pdf',
+          fileSize: 1024,
+          mimeType: 'application/pdf',
+          fileUrl: '/files/test-123',
+          uploadedAt: new Date().toISOString(),
+        });
+        setTimeout(() => this.onload?.());
+      }),
+      addEventListener: vi.fn(),
+      abort: vi.fn(),
+      timeout: 0,
+      onload: null,
+    };
+
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
+
+    const { result } = renderHook(() => useUploadFile());
+    const formData = new FormData();
+    const abortController = new AbortController();
+
+    await result.current.uploadFile(formData, abortController, progressCallback);
+    
+    // Progress callback should not be called when event is undefined
+    expect(progressCallback).not.toHaveBeenCalled();
+    
+    // Cleanup
+    delete (global as Record<string, unknown>).XMLHttpRequest;
+  });
+
+  it('should handle event without lengthComputable property', async () => {
+    const progressCallback = vi.fn();
+    
+    // Event without lengthComputable property
+    const incompleteEvent = { loaded: 100, total: 200 } as unknown as ProgressEvent;
+
+    const mockXhr: MockXHR = {
+      upload: {
+        addEventListener: vi.fn((event: string, handler: (e?: ProgressEvent | Event) => void) => {
+          if (event === 'progress') {
+            setTimeout(() => {
+              handler(incompleteEvent);
+            }, 0);
+          }
+        }),
+      },
+      open: vi.fn(),
+      send: vi.fn(function (this: MockXHR) {
+        this.status = 200;
+        this.responseText = JSON.stringify({
+          fileId: 'test-123',
+          fileName: 'test.pdf',
+          fileSize: 1024,
+          mimeType: 'application/pdf',
+          fileUrl: '/files/test-123',
+          uploadedAt: new Date().toISOString(),
+        });
+        setTimeout(() => this.onload?.());
+      }),
+      addEventListener: vi.fn(),
+      abort: vi.fn(),
+      timeout: 0,
+      onload: null,
+    };
+
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
+
+    const { result } = renderHook(() => useUploadFile());
+    const formData = new FormData();
+    const abortController = new AbortController();
+
+    await result.current.uploadFile(formData, abortController, progressCallback);
+    
+    // Progress callback should not be called when lengthComputable is missing
+    expect(progressCallback).not.toHaveBeenCalled();
+    
+    // Cleanup
+    delete (global as Record<string, unknown>).XMLHttpRequest;
+  });
+
+  it('should handle event with lengthComputable false', async () => {
+    const progressCallback = vi.fn();
+    
+    // Event with lengthComputable set to false
+    const eventWithoutLength = {
+      lengthComputable: false,
+      loaded: 100,
+      total: 200,
+      type: 'progress',
+    } as unknown as ProgressEvent;
+
+    const mockXhr: MockXHR = {
+      upload: {
+        addEventListener: vi.fn((event: string, handler: (e?: ProgressEvent | Event) => void) => {
+          if (event === 'progress') {
+            setTimeout(() => {
+              handler(eventWithoutLength);
+            }, 0);
+          }
+        }),
+      },
+      open: vi.fn(),
+      send: vi.fn(function (this: MockXHR) {
+        this.status = 200;
+        this.responseText = JSON.stringify({
+          fileId: 'test-123',
+          fileName: 'test.pdf',
+          fileSize: 1024,
+          mimeType: 'application/pdf',
+          fileUrl: '/files/test-123',
+          uploadedAt: new Date().toISOString(),
+        });
+        setTimeout(() => this.onload?.());
+      }),
+      addEventListener: vi.fn(),
+      abort: vi.fn(),
+      timeout: 0,
+      onload: null,
+    };
+
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
+
+    const { result } = renderHook(() => useUploadFile());
+    const formData = new FormData();
+    const abortController = new AbortController();
+
+    await result.current.uploadFile(formData, abortController, progressCallback);
+    
+    // Progress callback should not be called when lengthComputable is false
+    expect(progressCallback).not.toHaveBeenCalled();
+    
+    // Cleanup
+    delete (global as Record<string, unknown>).XMLHttpRequest;
+  });
+
+  it('should calculate correct percentage for various progress values', async () => {
+    const progressCallback = vi.fn();
+    
+    // Event with specific progress value
+    const progressEvent = {
+      lengthComputable: true,
+      loaded: 250,
+      total: 1000,
+      type: 'progress',
+    } as unknown as ProgressEvent;
+
+    const mockXhr: MockXHR = {
+      upload: {
+        addEventListener: vi.fn((event: string, handler: (e?: ProgressEvent | Event) => void) => {
+          if (event === 'progress') {
+            setTimeout(() => {
+              handler(progressEvent);
+            }, 0);
+          }
+        }),
+      },
+      open: vi.fn(),
+      send: vi.fn(function (this: MockXHR) {
+        this.status = 200;
+        this.responseText = JSON.stringify({
+          fileId: 'test-123',
+          fileName: 'test.pdf',
+          fileSize: 1024,
+          mimeType: 'application/pdf',
+          fileUrl: '/files/test-123',
+          uploadedAt: new Date().toISOString(),
+        });
+        setTimeout(() => this.onload?.());
+      }),
+      addEventListener: vi.fn(),
+      abort: vi.fn(),
+      timeout: 0,
+      onload: null,
+    };
+
+    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
+    global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
+
+    const { result } = renderHook(() => useUploadFile());
+    const formData = new FormData();
+    const abortController = new AbortController();
+
+    await result.current.uploadFile(formData, abortController, progressCallback);
+    
+    // Verify correct percentage is calculated (250/1000 = 25%)
+    expect(progressCallback).toHaveBeenCalledWith({
+      loaded: 250,
+      total: 1000,
+      percentage: 25,
+    });
+    
+    // Cleanup
+    delete (global as Record<string, unknown>).XMLHttpRequest;
   });
 });
