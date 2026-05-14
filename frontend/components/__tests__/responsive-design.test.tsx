@@ -58,7 +58,7 @@ const mocks = [
   {
     request: {
       query: DASHBOARD_METRICS_QUERY,
-      variables: { limit: 1000, offset: 0 },
+      variables: { limit: 50, offset: 0 },
     },
     result: {
       data: mockMetricsData,

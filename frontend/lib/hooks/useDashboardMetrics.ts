@@ -64,10 +64,16 @@ export interface UseDashboardMetricsReturn {
  * - Provides recent activity with relative timestamps
  * - Full error handling and loading states
  *
- * @param limit - Maximum number of builds to fetch (default: 1000)
+ * @param limit - Maximum number of builds to fetch (default: 50, max: 100)
  * @returns Hook result with metrics, activities, and loading states
+ *
+ * @note Backend validation enforces limit in range [1, 100]. Default limit of 50 provides:
+ * - Sufficient data for aggregate calculations
+ * - Respects backend constraints
+ * - Maintains good performance (small payload)
+ * - Leaves room for future tuning (not at maximum)
  */
-export function useDashboardMetrics(limit: number = 1000): UseDashboardMetricsReturn {
+export function useDashboardMetrics(limit: number = 50): UseDashboardMetricsReturn {
   // Fetch builds data from GraphQL
   const { data, loading, error, refetch: apolloRefetch } = useQuery<
     GetDashboardMetricsQuery,
