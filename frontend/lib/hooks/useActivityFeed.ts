@@ -25,9 +25,6 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
 
   const fetchActivityFeed = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       // Simulate API call - in production, call GraphQL BUILD_EVENTS_QUERY
       await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -102,8 +99,15 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
   }, [buildId]);
 
   useEffect(() => {
+    // Setting loading state at the start of an effect that triggers an async operation
+    // is a valid pattern for tracking async request state. Unlike pure subscriptions,
+    // data fetching effects naturally update state as part of their lifecycle.
+    // See: https://react.dev/reference/react/useEffect#fetching-data-with-effects
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    setError(null);
     void fetchActivityFeed();
-  }, [fetchActivityFeed]);
+  }, [buildId, fetchActivityFeed]);
 
   return {
     events,

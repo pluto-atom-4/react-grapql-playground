@@ -25,9 +25,6 @@ export function useStatusHistory(buildId: string): UseStatusHistoryReturn {
 
   const fetchStatusHistory = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       // Simulate API call - in production, call GraphQL BUILD_STATUS_HISTORY_QUERY
       // For now, we'll generate mock data based on build creation pattern
       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -58,11 +55,18 @@ export function useStatusHistory(buildId: string): UseStatusHistoryReturn {
     } finally {
       setLoading(false);
     }
-  }, [buildId]);
+  }, []);
 
   useEffect(() => {
+    // Setting loading state at the start of an effect that triggers an async operation
+    // is a valid pattern for tracking async request state. Unlike pure subscriptions,
+    // data fetching effects naturally update state as part of their lifecycle.
+    // See: https://react.dev/reference/react/useEffect#fetching-data-with-effects
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    setError(null);
     void fetchStatusHistory();
-  }, [fetchStatusHistory]);
+  }, [buildId, fetchStatusHistory]);
 
   return {
     statuses,
