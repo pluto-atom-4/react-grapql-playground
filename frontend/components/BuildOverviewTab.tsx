@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import React from 'react';
 import { StatusBadge } from './StatusBadge';
 import type { BuildStatus } from '../lib/generated/graphql';
 
@@ -36,7 +35,7 @@ export interface BuildOverviewTabProps {
  * Displays build metadata and quick actions
  */
 export function BuildOverviewTab({
-  buildId,
+  buildId: _buildId,
   build,
   isLoading = false,
   onUpdate,

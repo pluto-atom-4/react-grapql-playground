@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { BuildStatus } from '../lib/generated/graphql';
 
 /**
