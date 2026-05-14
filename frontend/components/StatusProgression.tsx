@@ -4,15 +4,7 @@ import type { ReactElement } from 'react';
 import React from 'react';
 import type { BuildStatus } from '../lib/generated/graphql';
 import { STATUS_LABELS, STATUS_NODE_COLORS, formatDuration, formatRelativeTime } from '../lib/status-utils';
-
-/**
- * Status history item
- */
-export interface StatusHistoryItem {
-  status: BuildStatus;
-  timestamp: Date;
-  duration?: number;
-}
+import type { StatusHistoryItem } from '../lib/types/activity-types';
 
 /**
  * Props for StatusProgression component

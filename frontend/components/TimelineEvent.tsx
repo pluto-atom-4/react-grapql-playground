@@ -1,35 +1,10 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import React, { useState } from 'react';
-import type { BuildStatus } from '../lib/generated/graphql';
+import { useState } from 'react';
 import { formatRelativeTime } from '../lib/status-utils';
 import { StatusBadge } from './StatusBadge';
-
-/**
- * Build event type
- */
-export type BuildEventType = 'status_change' | 'test_run' | 'manual_update' | 'system_event';
-
-/**
- * Build event structure
- */
-export interface BuildEvent {
-  id: string;
-  buildId: string;
-  eventType: BuildEventType;
-  timestamp: Date;
-  description: string;
-  metadata?: {
-    previousStatus?: BuildStatus;
-    newStatus?: BuildStatus;
-    reason?: string;
-    changedBy?: string;
-    testRunId?: string;
-    testResult?: 'PASSED' | 'FAILED';
-    [key: string]: unknown;
-  };
-}
+import type { BuildEvent, BuildEventType } from '../lib/types/activity-types';
 
 /**
  * Props for TimelineEvent component

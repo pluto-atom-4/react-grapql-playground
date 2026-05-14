@@ -1,8 +1,8 @@
 'use client';
 
 import type { ReactElement } from 'react';
-import React, { useState, useMemo } from 'react';
-import type { BuildEvent, BuildEventType } from './TimelineEvent';
+import { useState, useMemo } from 'react';
+import type { BuildEvent, BuildEventType } from '../lib/types/activity-types';
 import { TimelineEvent } from './TimelineEvent';
 import { filterEventsByType, filterEventsByDateRange, sortEventsByDate } from '../lib/status-utils';
 
@@ -65,15 +65,27 @@ export function ActivityFeed({
   );
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [displayedCount, setDisplayedCount] = useState(pageSize);
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null,
+  });
 
   // Filter and sort events
   const filteredEvents = useMemo(() => {
-    const typeFiltered = filterEventsByType(
+    let typeFiltered = filterEventsByType(
       events,
       Array.from(selectedEventTypes),
     );
+    // Apply date range filter if dates are set
+    if (dateRange.start || dateRange.end) {
+      typeFiltered = filterEventsByDateRange(
+        typeFiltered,
+        dateRange.start,
+        dateRange.end,
+      );
+    }
     return sortEventsByDate(typeFiltered, false); // Newest first
-  }, [events, selectedEventTypes]);
+  }, [events, selectedEventTypes, dateRange]);
 
   // Paginated events
   const paginatedEvents = filteredEvents.slice(0, displayedCount);
@@ -87,6 +99,11 @@ export function ActivityFeed({
       newTypes.add(eventType);
     }
     setSelectedEventTypes(newTypes);
+    setDisplayedCount(pageSize); // Reset pagination on filter change
+  };
+
+  const handleDateRangeChange = (start: Date | null, end: Date | null): void => {
+    setDateRange({ start, end });
     setDisplayedCount(pageSize); // Reset pagination on filter change
   };
 
@@ -135,6 +152,8 @@ export function ActivityFeed({
           eventTypes={eventTypes}
           selectedEventTypes={selectedEventTypes}
           onToggleEventType={handleToggleEventType}
+          dateRange={dateRange}
+          onDateRangeChange={handleDateRangeChange}
         />
 
         {/* Empty state */}
@@ -152,6 +171,8 @@ export function ActivityFeed({
         eventTypes={eventTypes}
         selectedEventTypes={selectedEventTypes}
         onToggleEventType={handleToggleEventType}
+        dateRange={dateRange}
+        onDateRangeChange={handleDateRangeChange}
       />
 
       {/* Event list */}
@@ -214,12 +235,16 @@ interface FilterBarProps {
   eventTypes: BuildEventType[];
   selectedEventTypes: Set<BuildEventType>;
   onToggleEventType: (eventType: BuildEventType) => void;
+  dateRange: { start: Date | null; end: Date | null };
+  onDateRangeChange: (start: Date | null, end: Date | null) => void;
 }
 
 function FilterBar({
   eventTypes,
   selectedEventTypes,
   onToggleEventType,
+  dateRange,
+  onDateRangeChange,
 }: FilterBarProps): ReactElement {
   const eventTypeLabels: Record<BuildEventType, string> = {
     status_change: 'Status Changes',
@@ -228,25 +253,80 @@ function FilterBar({
     system_event: 'System Events',
   };
 
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const newStart = e.target.value ? new Date(e.target.value) : null;
+    onDateRangeChange(newStart, dateRange.end);
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const newEnd = e.target.value ? new Date(e.target.value) : null;
+    onDateRangeChange(dateRange.start, newEnd);
+  };
+
+  const handleClearDates = (): void => {
+    onDateRangeChange(null, null);
+  };
+
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Filter events by type">
-      {eventTypes.map((eventType) => (
-        <button
-          key={eventType}
-          type="button"
-          onClick={() => onToggleEventType(eventType)}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-            ${
-              selectedEventTypes.has(eventType)
-                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }
-          `}
-          aria-pressed={selectedEventTypes.has(eventType)}
-        >
-          {eventTypeLabels[eventType]}
-        </button>
-      ))}
+    <div className="space-y-3">
+      {/* Event type filters */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter events by type">
+        {eventTypes.map((eventType) => (
+          <button
+            key={eventType}
+            type="button"
+            onClick={() => onToggleEventType(eventType)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+              ${
+                selectedEventTypes.has(eventType)
+                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }
+            `}
+            aria-pressed={selectedEventTypes.has(eventType)}
+          >
+            {eventTypeLabels[eventType]}
+          </button>
+        ))}
+      </div>
+
+      {/* Date range filter */}
+      <div className="flex flex-wrap gap-2 items-end">
+        <div>
+          <label htmlFor="date-start" className="block text-xs font-medium text-gray-700 mb-1">
+            From
+          </label>
+          <input
+            id="date-start"
+            type="date"
+            value={dateRange.start ? dateRange.start.toISOString().split('T')[0] : ''}
+            onChange={handleStartDateChange}
+            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label htmlFor="date-end" className="block text-xs font-medium text-gray-700 mb-1">
+            To
+          </label>
+          <input
+            id="date-end"
+            type="date"
+            value={dateRange.end ? dateRange.end.toISOString().split('T')[0] : ''}
+            onChange={handleEndDateChange}
+            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        {(dateRange.start || dateRange.end) && (
+          <button
+            type="button"
+            onClick={handleClearDates}
+            className="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            title="Clear date filters"
+          >
+            Clear dates
+          </button>
+        )}
+      </div>
     </div>
   );
 }

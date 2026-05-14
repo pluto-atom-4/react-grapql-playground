@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { BuildEvent } from '../TimelineEvent';
+import { BuildStatus } from '../../lib/generated/graphql';
+import type { BuildEvent } from '../../lib/types/activity-types';
 import { TimelineEvent } from '../TimelineEvent';
 
 describe('TimelineEvent', () => {
@@ -12,8 +13,8 @@ describe('TimelineEvent', () => {
     timestamp: new Date('2026-01-15T10:00:00'),
     description: 'Build status changed to RUNNING',
     metadata: {
-      previousStatus: 'PENDING',
-      newStatus: 'RUNNING',
+      previousStatus: BuildStatus.Pending,
+      newStatus: BuildStatus.Running,
       changedBy: 'system',
     },
   };
@@ -83,8 +84,7 @@ describe('TimelineEvent', () => {
     expect(onExpand).toHaveBeenCalledWith(mockEvent.id, true);
   });
 
-  it('should display metadata when expanded', async () => {
-    const user = userEvent.setup();
+  it('should display metadata when expanded', () => {
     render(
       <TimelineEvent event={mockEvent} expanded={true} />,
     );

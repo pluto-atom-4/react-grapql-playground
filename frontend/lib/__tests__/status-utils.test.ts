@@ -14,54 +14,54 @@ import {
   STATUS_COLORS,
   STATUS_NODE_COLORS,
 } from '../status-utils';
-import type { BuildStatus } from '../generated/graphql';
+import { BuildStatus } from '../generated/graphql';
 
 describe('Status Utilities', () => {
   describe('formatStatusTransition', () => {
     it('should format transition from PENDING to RUNNING', () => {
-      const result = formatStatusTransition('PENDING', 'RUNNING');
+      const result = formatStatusTransition(BuildStatus.Pending, BuildStatus.Running);
       expect(result).toBe('Started running');
     });
 
     it('should format transition from RUNNING to COMPLETE', () => {
-      const result = formatStatusTransition('RUNNING', 'COMPLETE');
+      const result = formatStatusTransition(BuildStatus.Running, BuildStatus.Complete);
       expect(result).toBe('Completed successfully');
     });
 
     it('should format transition from RUNNING to FAILED', () => {
-      const result = formatStatusTransition('RUNNING', 'FAILED');
+      const result = formatStatusTransition(BuildStatus.Running, BuildStatus.Failed);
       expect(result).toBe('Failed during execution');
     });
 
     it('should handle transition with no previous status', () => {
-      const result = formatStatusTransition(undefined, 'PENDING');
+      const result = formatStatusTransition(undefined, BuildStatus.Pending);
       expect(result).toBe('Moved to Pending');
     });
 
     it('should handle same status', () => {
-      const result = formatStatusTransition('RUNNING', 'RUNNING');
+      const result = formatStatusTransition(BuildStatus.Running, BuildStatus.Running);
       expect(result).toBe('Remained in Running');
     });
 
     it('should handle unknown transition', () => {
-      const result = formatStatusTransition('COMPLETE' as BuildStatus, 'FAILED');
+      const result = formatStatusTransition(BuildStatus.Complete, BuildStatus.Failed);
       expect(result).toContain('Changed from');
     });
   });
 
   describe('Color functions', () => {
     it('should return correct status color for PENDING', () => {
-      const color = getStatusColor('PENDING');
-      expect(color).toBe(STATUS_COLORS.PENDING);
+      const color = getStatusColor(BuildStatus.Pending);
+      expect(color).toBe(STATUS_COLORS[BuildStatus.Pending]);
     });
 
     it('should return correct node color for COMPLETE', () => {
-      const color = getStatusNodeColor('COMPLETE');
-      expect(color).toBe(STATUS_NODE_COLORS.COMPLETE);
+      const color = getStatusNodeColor(BuildStatus.Complete);
+      expect(color).toBe(STATUS_NODE_COLORS[BuildStatus.Complete]);
     });
 
     it('should include text and background in color', () => {
-      const color = getStatusColor('FAILED');
+      const color = getStatusColor(BuildStatus.Failed);
       expect(color).toContain('bg-');
       expect(color).toContain('text-');
     });

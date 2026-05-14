@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { BuildEvent } from '../TimelineEvent';
+import { BuildStatus } from '../../lib/generated/graphql';
+import type { BuildEvent } from '../../lib/types/activity-types';
 import { ActivityFeed } from '../ActivityFeed';
 
 describe('ActivityFeed', () => {
@@ -12,7 +13,7 @@ describe('ActivityFeed', () => {
       eventType: 'status_change',
       timestamp: new Date('2026-01-15T12:00:00'),
       description: 'Build completed',
-      metadata: { newStatus: 'COMPLETE' },
+      metadata: { newStatus: BuildStatus.Complete },
     },
     {
       id: 'event-2',
@@ -28,7 +29,7 @@ describe('ActivityFeed', () => {
       eventType: 'status_change',
       timestamp: new Date('2026-01-15T10:00:00'),
       description: 'Build started',
-      metadata: { newStatus: 'RUNNING' },
+      metadata: { newStatus: BuildStatus.Running },
     },
   ];
 
@@ -192,7 +193,7 @@ describe('ActivityFeed', () => {
       description: `Event ${i}`,
     }));
 
-    const { rerender } = render(
+    render(
       <ActivityFeed buildId="build-123" events={manyEvents} pageSize={10} />,
     );
 

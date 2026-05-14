@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import type { StatusHistoryItem } from '../components/StatusProgression';
+import { BuildStatus } from '../generated/graphql';
+import type { StatusHistoryItem } from '../types/activity-types';
 
 interface UseStatusHistoryReturn {
   statuses: StatusHistoryItem[];
@@ -35,17 +36,17 @@ export function useStatusHistory(buildId: string): UseStatusHistoryReturn {
       const now = new Date();
       const mockStatuses: StatusHistoryItem[] = [
         {
-          status: 'PENDING',
+          status: BuildStatus.Pending,
           timestamp: new Date(now.getTime() - 3600000 * 2), // 2 hours ago
           duration: 1800000, // 30 minutes
         },
         {
-          status: 'RUNNING',
+          status: BuildStatus.Running,
           timestamp: new Date(now.getTime() - 3600000 * 1.5), // 1.5 hours ago
           duration: 1500000, // 25 minutes
         },
         {
-          status: 'COMPLETE',
+          status: BuildStatus.Complete,
           timestamp: new Date(now.getTime() - 900000), // 15 minutes ago
           duration: 0, // current status
         },

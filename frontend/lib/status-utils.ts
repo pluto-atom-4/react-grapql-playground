@@ -177,12 +177,14 @@ export function filterEventsByType<T extends { eventType: string }>(
  */
 export function filterEventsByDateRange<T extends { timestamp: Date | string }>(
   events: T[],
-  startDate: Date,
-  endDate: Date,
+  startDate: Date | null,
+  endDate: Date | null,
 ): T[] {
   return events.filter((event) => {
     const eventDate = event.timestamp instanceof Date ? event.timestamp : new Date(event.timestamp);
-    return eventDate >= startDate && eventDate <= endDate;
+    const afterStart = !startDate || eventDate >= startDate;
+    const beforeEnd = !endDate || eventDate <= endDate;
+    return afterStart && beforeEnd;
   });
 }
 

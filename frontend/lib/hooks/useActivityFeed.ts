@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import type { BuildEvent } from '../components/TimelineEvent';
+import { BuildStatus } from '../generated/graphql';
+import type { BuildEvent } from '../types/activity-types';
 
 interface UseActivityFeedReturn {
   events: BuildEvent[];
@@ -40,8 +41,8 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
           timestamp: new Date(now.getTime() - 900000), // 15 minutes ago
           description: 'Build completed successfully',
           metadata: {
-            previousStatus: 'RUNNING',
-            newStatus: 'COMPLETE',
+            previousStatus: BuildStatus.Running,
+            newStatus: BuildStatus.Complete,
             changedBy: 'system',
           },
         },
@@ -63,8 +64,8 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
           timestamp: new Date(now.getTime() - 1800000), // 30 minutes ago
           description: 'Build started',
           metadata: {
-            previousStatus: 'PENDING',
-            newStatus: 'RUNNING',
+            previousStatus: BuildStatus.Pending,
+            newStatus: BuildStatus.Running,
             changedBy: 'system',
           },
         },
@@ -86,7 +87,7 @@ export function useActivityFeed(buildId: string): UseActivityFeedReturn {
           timestamp: new Date(now.getTime() - 3600000), // 1 hour ago
           description: 'Build created',
           metadata: {
-            newStatus: 'PENDING',
+            newStatus: BuildStatus.Pending,
             changedBy: 'system',
           },
         },

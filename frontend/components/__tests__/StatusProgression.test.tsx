@@ -1,23 +1,24 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { StatusHistoryItem } from '../StatusProgression';
+import { BuildStatus } from '../../lib/generated/graphql';
+import type { StatusHistoryItem } from '../../lib/types/activity-types';
 import { StatusProgression } from '../StatusProgression';
 
 describe('StatusProgression', () => {
   const mockStatuses: StatusHistoryItem[] = [
     {
-      status: 'PENDING',
+      status: BuildStatus.Pending,
       timestamp: new Date('2026-01-15T10:00:00'),
       duration: 1800000, // 30 minutes
     },
     {
-      status: 'RUNNING',
+      status: BuildStatus.Running,
       timestamp: new Date('2026-01-15T10:30:00'),
       duration: 900000, // 15 minutes
     },
     {
-      status: 'COMPLETE',
+      status: BuildStatus.Complete,
       timestamp: new Date('2026-01-15T10:45:00'),
     },
   ];
@@ -43,7 +44,7 @@ describe('StatusProgression', () => {
   });
 
   it('should display arrow connectors', () => {
-    const { container } = render(
+    render(
       <StatusProgression buildId="build-123" statuses={mockStatuses} />,
     );
 
@@ -181,7 +182,7 @@ describe('StatusProgression', () => {
   it('should handle single status', () => {
     const singleStatus: StatusHistoryItem[] = [
       {
-        status: 'PENDING',
+        status: BuildStatus.Pending,
         timestamp: new Date(),
       },
     ];
