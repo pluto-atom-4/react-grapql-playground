@@ -57,7 +57,7 @@ const mockMetricsData = {
  * Issue #295: Create a new Apollo cache for each test to prevent cleanup issues
  * This ensures each test has isolated cache and reduces the chance of unhandled rejections
  */
-const createTestCache = () => new InMemoryCache();
+const createTestCache = (): InMemoryCache => new InMemoryCache();
 
 describe('DashboardMetrics Component', () => {
   const mockMutationResult = {
