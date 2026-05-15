@@ -25,6 +25,7 @@ export interface BuildPartsTabProps {
   isLoading?: boolean;
   onPartAdded?: (part: Part) => void;
   onPartRemoved?: (partId: string) => void;
+  onPartDrillDown?: (partId: string) => void;
 }
 
 /**
@@ -38,6 +39,7 @@ export function BuildPartsTab({
   isLoading = false,
   onPartAdded,
   onPartRemoved,
+  onPartDrillDown,
 }: BuildPartsTabProps): ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -107,14 +109,24 @@ export function BuildPartsTab({
                   <span>Qty: {part.quantity}</span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onPartRemoved?.(part.id)}
-                className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50 transition-colors"
-                aria-label={`Remove part ${part.name}`}
-              >
-                Remove
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onPartDrillDown?.(part.id)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+                  aria-label={`View details for part ${part.name}`}
+                >
+                  View Details
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPartRemoved?.(part.id)}
+                  className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                  aria-label={`Remove part ${part.name}`}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>

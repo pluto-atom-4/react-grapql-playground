@@ -25,6 +25,7 @@ export interface BuildTestRunsTabProps {
   testRuns?: TestRun[];
   isLoading?: boolean;
   onTestRunAdded?: (testRun: TestRun) => void;
+  onTestRunDrillDown?: (testRunId: string) => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export function BuildTestRunsTab({
   testRuns = [],
   isLoading = false,
   onTestRunAdded,
+  onTestRunDrillDown,
 }: BuildTestRunsTabProps): ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -148,6 +150,7 @@ export function BuildTestRunsTab({
                 </div>
                 <button
                   type="button"
+                  onClick={() => onTestRunDrillDown?.(run.id)}
                   className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
                   aria-label={`View test run ${run.id}`}
                 >

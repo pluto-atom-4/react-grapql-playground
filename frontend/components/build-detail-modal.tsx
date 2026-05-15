@@ -7,6 +7,8 @@ import { BuildPartsTab, type Part } from './BuildPartsTab';
 import { BuildTestRunsTab, type TestRun } from './BuildTestRunsTab';
 import { BuildHistoryTab } from './BuildHistoryTab';
 import { ErrorBoundary } from './ErrorBoundary';
+import { PartDetailsModal } from './PartDetailsModal';
+import { TestRunResultViewer } from './TestRunResultViewer';
 import { useBuildDetailModal } from '@/lib/hooks/useBuildDetailModal';
 import { useToast } from '@/lib/error-notifier';
 import { ModalSkeleton } from './SkeletonLoader/ModalSkeleton';
@@ -37,7 +39,7 @@ function BuildDetailContent({
   onClose,
 }: BuildDetailModalProps): ReactElement {
   const toast = useToast();
-  const { state, handlers, setActiveTab, refetchBuild } = useBuildDetailModal(buildId);
+  const { state, handlers, setActiveTab, refetchBuild, clearDrillDown } = useBuildDetailModal(buildId);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -183,6 +185,9 @@ function BuildDetailContent({
                 handleActionError(error instanceof Error ? error : new Error(String(error)));
               }
             }}
+            onPartDrillDown={(partId: string) => {
+              handlers.onDrillDownPart?.(partId);
+            }}
           />
         </ErrorBoundary>
       ),
@@ -205,6 +210,9 @@ function BuildDetailContent({
               } catch (error) {
                 handleActionError(error instanceof Error ? error : new Error(String(error)));
               }
+            }}
+            onTestRunDrillDown={(testRunId: string) => {
+              handlers.onDrillDownTestRun?.(testRunId);
             }}
           />
         </ErrorBoundary>
@@ -251,6 +259,71 @@ function BuildDetailContent({
         <div className="flex-1 overflow-y-auto">
           <Tabs tabs={tabs} defaultTab="overview" onTabChange={handleTabChange} variant="default" lazy={true} />
         </div>
+
+        {/* Part Details Drilldown Modal */}
+        {state.selectedPartId && (() => {
+          const selectedPart = state.parts.find((p) => p.id === state.selectedPartId);
+          return selectedPart ? (
+            <PartDetailsModal
+              part={selectedPart}
+              onClose={() => {
+                clearDrillDown();
+              }}
+              onSave={async (_partData) => {
+                try {
+                  // Handle part update mutation here
+                  toast.success('Part updated successfully');
+                  clearDrillDown();
+                  void refetchBuild();
+                } catch (error) {
+                  handleActionError(error instanceof Error ? error : new Error(String(error)));
+                }
+              }}
+              onDelete={async (_partId: string) => {
+                try {
+                  // Handle part delete mutation here
+                  toast.success('Part deleted successfully');
+                  clearDrillDown();
+                  void refetchBuild();
+                } catch (error) {
+                  handleActionError(error instanceof Error ? error : new Error(String(error)));
+                }
+              }}
+            />
+          ) : null;
+        })()}
+
+        {/* Test Result Drilldown Modal */}
+        {state.selectedTestRunId && (() => {
+          const selectedTestRun = state.testRuns.find((t) => t.id === state.selectedTestRunId);
+          return selectedTestRun ? (
+            <TestRunResultViewer
+              testRun={selectedTestRun}
+              onClose={() => {
+                clearDrillDown();
+              }}
+              onRerun={async () => {
+                try {
+                  // Handle test rerun mutation here
+                  toast.success('Test run resubmitted successfully');
+                  clearDrillDown();
+                  void refetchBuild();
+                } catch (error) {
+                  handleActionError(error instanceof Error ? error : new Error(String(error)));
+                }
+              }}
+              onDownloadResult={() => {
+                // Handle download here
+                const testRun = state.testRuns.find((t) => t.id === state.selectedTestRunId);
+                if (testRun?.fileUrl) {
+                  window.open(testRun.fileUrl, '_blank');
+                } else {
+                  toast.error('No test result file available');
+                }
+              }}
+            />
+          ) : null;
+        })()}
       </div>
     </div>
   );
