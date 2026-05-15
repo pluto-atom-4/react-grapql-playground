@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
-import { InMemoryCache, ApolloClient } from '@apollo/client';
+import { InMemoryCache } from '@apollo/client';
 import { DashboardMetrics } from '../DashboardMetrics';
 import { DASHBOARD_METRICS_QUERY } from '../../lib/graphql-queries';
 import { BuildStatus } from '../../lib/generated/graphql';
