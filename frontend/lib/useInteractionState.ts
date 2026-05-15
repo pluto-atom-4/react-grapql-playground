@@ -22,8 +22,8 @@ export interface InteractionStateHandlers extends InteractionState {
   onMouseLeave: () => void;
   onMouseDown: () => void;
   onMouseUp: () => void;
-  onKeyDown: (e: KeyboardEvent) => void;
-  onKeyUp: (e: KeyboardEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  onKeyUp: (e: React.KeyboardEvent) => void;
 }
 
 /**
