@@ -150,31 +150,29 @@ interface ErrorLike {
   stack?: string;
 }
 
-interface PromiseHandler<T = unknown, U = unknown> {
-  (this: void, value: T): U | Promise<U>;
-}
-
 type OnFulfilled<T = unknown> = ((value: T) => unknown) | undefined | null;
 type OnRejected = ((reason: unknown) => unknown) | undefined | null;
 
 // Monkey-patch Promise.then to add automatic error suppression
 const originalThen = Promise.prototype.then;
 Promise.prototype.then = function (
-  this: Promise<unknown>,
+  this: void,
   onFulfilled?: OnFulfilled,
   onRejected?: OnRejected
 ): Promise<unknown> {
   // Wrap the rejection handler to suppress Apollo AbortErrors
-  const wrappedRejected = (reason: ErrorLike): unknown => {
+  const wrappedRejected = (reason: unknown): unknown => {
+    const errorLike = reason as ErrorLike;
+    
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
       typeof reason === 'object' &&
-      reason.name === 'AbortError' &&
-      reason.message === 'The operation was aborted'
+      errorLike.name === 'AbortError' &&
+      errorLike.message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = reason.stack ?? '';
+      const stack = errorLike.stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
@@ -191,7 +189,10 @@ Promise.prototype.then = function (
     }
     
     // Re-throw if no handler
-    throw reason;
+    if (reason instanceof Error) {
+      throw reason;
+    }
+    throw new Error(String(reason));
   };
   
   // Call the original then with our wrapped handler
@@ -201,20 +202,22 @@ Promise.prototype.then = function (
 // Monkey-patch Promise.catch to add automatic error suppression
 const originalCatch = Promise.prototype.catch;
 Promise.prototype.catch = function (
-  this: Promise<unknown>,
+  this: void,
   onRejected?: OnRejected
 ): Promise<unknown> {
   // Wrap the rejection handler to suppress Apollo AbortErrors
-  const wrappedRejected = (reason: ErrorLike): unknown => {
+  const wrappedRejected = (reason: unknown): unknown => {
+    const errorLike = reason as ErrorLike;
+    
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
       typeof reason === 'object' &&
-      reason.name === 'AbortError' &&
-      reason.message === 'The operation was aborted'
+      errorLike.name === 'AbortError' &&
+      errorLike.message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = reason.stack ?? '';
+      const stack = errorLike.stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
@@ -231,7 +234,10 @@ Promise.prototype.catch = function (
     }
     
     // Re-throw if no handler
-    throw reason;
+    if (reason instanceof Error) {
+      throw reason;
+    }
+    throw new Error(String(reason));
   };
   
   // Call the original catch with our wrapped handler
@@ -241,15 +247,17 @@ Promise.prototype.catch = function (
 // Also handle at process level
 if (typeof process !== 'undefined' && typeof process.on === 'function') {
   process.on('unhandledRejection', (reason: unknown): void => {
+    const errorLike = reason as ErrorLike;
+    
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
       typeof reason === 'object' &&
-      (reason as ErrorLike).name === 'AbortError' &&
-      (reason as ErrorLike).message === 'The operation was aborted'
+      errorLike.name === 'AbortError' &&
+      errorLike.message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = (reason as ErrorLike).stack ?? '';
+      const stack = errorLike.stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
