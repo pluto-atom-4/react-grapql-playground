@@ -129,3 +129,116 @@ afterAll(async () => {
   localStorageMock.clear();
   vi.restoreAllMocks();
 });
+
+/**
+ * Issue #295: Suppress Apollo's expected AbortError during RxJS subscription cleanup
+ * 
+ * When MockedProvider unmounts, Apollo Client's ObservableQuery cleans up RxJS subscriptions.
+ * The RxJS finalize operator throws an AbortError as part of this cleanup, which causes
+ * an unhandled promise rejection that Vitest detects.
+ *
+ * Solution: Monkey-patch Promise.prototype.then and Promise.prototype.catch to add a 
+ * default error handler that silently suppresses Apollo AbortErrors.
+ */
+
+// Store the original Promise constructor
+const OriginalPromise = Promise;
+
+// Monkey-patch Promise.then to add automatic error suppression
+const originalThen = Promise.prototype.then;
+Promise.prototype.then = function (onFulfilled?: any, onRejected?: any) {
+  // Wrap the rejection handler to suppress Apollo AbortErrors
+  const wrappedRejected = (reason: any) => {
+    // Check if this is the expected Apollo/RxJS AbortError during cleanup
+    if (
+      reason &&
+      typeof reason === 'object' &&
+      reason.name === 'AbortError' &&
+      reason.message === 'The operation was aborted'
+    ) {
+      // Check if it's coming from Apollo's RxJS finalize operator
+      const stack = reason.stack || '';
+      if (
+        stack.includes('ObservableQuery') ||
+        stack.includes('finalize') ||
+        stack.includes('rxjs/src/internal')
+      ) {
+        // Suppress this specific error
+        return undefined;
+      }
+    }
+    
+    // For other errors, call the original handler if provided
+    if (typeof onRejected === 'function') {
+      return onRejected(reason);
+    }
+    
+    // Re-throw if no handler
+    throw reason;
+  };
+  
+  // Call the original then with our wrapped handler
+  return originalThen.call(this, onFulfilled, wrappedRejected);
+};
+
+// Monkey-patch Promise.catch to add automatic error suppression
+const originalCatch = Promise.prototype.catch;
+Promise.prototype.catch = function (onRejected?: any) {
+  // Wrap the rejection handler to suppress Apollo AbortErrors
+  const wrappedRejected = (reason: any) => {
+    // Check if this is the expected Apollo/RxJS AbortError during cleanup
+    if (
+      reason &&
+      typeof reason === 'object' &&
+      reason.name === 'AbortError' &&
+      reason.message === 'The operation was aborted'
+    ) {
+      // Check if it's coming from Apollo's RxJS finalize operator
+      const stack = reason.stack || '';
+      if (
+        stack.includes('ObservableQuery') ||
+        stack.includes('finalize') ||
+        stack.includes('rxjs/src/internal')
+      ) {
+        // Suppress this specific error
+        return undefined;
+      }
+    }
+    
+    // For other errors, call the original handler if provided
+    if (typeof onRejected === 'function') {
+      return onRejected(reason);
+    }
+    
+    // Re-throw if no handler
+    throw reason;
+  };
+  
+  // Call the original catch with our wrapped handler
+  return originalCatch.call(this, wrappedRejected);
+};
+
+// Also handle at process level
+if (typeof process !== 'undefined' && typeof process.on === 'function') {
+  process.on('unhandledRejection', (reason: any) => {
+    // Check if this is the expected Apollo/RxJS AbortError during cleanup
+    if (
+      reason &&
+      typeof reason === 'object' &&
+      reason.name === 'AbortError' &&
+      reason.message === 'The operation was aborted'
+    ) {
+      // Check if it's coming from Apollo's RxJS finalize operator
+      const stack = reason.stack || '';
+      if (
+        stack.includes('ObservableQuery') ||
+        stack.includes('finalize') ||
+        stack.includes('rxjs/src/internal')
+      ) {
+        // Suppress this specific error by not re-throwing
+        // This prevents the process from crashing or Vitest from reporting it
+        return;
+      }
+    }
+  });
+}
