@@ -306,14 +306,16 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onRerun={() => {
+              onRerun={(): Promise<void> => {
                 try {
                   // Handle test rerun mutation here
                   toast.success('Test run resubmitted successfully');
                   clearDrillDown();
                   void refetchBuild();
+                  return Promise.resolve();
                 } catch (error) {
                   handleActionError(error instanceof Error ? error : new Error(String(error)));
+                  return Promise.resolve();
                 }
               }}
               onDownloadResult={() => {
