@@ -72,17 +72,12 @@ export function PartDetailsModal({
   ];
 
   const handleSave = async (data: Record<string, string | number>): Promise<void> => {
-    try {
-      await onSave({
-        name: String(data.name),
-        sku: String(data.sku),
-        quantity: Number(data.quantity),
-      });
-      setIsEditing(false);
-    } catch (err) {
-      // Error is handled by InlineEditor
-      throw err;
-    }
+    await onSave({
+      name: String(data.name),
+      sku: String(data.sku),
+      quantity: Number(data.quantity),
+    });
+    setIsEditing(false);
   };
 
   const handleDeleteConfirm = async (): Promise<void> => {

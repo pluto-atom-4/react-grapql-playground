@@ -5,6 +5,8 @@ import { DashboardMetrics } from '../../DashboardMetrics';
 import { DASHBOARD_METRICS_QUERY } from '../../../lib/graphql-queries';
 import { BuildStatus } from '../../../lib/generated/graphql';
 
+/* global performance */
+
 /**
  * Integration tests for DashboardMetrics
  *

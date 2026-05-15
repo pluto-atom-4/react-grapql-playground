@@ -3,7 +3,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactElement } from 'react';
 import { MockedProvider } from '@apollo/client/testing/react';
 import BuildDetailModal from '../build-detail-modal';
 import * as apolloHooks from '@/lib/apollo-hooks';
@@ -243,7 +242,7 @@ describe('BuildDetailModal - Tabbed Structure', () => {
   });
 
   describe('Parts Tab Data Display', () => {
-    it('should render Parts tab', async (): Promise<void> => {
+    it('should render Parts tab', (): void => {
       render(
         <MockedProvider>
           <BuildDetailModal buildId="build-123" onClose={vi.fn()} />
@@ -257,7 +256,7 @@ describe('BuildDetailModal - Tabbed Structure', () => {
   });
 
   describe('Test Runs Tab Data Display', () => {
-    it('should render Test Runs tab with badge count', async (): Promise<void> => {
+    it('should render Test Runs tab with badge count', (): void => {
       render(
         <MockedProvider>
           <BuildDetailModal buildId="build-123" onClose={vi.fn()} />
@@ -293,7 +292,7 @@ describe('BuildDetailModal - Tabbed Structure', () => {
   });
 
   describe('Error Boundary Resilience', () => {
-    it('should handle component errors gracefully', async (): Promise<void> => {
+    it('should handle component errors gracefully', (): void => {
       // This test verifies error boundaries exist and catch errors
       // The exact error message depends on ErrorBoundary implementation
       render(
@@ -309,7 +308,7 @@ describe('BuildDetailModal - Tabbed Structure', () => {
   });
 
   describe('Accessibility (WCAG 2.1 Level AA)', () => {
-    it('should have proper ARIA attributes on tabs', async (): Promise<void> => {
+    it('should have proper ARIA attributes on tabs', (): void => {
       render(
         <MockedProvider>
           <BuildDetailModal buildId="build-123" onClose={vi.fn()} />

@@ -38,7 +38,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error): void {
     // Log error for debugging
     if (typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
       console.error('ErrorBoundary caught an error:', error);
     }
   }

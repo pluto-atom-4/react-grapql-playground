@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import { MockedProvider, type MockedProviderProps } from '@apollo/client/testing/react';
+import type { RenderResult } from '@testing-library/react';
 
 /**
  * Test utility to wrap components with MockedProvider
@@ -20,12 +21,13 @@ export function createApolloWrapper(
 /**
  * Test utility to render components with Apollo wrapper
  * Usage: const { getByText } = renderWithApollo(<Component />, mocks);
+ * This function uses dynamic import internally since render comes from React Testing Library.
  */
-export function renderWithApollo(
+export async function renderWithApollo(
   ui: ReactElement,
   mocks: MockedProviderProps['mocks'] = [],
-) {
-  const { render } = require('@testing-library/react');
+): Promise<RenderResult> {
+  const { render } = await import('@testing-library/react');
   const wrapper = createApolloWrapper(mocks);
   return render(ui, { wrapper });
 }

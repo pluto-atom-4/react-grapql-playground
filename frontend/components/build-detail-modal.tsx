@@ -45,21 +45,21 @@ function BuildDetailContent({
 
   // Escape key handler to close modal
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleEscape = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         onClose();
       }
     };
 
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    return (): void => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
   // Focus trap: keep Tab inside modal
   useEffect(() => {
     if (!modalRef.current) return;
 
-    const handleTabKey = (e: KeyboardEvent) => {
+    const handleTabKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Tab') return;
 
       const focusableElements = modalRef.current!.querySelectorAll(
@@ -85,7 +85,7 @@ function BuildDetailContent({
     };
 
     window.addEventListener('keydown', handleTabKey);
-    return () => window.removeEventListener('keydown', handleTabKey);
+    return (): void => window.removeEventListener('keydown', handleTabKey);
   }, []);
 
   // Focus first tab button when modal opens
@@ -128,16 +128,16 @@ function BuildDetailContent({
   }
 
   // Handler wrappers for tab components
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = (tabId: string): void => {
     setActiveTab(tabId as 'overview' | 'parts' | 'testRuns' | 'history');
   };
 
-  const handleEditComplete = () => {
+  const handleEditComplete = (): void => {
     toast.success('Build updated successfully');
     void refetchBuild();
   };
 
-  const handleActionError = (error: Error) => {
+  const handleActionError = (error: Error): void => {
     toast.error(`Action failed: ${error.message}`);
   };
 
@@ -169,15 +169,15 @@ function BuildDetailContent({
             buildId={buildId}
             parts={state.parts as Part[]}
             isLoading={state.loading}
-            onPartAdded={async (part) => {
+            onPartAdded={(part) => {
               try {
-                await handlers.onAddPart?.(part);
+                void handlers.onAddPart?.(part);
                 toast.success('Part added successfully');
               } catch (error) {
                 handleActionError(error instanceof Error ? error : new Error(String(error)));
               }
             }}
-            onPartRemoved={async (_partId: string) => {
+            onPartRemoved={(_partId: string) => {
               try {
                 // Note: Delete handler not yet implemented
                 toast.info('Part deletion not yet implemented');
@@ -185,7 +185,7 @@ function BuildDetailContent({
                 handleActionError(error instanceof Error ? error : new Error(String(error)));
               }
             }}
-            onPartDrillDown={(partId: string) => {
+            onPartDrillDown={(partId: string): void => {
               handlers.onDrillDownPart?.(partId);
             }}
           />
@@ -203,15 +203,15 @@ function BuildDetailContent({
             buildId={buildId}
             testRuns={state.testRuns as TestRun[]}
             isLoading={state.loading}
-            onTestRunAdded={async (testRun) => {
+            onTestRunAdded={(testRun) => {
               try {
-                await handlers.onAddTestRun?.(testRun);
+                void handlers.onAddTestRun?.(testRun);
                 toast.success('Test run submitted successfully');
               } catch (error) {
                 handleActionError(error instanceof Error ? error : new Error(String(error)));
               }
             }}
-            onTestRunDrillDown={(testRunId: string) => {
+            onTestRunDrillDown={(testRunId: string): void => {
               handlers.onDrillDownTestRun?.(testRunId);
             }}
           />
@@ -261,7 +261,7 @@ function BuildDetailContent({
         </div>
 
         {/* Part Details Drilldown Modal */}
-        {state.selectedPartId && (() => {
+        {state.selectedPartId && ((): React.ReactNode => {
           const selectedPart = state.parts.find((p) => p.id === state.selectedPartId);
           return selectedPart ? (
             <PartDetailsModal
@@ -269,7 +269,7 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onSave={async (_partData) => {
+              onSave={(_partData) => {
                 try {
                   // Handle part update mutation here
                   toast.success('Part updated successfully');
@@ -279,7 +279,7 @@ function BuildDetailContent({
                   handleActionError(error instanceof Error ? error : new Error(String(error)));
                 }
               }}
-              onDelete={async (_partId: string) => {
+              onDelete={(_partId: string) => {
                 try {
                   // Handle part delete mutation here
                   toast.success('Part deleted successfully');
@@ -294,7 +294,7 @@ function BuildDetailContent({
         })()}
 
         {/* Test Result Drilldown Modal */}
-        {state.selectedTestRunId && (() => {
+        {state.selectedTestRunId && ((): React.ReactNode => {
           const selectedTestRun = state.testRuns.find((t) => t.id === state.selectedTestRunId);
           return selectedTestRun ? (
             <TestRunResultViewer
@@ -302,7 +302,7 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onRerun={async () => {
+              onRerun={() => {
                 try {
                   // Handle test rerun mutation here
                   toast.success('Test run resubmitted successfully');

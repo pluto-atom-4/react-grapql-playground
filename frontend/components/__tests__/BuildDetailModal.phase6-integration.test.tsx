@@ -10,6 +10,7 @@ import { BuildStatus, TestStatus } from '@/lib/apollo-hooks';
 import * as testRunsHook from '@/lib/hooks/useTestRuns';
 import * as activityFeedHook from '@/lib/hooks/useActivityFeed';
 import { createMockBuild, createMockTestRun } from './mocks/build';
+import type { BuildEvent } from '@/lib/hooks/useActivityFeed';
 
 // Mock dependencies
 vi.mock('@/lib/apollo-hooks');
@@ -84,13 +85,14 @@ describe('BuildDetailModal - Phase 6: Event Handlers', () => {
     });
 
     vi.mocked(activityFeedHook.useActivityFeed).mockReturnValue({
-      events: mockEvents,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      events: mockEvents as BuildEvent[],
       loading: false,
       error: null,
     });
   });
 
-  const renderModal = (onClose = vi.fn()) => {
+  const renderModal = (onClose = vi.fn()): ReturnType<typeof render> => {
     return render(
       <MockedProvider>
         <BuildDetailModal buildId="build-ph6-1" onClose={onClose} />
@@ -202,7 +204,7 @@ describe('BuildDetailModal - Phase 6: Event Handlers', () => {
       const viewDetailsButtons = screen.getAllByText('View Details');
       
       // Should not throw
-      await expect(async () => {
+      expect(async () => {
         await userEvent.click(viewDetailsButtons[0]);
       }).not.toThrow();
     });
@@ -221,7 +223,7 @@ describe('BuildDetailModal - Phase 6: Event Handlers', () => {
       const viewButtons = screen.getAllByText('View');
       
       // Should not throw
-      await expect(async () => {
+      expect(async () => {
         await userEvent.click(viewButtons[0]);
       }).not.toThrow();
     });
@@ -299,7 +301,6 @@ describe('BuildDetailModal - Phase 6: Event Handlers', () => {
       await userEvent.keyboard('{ArrowRight}');
 
       // Verify focus moved (aria-selected should indicate active tab)
-      const testRunsTab = screen.getByRole('tab', { name: /test runs/i });
       
       await waitFor(() => {
         // One of the tabs after parts should be selected

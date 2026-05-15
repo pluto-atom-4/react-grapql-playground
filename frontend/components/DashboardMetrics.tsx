@@ -54,13 +54,9 @@ function DashboardMetricsComponent({
     failed: '❌',
   };
 
-  const handleRefresh = async (): Promise<void> => {
-    try {
-      await refetch();
-      onMetricsRefresh?.();
-    } catch (err) {
-      console.error('Error refreshing metrics:', err);
-    }
+  const handleRefresh = (): void => {
+    void refetch();
+    onMetricsRefresh?.();
   };
 
   if (error && !isLoading) {

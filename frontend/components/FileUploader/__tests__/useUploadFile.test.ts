@@ -2,6 +2,8 @@
  * useUploadFile hook tests
  */
 
+/* global global */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUploadFile } from '../useUploadFile';
@@ -60,7 +62,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -81,7 +82,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -114,7 +114,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -143,7 +142,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -184,14 +182,14 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
     const formData = new FormData();
     const abortController = new AbortController();
 
-    const uploadPromise = result.current.uploadFile(formData, abortController, progressCallback);
+    // Start upload
+    void result.current.uploadFile(formData, abortController, progressCallback);
     
     // Wait for async operations to complete
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -240,7 +238,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -291,7 +288,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -347,7 +343,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
@@ -403,7 +398,6 @@ describe('useUploadFile Hook', () => {
       onload: null,
     };
 
-    // eslint-disable-next-line no-undef -- global.XMLHttpRequest is used in Node test environment
     global.XMLHttpRequest = vi.fn(() => mockXhr) as unknown as typeof XMLHttpRequest;
 
     const { result } = renderHook(() => useUploadFile());
