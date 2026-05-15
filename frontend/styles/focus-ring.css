@@ -1,10 +1,10 @@
 /**
- * Focus Ring Styling - WCAG AAA Compliant
+ * Focus Ring Styling - WCAG AA Compliant
  * 
  * Provides consistent focus ring styling across all interactive elements
- * Meeting WCAG AAA standards:
+ * Meeting WCAG AA standards:
  * - 2px minimum width
- * - 7:1 contrast ratio minimum for AAA compliance
+ * - 3:1 contrast ratio minimum for AA compliance
  * - Consistent color: Blue 500 (#3b82f6)
  * - Visible on all interactive elements
  */
