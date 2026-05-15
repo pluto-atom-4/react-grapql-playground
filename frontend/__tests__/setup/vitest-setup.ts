@@ -160,7 +160,7 @@ const _then = Promise.prototype.then;
 const _catch = Promise.prototype.catch;
 
 // Monkey-patch Promise.then to add automatic error suppression
-// @ts-ignore
+// @ts-expect-error: Monkey-patching Promise.prototype.then to suppress Apollo AbortError during RxJS cleanup (see Issue #295)
 Promise.prototype.then = function (
   this: Promise<unknown>,
   onFulfilled?: OnFulfilled,
