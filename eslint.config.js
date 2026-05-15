@@ -15,6 +15,7 @@ export default [
         ecmaVersion: 2022,
         sourceType: 'module',
         projectService: true,
+        allowDefaultProject: ['postcss.config.js', 'tailwind.config.js', 'eslint.config.js', 'next.config.js'],
         ecmaFeatures: {
           jsx: true,
         },

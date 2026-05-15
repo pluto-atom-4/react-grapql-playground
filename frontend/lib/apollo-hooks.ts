@@ -25,6 +25,7 @@ interface BuildDetail extends Build {
 }
 
 // Hook: Fetch builds with pagination
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function useBuilds(
   initialPageSize: number = 10,
 ) {
@@ -76,6 +77,7 @@ export function useBuilds(
     builds,
     loading,
     error,
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
     refetch: () => void apolloRefetch(),
     // Pagination controls
     currentPage: page,

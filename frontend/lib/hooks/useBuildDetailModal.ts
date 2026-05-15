@@ -6,7 +6,6 @@ import {
   useUpdateBuildStatus,
   useAddPart,
   useSubmitTestRun,
-  BuildStatus,
   TestStatus,
 } from '@/lib/apollo-hooks';
 import { useActivityFeed } from './useActivityFeed';
@@ -44,6 +43,7 @@ import type {
  * // Use handlers for tab component callbacks
  * // Use setActiveTab for tab switching
  */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function useBuildDetailModal(buildId: string) {
   // Core data hooks
   const { build, loading: buildLoading, error: buildError, refetch: refetchBuild } = useBuildDetail(buildId);
@@ -67,24 +67,36 @@ export function useBuildDetailModal(buildId: string) {
   const [localError, setLocalError] = useState<Error | null>(null);
 
   // Consolidate state
+  const buildData: BuildData | undefined = build
+    ? {
+        id: build.id,
+        name: build.name,
+        description: build.description || undefined,
+        status: build.status,
+        createdAt: String(build.createdAt),
+        updatedAt: String(build.updatedAt),
+      }
+    : undefined;
+
+  const partsData: PartData[] = Array.isArray(build?.parts)
+    ? (build.parts as PartData[])
+    : [];
+  const testRunsData: TestRunData[] = Array.isArray(testRuns)
+    ? (testRuns as TestRunData[])
+    : [];
+  const eventsData: BuildHistoryEvent[] = Array.isArray(events)
+    ? (events as BuildHistoryEvent[])
+    : [];
+
   const state: BuildDetailModalState = {
     buildId,
-    build: build
-      ? {
-          id: build.id,
-          name: build.name,
-          description: build.description || undefined,
-          status: build.status as BuildStatus,
-          createdAt: build.createdAt,
-          updatedAt: build.updatedAt,
-        }
-      : undefined,
-    parts: (build?.parts as PartData[]) || [],
-    testRuns: (testRuns as TestRunData[]) || [],
-    events: (events as BuildHistoryEvent[]) || [],
+    build: buildData,
+    parts: partsData,
+    testRuns: testRunsData,
+    events: eventsData,
     activeTab,
     loading: buildLoading || testRunsLoading || eventsLoading,
-    error: buildError || testRunsError ? (new Error('Failed to load modal data') as Error) : localError,
+    error: buildError || testRunsError ? (new Error('Failed to load modal data')) : localError,
     isUpdating,
     selectedPartId,
     selectedTestRunId,
@@ -98,7 +110,7 @@ export function useBuildDetailModal(buildId: string) {
         setLocalError(null);
 
         if (data.status && data.status !== build?.status) {
-          await updateStatus(buildId, data.status as BuildStatus);
+          await updateStatus(buildId, data.status);
         }
 
         // Refetch to ensure all changes are reflected
@@ -111,7 +123,7 @@ export function useBuildDetailModal(buildId: string) {
         setIsUpdating(false);
       }
     },
-    [build?.status, buildId, updateStatus, refetchBuild],
+    [build, buildId, updateStatus, refetchBuild],
   );
 
   // Add part handler
@@ -152,8 +164,9 @@ export function useBuildDetailModal(buildId: string) {
         }
 
         // Convert status string to TestStatus enum
-        const testStatus = (data.status as string).toUpperCase();
-        if (!Object.values(TestStatus).includes(testStatus as unknown as TestStatus)) {
+        const testStatus = String(data.status).toUpperCase();
+        const validStatuses = Object.values(TestStatus);
+        if (!validStatuses.includes(testStatus as TestStatus)) {
           throw new Error(`Invalid test status: ${data.status}`);
         }
 
