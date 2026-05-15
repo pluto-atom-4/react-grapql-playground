@@ -164,7 +164,7 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
               return (
                 <tr
                   key={build.id}
-                  className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 ${statusClassName}`}
+                  className={`border-b border-gray-200 hover:bg-gray-50 transition-all duration-200 ease-in-out ${statusClassName}`}
                   style={{ minHeight: '56px' }}
                   data-testid={`build-${build.id}`}
                 >

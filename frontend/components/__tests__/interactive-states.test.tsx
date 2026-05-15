@@ -71,7 +71,7 @@ describe('Issue #256: Interactive States & Hover Effects', () => {
         />
       );
 
-      const input = screen.getByTestId('build-name-input') as HTMLInputElement;
+      const input = screen.getByTestId('build-name-input');
       
       // Input should be auto-focused
       await waitFor(() => {

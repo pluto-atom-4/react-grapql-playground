@@ -5,6 +5,8 @@ import { ApolloWrapper } from './apollo-wrapper';
 import { ToastContainer } from '@/components/toast-notification';
 import { ErrorBoundary } from '@/components/error-boundary';
 import './globals.css';
+import '@/styles/focus-ring.css';
+import '@/styles/transitions.css';
 
 export const metadata: Metadata = {
   title: 'Boltline Test Dashboard',

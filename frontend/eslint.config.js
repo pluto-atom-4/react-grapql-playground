@@ -28,7 +28,7 @@ export default [
           jsx: true,
         },
         projectService: {
-          allowDefaultProject: ['eslint.config.js', 'next.config.js'],
+          allowDefaultProject: ['eslint.config.js', 'next.config.js', 'postcss.config.js', 'tailwind.config.js'],
         },
       },
       globals: {
