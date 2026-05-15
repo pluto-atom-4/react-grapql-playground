@@ -269,7 +269,7 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onSave={async (_partData) => {
+              onSave={(_partData) => {
                 try {
                   // Handle part update mutation here
                   toast.success('Part updated successfully');
@@ -279,7 +279,7 @@ function BuildDetailContent({
                   handleActionError(error instanceof Error ? error : new Error(String(error)));
                 }
               }}
-              onDelete={async (_partId: string) => {
+              onDelete={(_partId: string) => {
                 try {
                   // Handle part delete mutation here
                   toast.success('Part deleted successfully');
@@ -302,7 +302,7 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onRerun={async () => {
+              onRerun={() => {
                 try {
                   // Handle test rerun mutation here
                   toast.success('Test run resubmitted successfully');
