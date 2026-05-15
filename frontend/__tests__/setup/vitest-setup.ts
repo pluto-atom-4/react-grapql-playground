@@ -18,7 +18,7 @@ import { initializeLocalStorageMock, localStorageMock } from './localStorage-moc
 initializeLocalStorageMock();
 
 /**
- * Issue #295: Monkey-patch RxJS Subscription to suppress Apollo AbortError
+ * Issue #295: Monkey-patch console.error to suppress Apollo AbortError
  * The error occurs when RxJS subscriptions are cleaned up during test teardown
  */
 if (typeof globalThis !== 'undefined') {
@@ -51,11 +51,12 @@ if (typeof globalThis !== 'undefined') {
 /**
  * Global beforeAll: Set up error suppression
  */
-beforeAll(() => {
+beforeAll((): void => {
   // Suppress Apollo errors that occur during cleanup
   if (typeof window !== 'undefined') {
     const originalOnerror = window.onerror;
     window.onerror = function (
+      this: void,
       message: string | Event,
       source?: string,
       lineno?: number,
@@ -66,15 +67,15 @@ beforeAll(() => {
       if (
         typeof message === 'string' &&
         (message.includes('AbortError') ||
-         message.includes('The operation was aborted') ||
-         message.includes('finalize'))
+          message.includes('The operation was aborted') ||
+          message.includes('finalize'))
       ) {
         return true; // Suppress the error
       }
 
       // Call original handler
       if (originalOnerror) {
-        return originalOnerror.call(window, message, source, lineno, colno, error) as boolean;
+        return (originalOnerror.call(window, message, source, lineno, colno, error) ?? false) as boolean;
       }
 
       return false;
@@ -86,7 +87,7 @@ beforeAll(() => {
  * Global beforeEach: Clean up state before each test
  * Runs before every test in the entire suite
  */
-beforeEach(() => {
+beforeEach((): void => {
   // Clear localStorage to ensure clean state for each test
   localStorageMock.clear();
 
@@ -102,7 +103,7 @@ beforeEach(() => {
  * Issue #295: Added Apollo Client cleanup to prevent unhandled AbortError rejections
  * when MockedProvider unmounts with pending subscriptions
  */
-afterEach(async () => {
+afterEach(async (): Promise<void> => {
   // Final cleanup of localStorage
   localStorageMock.clear();
 
@@ -112,16 +113,20 @@ afterEach(async () => {
   // Issue #295: Wait for pending microtasks to settle
   // This allows Apollo Client's RxJS unsubscribe and cleanup to complete
   // before the next test starts, preventing cross-test interference
-  await new Promise((resolve) => process.nextTick(resolve));
+  await new Promise((resolve): void => {
+    process.nextTick(resolve);
+  });
 });
 
 /**
  * Global afterAll: Final cleanup after all tests complete
  * Ensures Apollo Client resources are fully disposed
  */
-afterAll(async () => {
+afterAll(async (): Promise<void> => {
   // Give final chance for any remaining operations to complete
-  await new Promise((resolve) => process.nextTick(resolve));
+  await new Promise((resolve): void => {
+    process.nextTick(resolve);
+  });
   
   // Final cleanup
   localStorageMock.clear();
@@ -139,14 +144,28 @@ afterAll(async () => {
  * default error handler that silently suppresses Apollo AbortErrors.
  */
 
-// Store the original Promise constructor
-const OriginalPromise = Promise;
+interface ErrorLike {
+  name?: string;
+  message?: string;
+  stack?: string;
+}
+
+interface PromiseHandler<T = unknown, U = unknown> {
+  (this: void, value: T): U | Promise<U>;
+}
+
+type OnFulfilled<T = unknown> = ((value: T) => unknown) | undefined | null;
+type OnRejected = ((reason: unknown) => unknown) | undefined | null;
 
 // Monkey-patch Promise.then to add automatic error suppression
 const originalThen = Promise.prototype.then;
-Promise.prototype.then = function (onFulfilled?: any, onRejected?: any) {
+Promise.prototype.then = function (
+  this: Promise<unknown>,
+  onFulfilled?: OnFulfilled,
+  onRejected?: OnRejected
+): Promise<unknown> {
   // Wrap the rejection handler to suppress Apollo AbortErrors
-  const wrappedRejected = (reason: any) => {
+  const wrappedRejected = (reason: ErrorLike): unknown => {
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
@@ -155,7 +174,7 @@ Promise.prototype.then = function (onFulfilled?: any, onRejected?: any) {
       reason.message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = reason.stack || '';
+      const stack = reason.stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
@@ -176,14 +195,17 @@ Promise.prototype.then = function (onFulfilled?: any, onRejected?: any) {
   };
   
   // Call the original then with our wrapped handler
-  return originalThen.call(this, onFulfilled, wrappedRejected);
+  return originalThen.call(this, onFulfilled as OnFulfilled, wrappedRejected as OnRejected);
 };
 
 // Monkey-patch Promise.catch to add automatic error suppression
 const originalCatch = Promise.prototype.catch;
-Promise.prototype.catch = function (onRejected?: any) {
+Promise.prototype.catch = function (
+  this: Promise<unknown>,
+  onRejected?: OnRejected
+): Promise<unknown> {
   // Wrap the rejection handler to suppress Apollo AbortErrors
-  const wrappedRejected = (reason: any) => {
+  const wrappedRejected = (reason: ErrorLike): unknown => {
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
@@ -192,7 +214,7 @@ Promise.prototype.catch = function (onRejected?: any) {
       reason.message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = reason.stack || '';
+      const stack = reason.stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
@@ -213,21 +235,21 @@ Promise.prototype.catch = function (onRejected?: any) {
   };
   
   // Call the original catch with our wrapped handler
-  return originalCatch.call(this, wrappedRejected);
+  return originalCatch.call(this, wrappedRejected as OnRejected);
 };
 
 // Also handle at process level
 if (typeof process !== 'undefined' && typeof process.on === 'function') {
-  process.on('unhandledRejection', (reason: any) => {
+  process.on('unhandledRejection', (reason: unknown): void => {
     // Check if this is the expected Apollo/RxJS AbortError during cleanup
     if (
       reason &&
       typeof reason === 'object' &&
-      reason.name === 'AbortError' &&
-      reason.message === 'The operation was aborted'
+      (reason as ErrorLike).name === 'AbortError' &&
+      (reason as ErrorLike).message === 'The operation was aborted'
     ) {
       // Check if it's coming from Apollo's RxJS finalize operator
-      const stack = reason.stack || '';
+      const stack = (reason as ErrorLike).stack ?? '';
       if (
         stack.includes('ObservableQuery') ||
         stack.includes('finalize') ||
