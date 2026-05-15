@@ -40,6 +40,7 @@ export interface TestRunData {
   result?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  startedAt?: string | null;
   completedAt?: string | null;
   fileUrl?: string | null;
 }
