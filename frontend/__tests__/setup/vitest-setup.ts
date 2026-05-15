@@ -153,8 +153,11 @@ interface ErrorLike {
 type OnFulfilled<T = unknown> = ((value: T) => unknown) | undefined | null;
 type OnRejected = ((reason: unknown) => unknown) | undefined | null;
 
+// Store original methods with proper typing to avoid unbound-method errors
+const originalThenMethod = Promise.prototype.then;
+const originalCatchMethod = Promise.prototype.catch;
+
 // Monkey-patch Promise.then to add automatic error suppression
-const originalThen = Promise.prototype.then;
 Promise.prototype.then = function (
   this: void,
   onFulfilled?: OnFulfilled,
@@ -196,11 +199,10 @@ Promise.prototype.then = function (
   };
   
   // Call the original then with our wrapped handler
-  return originalThen.call(this, onFulfilled as OnFulfilled, wrappedRejected as OnRejected);
+  return originalThenMethod.call(this, onFulfilled, wrappedRejected);
 };
 
 // Monkey-patch Promise.catch to add automatic error suppression
-const originalCatch = Promise.prototype.catch;
 Promise.prototype.catch = function (
   this: void,
   onRejected?: OnRejected
@@ -241,7 +243,7 @@ Promise.prototype.catch = function (
   };
   
   // Call the original catch with our wrapped handler
-  return originalCatch.call(this, wrappedRejected as OnRejected);
+  return originalCatchMethod.call(this, wrappedRejected);
 };
 
 // Also handle at process level
