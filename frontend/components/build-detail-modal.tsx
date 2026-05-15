@@ -269,24 +269,28 @@ function BuildDetailContent({
               onClose={() => {
                 clearDrillDown();
               }}
-              onSave={(_partData) => {
+              onSave={(_partData): Promise<void> => {
                 try {
                   // Handle part update mutation here
                   toast.success('Part updated successfully');
                   clearDrillDown();
                   void refetchBuild();
+                  return Promise.resolve();
                 } catch (error) {
                   handleActionError(error instanceof Error ? error : new Error(String(error)));
+                  return Promise.resolve();
                 }
               }}
-              onDelete={(_partId: string) => {
+              onDelete={(_partId: string): Promise<void> => {
                 try {
                   // Handle part delete mutation here
                   toast.success('Part deleted successfully');
                   clearDrillDown();
                   void refetchBuild();
+                  return Promise.resolve();
                 } catch (error) {
                   handleActionError(error instanceof Error ? error : new Error(String(error)));
+                  return Promise.resolve();
                 }
               }}
             />
