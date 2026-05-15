@@ -96,38 +96,6 @@ export function BuildOverviewTab({
         </div>
       </div>
 
-      {/* Owner and Version */}
-      {build.owner && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Owner</label>
-          <div className="text-gray-900">{build.owner}</div>
-        </div>
-      )}
-
-      {build.version && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Version</label>
-          <div className="text-gray-900 font-mono text-sm">{build.version}</div>
-        </div>
-      )}
-
-      {/* Tags */}
-      {build.tags && build.tags.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Tags</label>
-          <div className="flex flex-wrap gap-2">
-            {build.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Actions */}
       <div className="flex gap-2 pt-4 border-t border-gray-200">
         <button
