@@ -153,13 +153,16 @@ interface ErrorLike {
 type OnFulfilled<T = unknown> = ((value: T) => unknown) | undefined | null;
 type OnRejected = ((reason: unknown) => unknown) | undefined | null;
 
-// Store original methods with proper typing to avoid unbound-method errors
-const originalThenMethod = Promise.prototype.then;
-const originalCatchMethod = Promise.prototype.catch;
+// Store the original then and catch methods to call later
+// eslint-disable-next-line @typescript-eslint/unbound-method -- We need to store these for safe calls later
+const _then = Promise.prototype.then;
+// eslint-disable-next-line @typescript-eslint/unbound-method -- We need to store these for safe calls later
+const _catch = Promise.prototype.catch;
 
 // Monkey-patch Promise.then to add automatic error suppression
+// @ts-ignore
 Promise.prototype.then = function (
-  this: void,
+  this: Promise<unknown>,
   onFulfilled?: OnFulfilled,
   onRejected?: OnRejected
 ): Promise<unknown> {
@@ -198,13 +201,13 @@ Promise.prototype.then = function (
     throw new Error(String(reason));
   };
   
-  // Call the original then with our wrapped handler
-  return originalThenMethod.call(this, onFulfilled, wrappedRejected);
+  // Call the original then with our wrapped handler using call with explicit this context
+  return _then.call(this, onFulfilled, wrappedRejected);
 };
 
 // Monkey-patch Promise.catch to add automatic error suppression
 Promise.prototype.catch = function (
-  this: void,
+  this: Promise<unknown>,
   onRejected?: OnRejected
 ): Promise<unknown> {
   // Wrap the rejection handler to suppress Apollo AbortErrors
@@ -242,8 +245,8 @@ Promise.prototype.catch = function (
     throw new Error(String(reason));
   };
   
-  // Call the original catch with our wrapped handler
-  return originalCatchMethod.call(this, wrappedRejected);
+  // Call the original catch with our wrapped handler using call with explicit this context
+  return _catch.call(this, wrappedRejected);
 };
 
 // Also handle at process level
