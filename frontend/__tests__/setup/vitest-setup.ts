@@ -23,12 +23,10 @@ initializeLocalStorageMock();
  */
 if (typeof globalThis !== 'undefined') {
   try {
-    // Try to patch the RxJS error handling
-    const RxJS = require('rxjs');
     const originalError = console.error;
     
     // Capture the original error stack and suppress Apollo errors
-    console.error = function (...args: any[]) {
+    console.error = function (this: void, ...args: unknown[]): void {
       const message = String(args?.[0]);
       
       // Suppress Apollo AbortError
@@ -43,10 +41,10 @@ if (typeof globalThis !== 'undefined') {
       }
 
       // Call original error handler
-      originalError.apply(console, args);
+      originalError.apply(console, args as Parameters<typeof originalError>);
     };
   } catch {
-    // RxJS might not be available, that's OK
+    // Error patching console, that's OK
   }
 }
 
