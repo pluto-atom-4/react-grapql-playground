@@ -13,6 +13,20 @@ export interface InteractionState {
 }
 
 /**
+ * Return type for useInteractionState hook
+ */
+export interface InteractionStateHandlers extends InteractionState {
+  onFocus: () => void;
+  onBlur: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onMouseDown: () => void;
+  onMouseUp: () => void;
+  onKeyDown: (e: KeyboardEvent) => void;
+  onKeyUp: (e: KeyboardEvent) => void;
+}
+
+/**
  * Custom hook for managing focus/hover states with keyboard interaction detection
  * 
  * Helps components track:
@@ -38,7 +52,7 @@ export interface InteractionState {
  *   </button>
  * );
  */
-export function useInteractionState() {
+export function useInteractionState(): InteractionStateHandlers {
   const [state, setState] = useState<InteractionState>({
     isFocused: false,
     isHovered: false,

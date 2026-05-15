@@ -108,7 +108,7 @@ describe('Button Component', () => {
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('can be focused and receive keyboard events', async () => {
+    it('can be focused and receive keyboard events', () => {
       render(<Button>Keyboard</Button>);
       const button = screen.getByRole('button', { name: /keyboard/i });
       
@@ -152,7 +152,7 @@ describe('Button Component', () => {
   describe('Ref Forwarding', () => {
     it('forwards ref correctly', () => {
       const ref = vi.fn();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
       render(<Button ref={ref as any}>Ref Button</Button>);
       expect(ref).toHaveBeenCalled();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

@@ -9,7 +9,7 @@ describe('Interactive States - Integration Tests', () => {
   describe('Focus Ring Consistency Across Components', () => {
     it('Button has focus ring on Tab', async () => {
       const user = userEvent.setup();
-      const { container } = render(<Button>Focus Button</Button>);
+      const { container: _container } = render(<Button>Focus Button</Button>);
       
       const button = screen.getByRole('button', { name: /focus button/i });
       
@@ -272,7 +272,7 @@ describe('Interactive States - Integration Tests', () => {
   describe('Accessibility with Micro-interactions', () => {
     it('screen reader can identify focused elements with focus rings', async () => {
       const user = userEvent.setup();
-      const { container } = render(
+      const { container: _container } = render(
         <Button aria-label="Accessible button">Action</Button>
       );
       

@@ -110,6 +110,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: 'Tab' }) as any;
         result.current.onKeyDown(event);
       });
@@ -121,6 +122,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
         result.current.onKeyDown(event);
       });
@@ -132,6 +134,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: ' ' }) as any;
         result.current.onKeyDown(event);
       });
@@ -143,6 +146,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
         result.current.onKeyDown(event);
       });
@@ -154,6 +158,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: ' ' }) as any;
         result.current.onKeyDown(event);
       });
@@ -165,12 +170,14 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const downEvent = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
         result.current.onKeyDown(downEvent);
       });
       expect(result.current.isActive).toBe(true);
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const upEvent = new KeyboardEvent('keyup', { key: 'Enter' }) as any;
         result.current.onKeyUp(upEvent);
       });
@@ -184,6 +191,7 @@ describe('useInteractionState Hook', () => {
       
       act(() => {
         result.current.onMouseEnter();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: 'Tab' }) as any;
         result.current.onKeyDown(event);
       });
@@ -242,6 +250,7 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const event = new KeyboardEvent('keydown', { key: 'A' }) as any;
         result.current.onKeyDown(event);
       });
