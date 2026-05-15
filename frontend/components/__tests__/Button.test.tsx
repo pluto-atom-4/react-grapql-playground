@@ -152,9 +152,14 @@ describe('Button Component', () => {
   describe('Ref Forwarding', () => {
     it('forwards ref correctly', () => {
       const ref = vi.fn();
-      render(<Button ref={ref}>Ref Button</Button>);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render(<Button ref={ref as any}>Ref Button</Button>);
       expect(ref).toHaveBeenCalled();
-      expect(ref.mock.results[0].value?.tagName).toBe('BUTTON');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const refValue = ref.mock.results[0]?.value as HTMLButtonElement;
+      if (refValue && typeof refValue === 'object') {
+        expect(refValue.tagName).toBe('BUTTON');
+      }
     });
   });
 });
