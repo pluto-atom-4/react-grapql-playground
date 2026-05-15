@@ -151,7 +151,7 @@ export function useInteractionState(): InteractionStateHandlers {
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
+    return (): void => {
       lastInteractionTypeRef.current = null;
     };
   }, []);

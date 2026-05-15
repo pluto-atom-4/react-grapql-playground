@@ -155,7 +155,6 @@ describe('Button Component', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
       render(<Button ref={ref as any}>Ref Button</Button>);
       expect(ref).toHaveBeenCalled();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const refValue = ref.mock.results[0]?.value as HTMLButtonElement;
       if (refValue && typeof refValue === 'object') {
         expect(refValue.tagName).toBe('BUTTON');

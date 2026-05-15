@@ -110,8 +110,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: 'Tab' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -122,8 +123,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -134,8 +136,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: ' ' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -146,8 +149,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -158,8 +162,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: ' ' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -170,15 +175,17 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const downEvent = new KeyboardEvent('keydown', { key: 'Enter' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(downEvent);
       });
       expect(result.current.isActive).toBe(true);
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const upEvent = new KeyboardEvent('keyup', { key: 'Enter' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyUp(upEvent);
       });
       expect(result.current.isActive).toBe(false);
@@ -191,8 +198,9 @@ describe('useInteractionState Hook', () => {
       
       act(() => {
         result.current.onMouseEnter();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: 'Tab' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
@@ -250,8 +258,9 @@ describe('useInteractionState Hook', () => {
       const { result } = renderHook(() => useInteractionState());
       
       act(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
         const event = new KeyboardEvent('keydown', { key: 'A' }) as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         result.current.onKeyDown(event);
       });
       
