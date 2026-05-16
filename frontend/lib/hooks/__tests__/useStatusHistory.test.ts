@@ -27,7 +27,9 @@ describe('Hooks', () => {
       expect(result.current.statuses).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             status: expect.stringMatching(/PENDING|RUNNING|COMPLETE|FAILED/),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             timestamp: expect.any(Date),
           }),
         ]),
@@ -101,12 +103,16 @@ describe('Hooks', () => {
       expect(result.current.events).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             id: expect.any(String),
             buildId: 'build-123',
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             eventType: expect.stringMatching(
               /status_change|test_run|manual_update|system_event/,
             ),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             timestamp: expect.any(Date),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             description: expect.any(String),
           }),
         ]),

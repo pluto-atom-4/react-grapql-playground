@@ -185,10 +185,10 @@ describe('ActivityFeed', () => {
 
   it('should reset pagination on filter change', async () => {
     const user = userEvent.setup();
-    const manyEvents = Array.from({ length: 30 }, (_, i) => ({
+    const manyEvents: BuildEvent[] = Array.from({ length: 30 }, (_, i) => ({
       id: `event-${i}`,
       buildId: 'build-123',
-      eventType: (i % 2 === 0 ? 'status_change' : 'test_run') as any,
+      eventType: (i % 2 === 0 ? 'status_change' : 'test_run'),
       timestamp: new Date(Date.now() - i * 1000),
       description: `Event ${i}`,
     }));
@@ -243,7 +243,7 @@ describe('ActivityFeed', () => {
         id: 'event-1',
         buildId: 'build-123',
         eventType: 'status_change',
-        timestamp: '2026-01-15T12:00:00' as any,
+        timestamp: new Date('2026-01-15T12:00:00'),
         description: 'Build completed',
       },
     ];

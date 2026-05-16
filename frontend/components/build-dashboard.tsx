@@ -46,12 +46,12 @@ function BuildsTable({ initialBuilds }: BuildsTableProps): ReactElement {
   // Focus management: store focus when opening modal, restore when closing
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   
-  const handleOpenModal = (buildId: string) => {
+  const handleOpenModal = (buildId: string): void => {
     previousActiveElementRef.current = document.activeElement as HTMLElement;
     setSelectedBuildId(buildId);
   };
   
-  const handleCloseModal = () => {
+  const handleCloseModal = (): void => {
     setSelectedBuildId(null);
     // Restore focus to button that opened modal
     setTimeout(() => {

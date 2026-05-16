@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
+import { InMemoryCache } from '@apollo/client';
 import { DashboardMetrics } from '../DashboardMetrics';
 import { DASHBOARD_METRICS_QUERY } from '../../lib/graphql-queries';
 import { BuildStatus } from '../../lib/generated/graphql';
@@ -52,6 +53,12 @@ const mockMetricsData = {
   },
 };
 
+/**
+ * Issue #295: Create a new Apollo cache for each test to prevent cleanup issues
+ * This ensures each test has isolated cache and reduces the chance of unhandled rejections
+ */
+const createTestCache = (): InMemoryCache => new InMemoryCache();
+
 describe('DashboardMetrics Component', () => {
   const mockMutationResult = {
     result: {
@@ -77,7 +84,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should render metrics header and refresh button', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -90,7 +97,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display all metric cards with correct values', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -106,7 +113,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display metric labels', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -121,7 +128,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display completion rate', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -134,7 +141,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display Recent Activity section', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -146,7 +153,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display recent activity timeline entries', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -180,7 +187,7 @@ describe('DashboardMetrics Component', () => {
     ];
 
     render(
-      <MockedProvider mocks={metricsWithRefetch}>
+      <MockedProvider mocks={metricsWithRefetch} cache={createTestCache()}>
         <DashboardMetrics onMetricsRefresh={onMetricsRefresh} />
       </MockedProvider>
     );
@@ -199,7 +206,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should have region role for accessibility', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -213,7 +220,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should display icons for each metric', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -249,7 +256,7 @@ describe('DashboardMetrics Component', () => {
     ];
 
     render(
-      <MockedProvider mocks={emptyMocks}>
+      <MockedProvider mocks={emptyMocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -284,7 +291,7 @@ describe('DashboardMetrics Component', () => {
     ];
 
     render(
-      <MockedProvider mocks={emptyMocks}>
+      <MockedProvider mocks={emptyMocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -322,7 +329,7 @@ describe('DashboardMetrics Component', () => {
     ];
 
     render(
-      <MockedProvider mocks={mixedMocks}>
+      <MockedProvider mocks={mixedMocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );
@@ -335,7 +342,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should memoize and not re-render unnecessarily', async () => {
     const { rerender } = render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics onMetricsRefresh={() => {}} />
       </MockedProvider>
     );
@@ -346,7 +353,7 @@ describe('DashboardMetrics Component', () => {
 
     // Re-render with same props
     rerender(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics onMetricsRefresh={() => {}} />
       </MockedProvider>
     );
@@ -357,7 +364,7 @@ describe('DashboardMetrics Component', () => {
 
   it('should have responsive grid layout classes', async () => {
     render(
-      <MockedProvider mocks={mocks}>
+      <MockedProvider mocks={mocks} cache={createTestCache()}>
         <DashboardMetrics />
       </MockedProvider>
     );

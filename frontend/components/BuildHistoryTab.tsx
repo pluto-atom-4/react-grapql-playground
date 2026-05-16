@@ -17,6 +17,9 @@ export interface BuildHistoryTabProps {
  *
  * Displays activity feed (from Issue #259) for the build
  * Shows status changes, test runs, and other events
+ *
+ * Note: This component uses useActivityFeed hook internally
+ * Future enhancement: Accept events as props from parent component
  */
 export function BuildHistoryTab({
   buildId,
@@ -34,3 +37,4 @@ export function BuildHistoryTab({
     />
   );
 }
+

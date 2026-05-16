@@ -28,7 +28,7 @@ export const AccessibleTooltip: React.FC<AccessibleTooltipProps> = ({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return (): void => document.removeEventListener('keydown', handleKeyDown);
   }, [isVisible]);
 
   const handleMouseEnter = useCallback((): void => {

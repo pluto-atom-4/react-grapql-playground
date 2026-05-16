@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+/* global require */
+
 export default {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
@@ -22,5 +24,6 @@ export default {
       },
     },
   },
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('tailwindcss-animate')],
 };

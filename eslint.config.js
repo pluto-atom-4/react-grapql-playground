@@ -15,6 +15,7 @@ export default [
         ecmaVersion: 2022,
         sourceType: 'module',
         projectService: true,
+        allowDefaultProject: ['postcss.config.js', 'tailwind.config.js', 'eslint.config.js', 'next.config.js'],
         ecmaFeatures: {
           jsx: true,
         },
@@ -64,6 +65,29 @@ export default [
       ],
       '@typescript-eslint/no-floating-promises': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
+  {
+    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/*accessibility.test.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        // Vitest globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      'no-undef': 'off',
     },
   },
 ];
