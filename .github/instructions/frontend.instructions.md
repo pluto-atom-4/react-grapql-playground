@@ -83,7 +83,7 @@ When implementing a frontend feature:
   - `pnpm lint` — No ESLint violations
   - `pnpm format:check` — Prettier compliance
   - `pnpm type-check` — TypeScript strict mode
-- [ ] **Logs**: Capture output to `docs/dev-note/CODE-QUALITY-*.md` (see Issue #306 automation)
+- [ ] **Logs**: Capture output to `docs/dev-note/issue-#[N]-pnpm-*.txt` (see Issue #306 automation)
 - [ ] **PR**: Reference logs in PR description and link issues
 
 ---
@@ -192,10 +192,10 @@ pnpm format:check              # ✓ All files formatted
 pnpm type-check                # ✓ TypeScript strict
 
 # Logs captured to:
-docs/dev-note/CODE-QUALITY-TEST.md        # Test results
-docs/dev-note/CODE-QUALITY-LINT.md        # Lint results
-docs/dev-note/CODE-QUALITY-FORMAT.md      # Format results
-docs/dev-note/CODE-QUALITY-TYPECHECK.md   # Type check results
+docs/dev-note/issue-#[N]-pnpm-test.txt        # Test results
+docs/dev-note/issue-#[N]-pnpm-lint.txt        # Lint results
+docs/dev-note/issue-#[N]-pnpm-format-check.txt      # Format results
+docs/dev-note/issue-#[N]-pnpm-type-check.txt   # Type check results
 ```
 
 If any check fails, fix and re-run. Orchestrator validates pre-merge.

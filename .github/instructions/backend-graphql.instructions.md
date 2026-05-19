@@ -126,7 +126,7 @@ When implementing a GraphQL feature:
   - `pnpm test:graphql --run` — All tests pass
   - `pnpm lint` — No ESLint violations
   - `pnpm type-check` — TypeScript strict mode
-- [ ] **Logs**: Capture output to `docs/dev-note/CODE-QUALITY-*.md`
+- [ ] **Logs**: Capture output to `docs/dev-note/issue-#[N]-pnpm-*.txt`
 - [ ] **PR**: Reference GraphQL schema changes and resolver logic
 
 ---
@@ -273,9 +273,9 @@ pnpm lint                      # ✓ 0 violations
 pnpm type-check                # ✓ TypeScript strict
 
 # Logs:
-docs/dev-note/CODE-QUALITY-TEST.md
-docs/dev-note/CODE-QUALITY-LINT.md
-docs/dev-note/CODE-QUALITY-TYPECHECK.md
+docs/dev-note/issue-#[N]-pnpm-test.txt
+docs/dev-note/issue-#[N]-pnpm-lint.txt
+docs/dev-note/issue-#[N]-pnpm-type-check.txt
 ```
 
 If any check fails, fix and re-run. Orchestrator validates pre-merge.

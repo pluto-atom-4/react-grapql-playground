@@ -85,7 +85,7 @@ When adding a new cross-layer feature:
   - [ ] `pnpm lint` — No ESLint violations
   - [ ] `pnpm format:check` — All files formatted
   - [ ] `pnpm type-check` — TypeScript strict compliance
-  - [ ] Capture logs to `docs/dev-note/CODE-QUALITY-*.md`
+  - [ ] Capture logs to `docs/dev-note/issue-#[N]-pnpm-*.txt`
 - [ ] **Integration Test**
   - [ ] Frontend → GraphQL communication works
   - [ ] GraphQL → Express event emission works

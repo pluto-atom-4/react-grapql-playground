@@ -561,20 +561,20 @@ pnpm type-check                 # TypeScript strict mode validation
 
 **Log Naming Convention** (all in `docs/dev-note/`):
 ```
-CODE-QUALITY-[CHECK-TYPE].md
+issue-#[N]-pnpm-[script-name].txt
 ```
 
 Examples:
-- `CODE-QUALITY-TEST.md` - Latest test suite output
-- `CODE-QUALITY-LINT.md` - Latest linting output
-- `CODE-QUALITY-FORMAT.md` - Latest format-check output
-- `CODE-QUALITY-TYPECHECK.md` - Latest type-check output
+- `issue-#[N]-pnpm-test.txt` - Latest test suite output
+- `issue-#[N]-pnpm-lint.txt` - Latest linting output
+- `issue-#[N]-pnpm-format-check.txt` - Latest format-check output
+- `issue-#[N]-pnpm-type-check.txt` - Latest type-check output
 
-**Key Policy: Single File Per Check Type**
-- Each new run **overwrites** the previous log
-- Only latest results preserved (no file flooding)
-- No timestamped versions or run numbers
-- Natural cleanup—no manual intervention needed
+**Key Policy: Single File Per Issue/Script Pair**
+- Each new run **overwrites** the previous log for the same issue/script pair
+- One current log is preserved per issue and script combination
+- No timestamped versions or duplicate filenames for the same issue/script pair
+- Natural cleanup—rerunning the same check updates the same file
 
 ### Recommended Command Sequence
 
@@ -582,24 +582,24 @@ When running quality checks, use this sequence for optimal feedback:
 
 ```bash
 # 1. Run layer-specific tests first (faster feedback on changes)
-pnpm test:frontend --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
-pnpm test:graphql --run >> docs/dev-note/CODE-QUALITY-TEST.md 2>&1
-pnpm test:express --run >> docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm test:frontend --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm test:graphql --run >> docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm test:express --run >> docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
 
 # 2. Run full test suite (catches integration issues)
-pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
 
 # 3. Run code quality checks (can run in parallel)
-pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
-pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
-pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
 ```
 
 ### Agent Responsibilities
 
 **Developer Agent:**
 1. Runs quality checks after implementing features
-2. Captures output to `docs/dev-note/CODE-QUALITY-*.md`
+2. Captures output to `docs/dev-note/issue-#[N]-pnpm-*.txt`
 3. **If FAIL**: Reports error, fixes locally, re-runs
 4. **If PASS**: Proceeds to PR creation
 5. References logs in PR body
@@ -633,7 +633,7 @@ All automated checks passed:
 - Format: ✅ PASS (0 issues)
 - Type Check: ✅ PASS (0 errors)
 
-See logs: `docs/dev-note/CODE-QUALITY-*.md`
+See logs: `docs/dev-note/issue-#[N]-pnpm-*.txt`
 ```
 
 **When some checks fail:**
@@ -642,11 +642,11 @@ See logs: `docs/dev-note/CODE-QUALITY-*.md`
 
 Check status:
 - Tests: ✅ PASS (843 tests)
-- Lint: ❌ FAIL (2 issues) → See `docs/dev-note/CODE-QUALITY-LINT.md`
+- Lint: ❌ FAIL (2 issues) → See `docs/dev-note/issue-#[N]-pnpm-lint.txt`
 - Format: ✅ PASS (0 issues)
 - Type Check: ✅ PASS (0 errors)
 
-See logs: `docs/dev-note/CODE-QUALITY-*.md`
+See logs: `docs/dev-note/issue-#[N]-pnpm-*.txt`
 ```
 
 ### Log Content Structure

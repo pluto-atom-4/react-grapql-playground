@@ -297,16 +297,16 @@ Before merging any PRs, orchestrator validates all quality checks pass:
 
 ```bash
 # Run all quality checks to verify no regressions
-pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
-pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
-pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
-pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
 
 # Review logs to confirm all pass
-cat docs/dev-note/CODE-QUALITY-TEST.md
-cat docs/dev-note/CODE-QUALITY-LINT.md
-cat docs/dev-note/CODE-QUALITY-FORMAT.md
-cat docs/dev-note/CODE-QUALITY-TYPECHECK.md
+cat docs/dev-note/issue-#[N]-pnpm-test.txt
+cat docs/dev-note/issue-#[N]-pnpm-lint.txt
+cat docs/dev-note/issue-#[N]-pnpm-format-check.txt
+cat docs/dev-note/issue-#[N]-pnpm-type-check.txt
 ```
 
 **Merge Decision**:

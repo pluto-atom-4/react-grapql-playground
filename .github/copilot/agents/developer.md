@@ -29,11 +29,11 @@ pnpm test --watch             # Watch tests in another terminal
 
 # 3. Pre-commit QA (CRITICAL - don't skip)
 # Always capture quality check outputs to docs/dev-note/ per Issue #306
-pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
 pnpm lint:fix                   # Fix style violations
-pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
-pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
-pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
 pnpm audit                      # Check security
 
 # 4. Commit & push
@@ -570,16 +570,16 @@ echo "✅ All checks passed including GraphQL codegen!"
 
 ```bash
 # Recommended: Run with log capture
-pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
-pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
-pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
-pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
 ```
 
 **Key Design**:
-- ✅ Single log file per check type (overwrites previous, no file flooding)
-- ✅ Latest results always available at known paths
-- ✅ Reference logs in PR descriptions: `See logs: docs/dev-note/CODE-QUALITY-*.md`
+- ✅ Single current log per issue/script pair (reruns overwrite the same file)
+- ✅ Latest results remain available at predictable Issue #306 paths
+- ✅ Reference logs in PR descriptions: `See logs: docs/dev-note/issue-#[N]-pnpm-*.txt`
 - ✅ Orchestrator and reviewers reference these logs for merge decisions
 
 **Reference in PRs**:
@@ -592,7 +592,7 @@ All automated checks passed:
 - Format: ✅ PASS (0 issues)
 - Type Check: ✅ PASS (0 errors)
 
-See logs: docs/dev-note/CODE-QUALITY-*.md
+See logs: docs/dev-note/issue-#[N]-pnpm-*.txt
 ```
 
 See `.copilot/agents/quality-assurance.md` for full automation guidelines.
