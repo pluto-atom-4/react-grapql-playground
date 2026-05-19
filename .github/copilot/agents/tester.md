@@ -1745,6 +1745,41 @@ Both feature test suites: ~25 min parallel vs 45 min sequential
 3. If it passes alone: state leakage from other test
 4. Add cleanup or isolation to fix
 
+## Quality Check Automation (Issue #306)
+
+During consolidation testing, tester agent validates all quality checks pass:
+
+```bash
+# Phase 4 (Consolidation) - Run all quality checks
+pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
+pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
+pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
+
+# Review logs to confirm all pass
+cat docs/dev-note/CODE-QUALITY-TEST.md
+cat docs/dev-note/CODE-QUALITY-LINT.md
+cat docs/dev-note/CODE-QUALITY-TYPECHECK.md
+cat docs/dev-note/CODE-QUALITY-FORMAT.md
+```
+
+**Tester Responsibilities**:
+- ✅ Run all quality checks on consolidation branch
+- ✅ Capture output to `docs/dev-note/CODE-QUALITY-*.md`
+- ✅ Track coverage metrics and test counts
+- ✅ **If all checks PASS**: Report ready for merge
+- ✅ **If any check FAILS**: Document specific errors and escalate to orchestrator
+
+**Log Content**:
+Each log file includes:
+- Status (✅ PASS | ❌ FAIL | ⚠️ PARTIAL)
+- Last updated timestamp
+- Total counts (tests, errors, issues)
+- Full command output or error summary
+- Recommendations for failed checks
+
+See `.copilot/agents/quality-assurance.md` for full automation guidelines.
+
 ## Model Override Guidance
 
 **Default Model**: Claude Haiku 4.5 (efficient for test writing)

@@ -28,10 +28,13 @@ pnpm dev                      # Start all services in one terminal
 pnpm test --watch             # Watch tests in another terminal
 
 # 3. Pre-commit QA (CRITICAL - don't skip)
-pnpm lint && pnpm lint:fix    # Fix style violations
-pnpm type-check               # Verify TypeScript
-pnpm test                     # Run all tests
-pnpm audit                    # Check security
+# Always capture quality check outputs to docs/dev-note/ per Issue #306
+pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
+pnpm lint:fix                   # Fix style violations
+pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
+pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
+pnpm audit                      # Check security
 
 # 4. Commit & push
 git add [specific files]      # Don't use git add .
@@ -560,6 +563,39 @@ echo "✅ All checks passed including GraphQL codegen!"
 - ✅ Tests validate functionality
 - ✅ No N+1 queries introduced in GraphQL layer
 - ✅ Smooth PR review process
+
+### Quality Check Automation (Issue #306)
+
+**Automatic Log Capture**: All quality checks automatically capture output to `docs/dev-note/` for traceability:
+
+```bash
+# Recommended: Run with log capture
+pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
+pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
+pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
+pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+```
+
+**Key Design**:
+- ✅ Single log file per check type (overwrites previous, no file flooding)
+- ✅ Latest results always available at known paths
+- ✅ Reference logs in PR descriptions: `See logs: docs/dev-note/CODE-QUALITY-*.md`
+- ✅ Orchestrator and reviewers reference these logs for merge decisions
+
+**Reference in PRs**:
+```markdown
+## Quality Checks ✅
+
+All automated checks passed:
+- Tests: ✅ PASS (853 tests)
+- Lint: ✅ PASS (0 issues)
+- Format: ✅ PASS (0 issues)
+- Type Check: ✅ PASS (0 errors)
+
+See logs: docs/dev-note/CODE-QUALITY-*.md
+```
+
+See `.copilot/agents/quality-assurance.md` for full automation guidelines.
 
 ## Dual-Backend Development Workflows
 

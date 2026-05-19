@@ -13,35 +13,35 @@
     "feature-branch-reuse": "REQUIRED - Never create new branches for feedback fixes",
     "phase-workflow": "3B (review) → 3C (fix on existing branch) → 3D (push) → 3E (re-review) → 3F (approve)"
   },
-  "copilot-instructions": ".copilot/copilot-instructions.md",
-  "agents-directory": ".copilot/agents/",
+  "copilot-instructions": ".github/copilot-instructions.md",
+  "agents-directory": ".github/copilot/agents/",
   "agents": {
     "orchestrator": {
-      "config-file": ".copilot/agents/orchestrator.md",
+      "config-file": ".github/copilot/agents/orchestrator.md",
       "invocation": "@orchestrator [task]",
       "auto-load": true,
       "description": "Coordinates multi-layer development, breaks down features, manages dependencies"
     },
     "developer": {
-      "config-file": ".copilot/agents/developer.md",
+      "config-file": ".github/copilot/agents/developer.md",
       "invocation": "@developer [task]",
       "auto-load": true,
       "description": "Implements features, bug fixes, writes code across all three layers"
     },
     "reviewer": {
-      "config-file": ".copilot/agents/reviewer.md",
+      "config-file": ".github/copilot/agents/reviewer.md",
       "invocation": "@reviewer [task]",
       "auto-load": true,
       "description": "Reviews code, validates architecture, provides quality feedback"
     },
     "tester": {
-      "config-file": ".copilot/agents/tester.md",
+      "config-file": ".github/copilot/agents/tester.md",
       "invocation": "@tester [task]",
       "auto-load": true,
       "description": "Tests strategies, debugging, validates coverage, parallel test execution"
     },
     "product-manager": {
-      "config-file": ".copilot/agents/product-manager.md",
+      "config-file": ".github/copilot/agents/product-manager.md",
       "invocation": "@product-manager [task]",
       "auto-load": true,
       "description": "Defines requirements, acceptance criteria, validates business alignment"
@@ -56,7 +56,7 @@
   "rules-reference": ".copilot/rules.json",
   "documentation": {
     "execution-plans": "docs/implementation-planning/",
-    "quick-reference": ".copilot/PR_FEEDBACK_QUICK_REFERENCE.md",
+    "quick-reference": ".github/copilot/quick-references/PR_FEEDBACK_QUICK_REFERENCE.md",
     "orchestration-guide": ".copilot/PARALLEL-EXECUTION-GUIDE.md"
   }
 }

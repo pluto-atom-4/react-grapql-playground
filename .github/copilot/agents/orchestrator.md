@@ -291,7 +291,31 @@ All execute simultaneously (no blocking, no conflicts)
 10:20 AM  Issue #144 completes ✓
 ```
 
-**5. Verify & Merge**
+**5. Quality Check Validation (Issue #306)**
+
+Before merging any PRs, orchestrator validates all quality checks pass:
+
+```bash
+# Run all quality checks to verify no regressions
+pnpm lint > docs/dev-note/CODE-QUALITY-LINT.md 2>&1
+pnpm type-check > docs/dev-note/CODE-QUALITY-TYPECHECK.md 2>&1
+pnpm format:check > docs/dev-note/CODE-QUALITY-FORMAT.md 2>&1
+pnpm test --run > docs/dev-note/CODE-QUALITY-TEST.md 2>&1
+
+# Review logs to confirm all pass
+cat docs/dev-note/CODE-QUALITY-TEST.md
+cat docs/dev-note/CODE-QUALITY-LINT.md
+cat docs/dev-note/CODE-QUALITY-FORMAT.md
+cat docs/dev-note/CODE-QUALITY-TYPECHECK.md
+```
+
+**Merge Decision**:
+- ✅ **If all checks PASS**: Proceed to "Verify & Merge" step
+- ❌ **If any check FAILS**: Escalate to developer for fixes before merging
+
+See `.copilot/agents/quality-assurance.md` for full automation guidelines.
+
+**6. Verify & Merge**
 
 ```bash
 # All PRs are ready simultaneously
