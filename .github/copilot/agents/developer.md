@@ -28,10 +28,13 @@ pnpm dev                      # Start all services in one terminal
 pnpm test --watch             # Watch tests in another terminal
 
 # 3. Pre-commit QA (CRITICAL - don't skip)
-pnpm lint && pnpm lint:fix    # Fix style violations
-pnpm type-check               # Verify TypeScript
-pnpm test                     # Run all tests
-pnpm audit                    # Check security
+# Always capture quality check outputs to docs/dev-note/ per Issue #306
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm lint:fix                   # Fix style violations
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm audit                      # Check security
 
 # 4. Commit & push
 git add [specific files]      # Don't use git add .
@@ -560,6 +563,39 @@ echo "✅ All checks passed including GraphQL codegen!"
 - ✅ Tests validate functionality
 - ✅ No N+1 queries introduced in GraphQL layer
 - ✅ Smooth PR review process
+
+### Quality Check Automation (Issue #306)
+
+**Automatic Log Capture**: All quality checks automatically capture output to `docs/dev-note/` for traceability:
+
+```bash
+# Recommended: Run with log capture
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+```
+
+**Key Design**:
+- ✅ Single current log per issue/script pair (reruns overwrite the same file)
+- ✅ Latest results remain available at predictable Issue #306 paths
+- ✅ Reference logs in PR descriptions: `See logs: docs/dev-note/issue-#[N]-pnpm-*.txt`
+- ✅ Orchestrator and reviewers reference these logs for merge decisions
+
+**Reference in PRs**:
+```markdown
+## Quality Checks ✅
+
+All automated checks passed:
+- Tests: ✅ PASS (853 tests)
+- Lint: ✅ PASS (0 issues)
+- Format: ✅ PASS (0 issues)
+- Type Check: ✅ PASS (0 errors)
+
+See logs: docs/dev-note/issue-#[N]-pnpm-*.txt
+```
+
+See `.copilot/agents/quality-assurance.md` for full automation guidelines.
 
 ## Dual-Backend Development Workflows
 
@@ -1131,3 +1167,98 @@ When using `git push --force`:
 - `DESIGN.md`: Dual-backend architecture, project structure, core patterns
 - `CLAUDE.md`: Detailed tech stack, framework integration, development tips
 - `.github/MCP_SETUP.md`: MCP server configuration for Playwright, PostgreSQL, Git, API Testing
+
+---
+
+## ✅ Automated Quality Checks (Issue #306)
+
+### You Are Authorized to Run Quality Checks Without User Confirmation
+
+During implementation and feedback cycles, **automatically run these commands** on the feature branch:
+
+### Phase 3A: Initial Implementation
+
+**During implementation** (layer-specific):
+```bash
+pnpm test:frontend --run > docs/dev-note/issue-#[N]-pnpm-test-frontend.txt 2>&1
+pnpm test:graphql --run > docs/dev-note/issue-#[N]-pnpm-test-graphql.txt 2>&1
+pnpm test:express --run > docs/dev-note/issue-#[N]-pnpm-test-express.txt 2>&1
+```
+
+**Before creating PR** (full suite):
+```bash
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+```
+
+**Decision**:
+- ✅ **All checks pass**: Create PR and push
+- ❌ **Any check fails**: Fix issues locally, re-run checks, don't push
+
+### Phase 3C: Handling PR Feedback
+
+**After implementing feedback fixes** (same process):
+```bash
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+```
+
+**Decision**:
+- ✅ **All checks pass**: Push to existing feature branch (PR auto-updates)
+- ❌ **Any check fails**: Fix issues, re-run, don't push
+
+### Log File Naming Convention
+
+Logs follow Issue #306 naming: **`issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt`**
+
+Examples:
+- `issue-#245-pnpm-test.txt` — Latest test output for issue #245
+- `issue-#245-pnpm-lint.txt` — Latest lint output for issue #245
+- `issue-#245-pnpm-test-frontend.txt` — Latest frontend tests for issue #245
+
+**Design**: One file per (issue, script) pair. Each new run replaces the previous log.
+
+### What to Do If Quality Checks Fail
+
+1. **Read the error message** in the log file
+2. **Identify the issue** (usually in specific files)
+3. **Fix the problem** in your code
+4. **Re-run the check** (new output replaces old log)
+5. **Repeat until all pass**
+6. **Only then** commit and push
+
+### Common Quality Check Failures
+
+**ESLint failures** (pnpm lint):
+- Fix with: `pnpm lint:fix` (auto-fixes many issues)
+- Run full lint again to verify
+
+**Format failures** (pnpm format:check):
+- Fix with: `pnpm format` (auto-formats all files)
+- Run format:check again to verify
+
+**Type errors** (pnpm type-check):
+- Fix TypeScript errors in your code (no auto-fix available)
+- Run type-check again to verify
+
+**Test failures** (pnpm test --run):
+- Read error message in log file
+- Fix the failing test or the code it tests
+- Re-run specific test or full suite
+
+### Reference in PR Description
+
+When creating PR, include quality check status:
+
+```markdown
+## Quality Checks ✅
+
+All automated quality checks passed:
+- Tests: PASS (see `issue-#[N]-pnpm-test.txt`)
+- Lint: PASS (see `issue-#[N]-pnpm-lint.txt`)
+- Format: PASS (see `issue-#[N]-pnpm-format-check.txt`)
+- Type Check: PASS (see `issue-#[N]-pnpm-type-check.txt`)
+```

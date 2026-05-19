@@ -1,143 +1,233 @@
-# E2E Test Failure Analysis - Issue #193
+# 📋 Development Notes - Code Quality Logs
 
-**Investigation Date**: April 17, 2026  
-**Status**: ✅ ROOT CAUSE IDENTIFIED & DOCUMENTED
-
-## Quick Links
-
-This directory contains comprehensive analysis of E2E test failure **TC-E2E-BW-001** from Issue #193:
-
-### 📄 Documents
-
-1. **[INVESTIGATION_SUMMARY.txt](./INVESTIGATION_SUMMARY.txt)** - START HERE
-   - Quick overview of findings
-   - Test status breakdown
-   - Root cause summary
-   - Affected components list
-   - Recommended fix
-   - **Best for**: Quick understanding of the issue
-
-2. **[E2E_BUILD_WORKFLOW_DEBUG.md](./E2E_BUILD_WORKFLOW_DEBUG.md)** - DETAILED ANALYSIS
-   - Executive summary
-   - Current status with error details
-   - Deep root cause analysis with code examples
-   - Component architecture analysis
-   - File structure and affected components
-   - Screenshot analysis
-   - Detailed recommendations
-   - Code references and line numbers
-   - **Best for**: Complete understanding and implementation planning
-
-3. **[COMPONENT_FLOW_DIAGRAM.md](./COMPONENT_FLOW_DIAGRAM.md)** - VISUAL REFERENCE
-   - Current (broken) flow with ASCII diagrams
-   - Expected (fixed) flow with ASCII diagrams
-   - Side-by-side comparisons
-   - Component hierarchy after fix
-   - Implementation checklist
-   - Files to modify summary
-   - **Best for**: Understanding the flow and planning implementation
-
-## Issue Summary
-
-### The Problem
-Test TC-E2E-BW-001 times out waiting for form input element `build-name-input` that doesn't exist.
-
-**Error:**
-```
-TimeoutError: locator.waitFor: Timeout 10000ms exceeded.
-waiting for locator('[data-testid="build-name-input"]') to be visible
-```
-
-### Root Cause
-- **Test Expects**: React modal form with input element
-- **Code Provides**: Browser `prompt()` dialog (native, outside DOM)
-- **Result**: Playwright can't find element in DOM, times out
-
-### Impact
-- ❌ TC-E2E-BW-001: Create Build workflow (FAILING)
-- ❌ TC-E2E-BW-002: Create Build with real-time update (WOULD FAIL)
-- ❌ TC-E2E-BW-003: Update status workflow (WOULD FAIL)  
-- ❌ TC-E2E-BW-004: Add part workflow (WOULD FAIL)
-- ❌ TC-E2E-BW-005: Multiple operations sequence (WOULD FAIL)
-
-### Recommended Fix
-Implement Create Build Modal Component instead of using `prompt()`:
-- Time estimate: 30-45 minutes
-- Unblocks all 5 E2E test cases
-- Improves user experience significantly
-
-## Key Findings
-
-### Current Status (beforeEach)
-✅ **FIXED**: beforeEach timeout issue resolved
-- Previous: 26+ seconds (hydration check timeout)
-- Now: ~1.3 seconds (Promise.race() with 1s max wait)
-
-### Current Status (Form Input Wait)
-❌ **FAILING**: Form element doesn't exist
-- Button click works ✅
-- Modal doesn't appear ❌
-- Form has no inputs with test IDs ❌
-
-## Implementation Plan
-
-### Phase 1: Create Modal Component
-1. Create `frontend/components/create-build-modal.tsx`
-2. Add state management to `build-dashboard.tsx`
-3. Replace `handleCreateBuild()` to use modal
-
-### Phase 2: Verify Tests
-1. Run E2E tests: `pnpm test:e2e`
-2. Verify all 5 build workflow tests pass
-
-### Phase 3: Future Improvements (Optional)
-1. Remove all `prompt()` usage
-2. Add form validation
-3. Add error handling
-
-## Evidence
-
-**Screenshot** (test-failed-1.png):
-- ✅ Dashboard loads
-- ✅ "Create Build" button visible (blue, top right)
-- ❌ No modal appears after click
-- ❌ No form inputs visible
-
-## Code Locations
-
-**Problem:**
-- `frontend/components/build-dashboard.tsx:52-67` (uses `prompt()`)
-
-**Tests:**
-- `frontend/e2e/tests/event-bus/build-workflow.spec.ts:46` (waits for form)
-
-**Test Page Object:**
-- `frontend/e2e/pages/DashboardPage.ts:101-115` (expects form)
-
-## Success Criteria
-
-- [x] Root cause identified
-- [x] Affected components documented
-- [x] Screenshots analyzed
-- [x] Component flow documented
-- [x] Implementation plan created
-- [ ] Modal component implemented
-- [ ] E2E tests passing
-
-## Navigation
-
-### For Quick Understanding
-→ Start with [INVESTIGATION_SUMMARY.txt](./INVESTIGATION_SUMMARY.txt)
-
-### For Implementation
-→ Read [E2E_BUILD_WORKFLOW_DEBUG.md](./E2E_BUILD_WORKFLOW_DEBUG.md)
-
-### For Visual Reference
-→ Check [COMPONENT_FLOW_DIAGRAM.md](./COMPONENT_FLOW_DIAGRAM.md)
+This directory stores automated code quality check logs generated during:
+- Feature implementation (Phase 3A)
+- Feedback fixes (Phase 3C)
+- Consolidation testing (Phase 4)
 
 ---
 
-**Status**: Investigation Complete ✅  
-**Ready for**: Implementation Phase  
-**Created by**: QA Investigation Session  
-**Last Updated**: April 17, 2026
+## 📁 Log Files
+
+### Issue #306 - Automated Code Quality Logging
+
+Logs follow naming convention: **`issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt`**
+
+**Purpose**: One log file per (issue, script) combination. Each new run replaces the previous log, maintaining a single current record per combination.
+
+### Examples
+
+```
+issue-#306-pnpm-test.txt           # Full test suite output (all layers)
+issue-#306-pnpm-test-frontend.txt  # Frontend layer tests only
+issue-#306-pnpm-test-graphql.txt   # GraphQL layer tests only
+issue-#306-pnpm-test-express.txt   # Express layer tests only
+issue-#306-pnpm-lint.txt           # Linting output (ESLint)
+issue-#306-pnpm-format-check.txt   # Prettier format validation
+issue-#306-pnpm-type-check.txt     # TypeScript strict mode check
+```
+
+---
+
+## 🎯 How Logs Are Used
+
+### During Development (Phase 3A: Initial Implementation)
+
+Developer runs layer-specific tests:
+```bash
+pnpm test:frontend --run > docs/dev-note/issue-#306-pnpm-test-frontend.txt 2>&1
+pnpm test:graphql --run > docs/dev-note/issue-#306-pnpm-test-graphql.txt 2>&1
+pnpm test:express --run > docs/dev-note/issue-#306-pnpm-test-express.txt 2>&1
+```
+
+Before creating PR:
+```bash
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#306-pnpm-lint.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#306-pnpm-format-check.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#306-pnpm-type-check.txt 2>&1
+```
+
+### During Feedback Fixes (Phase 3C)
+
+Developer re-runs same quality checks after fixing feedback:
+```bash
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#306-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#306-pnpm-type-check.txt 2>&1
+```
+
+New output replaces old log (same filename = one current log per script).
+
+### During Consolidation (Phase 4)
+
+Tester validates all layers before merge:
+```bash
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#306-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#306-pnpm-type-check.txt 2>&1
+```
+
+---
+
+## 📖 Log File Structure
+
+Every quality check log includes consistent header:
+
+```
+====================
+CODE QUALITY CHECK LOG
+====================
+
+Issue: #306
+Script: pnpm test
+Branch: feat/issue-#306-quality-automation
+Timestamp: 2026-05-19T14:30:22Z
+Triggered By: Developer Agent
+
+====================
+RESULT: ✅ PASS | ❌ FAIL | ⚠️ PARTIAL
+====================
+
+[Full command output below]
+...
+```
+
+---
+
+## 🔍 Accessing Logs
+
+### View all logs for a specific issue:
+```bash
+ls -la docs/dev-note/issue-#306-pnpm-*.txt
+```
+
+### View a specific log:
+```bash
+cat docs/dev-note/issue-#306-pnpm-test.txt
+cat docs/dev-note/issue-#306-pnpm-lint.txt
+```
+
+### Check format issues:
+```bash
+cat docs/dev-note/issue-#306-pnpm-format-check.txt
+```
+
+### View test output:
+```bash
+tail -100 docs/dev-note/issue-#306-pnpm-test.txt  # Last 100 lines
+```
+
+---
+
+## 📝 Log Lifecycle
+
+| Stage | Description |
+|-------|-------------|
+| **Created** | First time a quality check runs for an issue/script pair |
+| **Updated** | Every subsequent run for that issue/script overwrites the file |
+| **Referenced** | In PR descriptions and code review comments |
+| **Maintained** | Single current log per (issue, script) combination |
+
+---
+
+## 🏗️ Benefits of This Convention
+
+✅ **Single Log Per Script** — One file per (issue, script) = no log flooding  
+✅ **Latest Always Current** — Each run overwrites previous log  
+✅ **Easy to Reference** — PR: "See `issue-#306-pnpm-test.txt`"  
+✅ **Plain Text Format** — No tooling required, easy to diff  
+✅ **Issue-Based Organization** — All logs for issue #306 grouped together  
+✅ **Script Name in Filename** — Clear what check each log represents  
+
+---
+
+## 📚 Integration with Agents
+
+### Developer Agent
+- Runs layer-specific tests and captures to issue-specific logs
+- Runs full suite before PR creation
+- Fails PR if quality checks don't pass
+
+### Tester Agent
+- Runs consolidation tests and captures logs
+- Documents failures with log references
+- Escalates to orchestrator if checks fail
+
+### Reviewer Agent
+- References logs in PR reviews
+- Uses logs as evidence for approval decisions
+
+### Orchestrator Agent
+- Uses logs for execution plan tracking
+- References logs in milestone updates
+- Escalates failures with log evidence
+
+---
+
+## 🐛 Troubleshooting
+
+**"Log file not created?"**
+```bash
+# Ensure output redirection
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+
+# Check permissions
+ls -la docs/dev-note/
+chmod 644 docs/dev-note/issue-#306-pnpm-test.txt
+```
+
+**"Old log not overwritten?"**
+```bash
+# File permissions might be read-only
+rm docs/dev-note/issue-#306-pnpm-test.txt
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+```
+
+**"Want to keep historical logs?"**
+```bash
+# Archive old logs manually
+mkdir -p docs/dev-note/archive
+mv docs/dev-note/issue-#306-pnpm-test.txt docs/dev-note/archive/
+```
+
+---
+
+## 📋 Example Logs
+
+See example files in this directory:
+- `issue-306-pnpm-test.txt` — Example passing test output
+- `issue-306-pnpm-lint.txt` — Example passing lint output
+- `issue-306-pnpm-format-check.txt` — Example passing format check
+- `issue-306-pnpm-type-check.txt` — Example passing type check
+
+---
+
+## 🔗 Related Files
+
+| File | Purpose |
+|------|---------|
+| `.github/instructions/shared.instructions.md` | Log naming convention (Issue #306) |
+| `.github/instructions/workflow-phases.instructions.md` | Workflow phases with quality gates |
+| `.github/copilot-instructions.md` | Root instructions with quality gate automation |
+| `.github/copilot/agents/developer.md` | Developer: when to run quality checks |
+| `.github/copilot/agents/tester.md` | Tester: consolidation quality checks |
+| `.github/copilot/agents/reviewer.md` | Reviewer: how to reference logs in reviews |
+| `.github/copilot/agents/orchestrator.md` | Orchestrator: log coordination |
+
+---
+
+## ✅ Issue #306 Compliance
+
+This directory implements Issue #306 requirements:
+- ✅ Commands run **without user confirmation** (agents auto-execute)
+- ✅ **Latest logs** stored under `docs/dev-note/`
+- ✅ **Naming convention** follows `issue-#[N]-pnpm-[SCRIPT].txt`
+- ✅ **Single log per script** — no file flooding
+- ✅ **All agents** understand when/how to use logs
+
+---
+
+**Last Updated**: 2026-05-19  
+**Related Issue**: #306  
+**Pattern**: Official GitHub Copilot Automated Quality Logging

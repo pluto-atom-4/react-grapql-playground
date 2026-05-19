@@ -291,7 +291,31 @@ All execute simultaneously (no blocking, no conflicts)
 10:20 AM  Issue #144 completes ✓
 ```
 
-**5. Verify & Merge**
+**5. Quality Check Validation (Issue #306)**
+
+Before merging any PRs, orchestrator validates all quality checks pass:
+
+```bash
+# Run all quality checks to verify no regressions
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+
+# Review logs to confirm all pass
+cat docs/dev-note/issue-#[N]-pnpm-test.txt
+cat docs/dev-note/issue-#[N]-pnpm-lint.txt
+cat docs/dev-note/issue-#[N]-pnpm-format-check.txt
+cat docs/dev-note/issue-#[N]-pnpm-type-check.txt
+```
+
+**Merge Decision**:
+- ✅ **If all checks PASS**: Proceed to "Verify & Merge" step
+- ❌ **If any check FAILS**: Escalate to developer for fixes before merging
+
+See `.copilot/agents/quality-assurance.md` for full automation guidelines.
+
+**6. Verify & Merge**
 
 ```bash
 # All PRs are ready simultaneously
@@ -805,3 +829,153 @@ feat: #40 add ARIA labels and keyboard navigation
 - `.copilot/agents/product-manager.md`: Feature requirements and priorities
 - `docs/implementation-planning/PHASE-4-DEPENDENCIES.md`: Dependency analysis for Phase 4
 - `docs/implementation-planning/PHASE-4-ISSUE-BREAKDOWN.md`: Detailed per-issue breakdown
+
+---
+
+## ✅ Automated Quality Checks Coordination (Issue #306)
+
+### You Are Authorized to Use Quality Check Logs for Execution Planning
+
+As orchestrator, **leverage automated quality check logs** to track execution progress:
+
+### Execution Plan Integration
+
+**In execution plan documents**, track quality check status:
+
+```markdown
+## Issue #245: Add Pagination
+
+### Phase 3A: Implementation
+- Developer: Implementing on feat/issue-#245-pagination
+- Quality Checks: 
+  - Layer Tests: PASS (see `docs/dev-note/issue-#245-pnpm-test-frontend.txt`)
+  - Full Suite: PASS (see `docs/dev-note/issue-#245-pnpm-test.txt`)
+  - Lint: PASS (see `docs/dev-note/issue-#245-pnpm-lint.txt`)
+- Status: **Ready for PR**
+
+### Phase 3B: Review
+- Reviewer: Examining PR #[N]
+- Quality Status: ✅ All checks passed (see logs)
+- Review Status: In progress...
+```
+
+### Escalation & Failure Handling
+
+**If quality checks fail**, document and escalate:
+
+```markdown
+⚠️ QUALITY CHECK FAILURE - Issue #245
+
+Failed Checks:
+- Tests: FAIL (1 test failing)
+  - Log: `docs/dev-note/issue-#245-pnpm-test.txt`
+  - Error: "TestRunDetailsPanel test timeout"
+  - Action: Escalated to @developer for fix
+
+Status: Blocked on quality check resolution
+Next: Developer will re-run after fix
+```
+
+### PR Review Quality Evidence
+
+**Reference quality logs in PR consolidation decisions**:
+
+```markdown
+## Consolidation Status
+
+### Quality Metrics
+- PRs with passing quality checks: 5/5
+- All test suites: PASS
+- All linting: PASS
+- All type checks: PASS
+
+Consolidation is ready for merge.
+```
+
+### Log Management During Phases
+
+**Phase 3A (Implementation)**:
+- Track which issues have passing quality checks
+- Reference logs in execution plan updates
+- Use logs to identify which features are truly ready for PR
+
+**Phase 3B-3F (Review & Feedback)**:
+- Monitor quality logs during feedback cycles
+- Verify quality checks still pass after feedback fixes
+- Use logs as approval evidence
+
+**Phase 4 (Consolidation)**:
+- Run quality checks on consolidation branch
+- Document passing/failing logs in consolidation status
+- Use logs to decide if consolidation is merge-ready
+
+### Coordination Example
+
+```
+@orchestrator Create execution plan for Phase 3
+
+[Orchestrator creates plan]
+- Issue #245: pagination
+- Issue #246: CLS fix
+- Issue #247: accessibility
+
+@developer Implement Issue #245
+[Developer runs: pnpm test --run > docs/dev-note/issue-#245-pnpm-test.txt]
+[All checks PASS]
+[Developer creates PR]
+
+@orchestrator Update status: Issue #245 has passing quality checks
+- Tests: PASS (issue-#245-pnpm-test.txt)
+- Lint: PASS (issue-#245-pnpm-lint.txt)
+- Can be reviewed by @reviewer
+
+@reviewer Review PR #[N] for issue #245
+[References quality logs as evidence]
+
+[If feedback needed]
+@developer Fix Issue #245 feedback
+[Developer re-runs: pnpm test --run > docs/dev-note/issue-#245-pnpm-test.txt]
+[All checks PASS]
+
+@orchestrator: All quality checks passing, ready to consolidate Issue #245
+```
+
+### Viewing Quality Check Summary
+
+For quick status across all issues:
+
+```bash
+# View all latest quality checks for current phase
+ls -lh docs/dev-note/issue-#[CURRENT-PHASE]-pnpm-*.txt
+
+# Count passing checks by issue
+for issue in 245 246 247; do
+  if [ -f "docs/dev-note/issue-#$issue-pnpm-test.txt" ]; then
+    echo "Issue #$issue: Quality checks logged ✅"
+  fi
+done
+```
+
+### Quality as Go/No-Go Decision
+
+**Use quality checks to make execution decisions**:
+
+✅ **Go to next phase** when:
+- All quality checks PASS for all approved PRs
+- Tests show no regressions
+- Linting is clean
+- Type checks pass
+
+⚠️ **Hold/Escalate** when:
+- Any quality check FAILS
+- Tests show new regressions
+- Linting introduces violations
+- Type check errors discovered
+
+### Related Documentation
+
+See `docs/dev-note/README.md` for:
+- Log naming conventions
+- How logs are captured by agents
+- Log lifecycle and management
+- Examples of logs in execution plans

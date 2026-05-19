@@ -511,6 +511,174 @@ echo "✅ All QA checks passed!"
 - [ ] Code blocks with language tag
 - [ ] No broken internal links
 
+## Automated Code Quality Workflows (Issue #306)
+
+All agents (developer, orchestrator, code-review, tester) **run code quality checks automatically without user confirmation** during implementation, feedback cycles, and consolidation phases.
+
+### Verified Commands
+
+All commands execute with `--run` flag (never in watch mode) for CI-like behavior:
+
+**Test Suite Commands:**
+```bash
+pnpm test --run                 # Full test suite (all packages)
+pnpm test:frontend --run        # Frontend tests only
+pnpm test:graphql --run         # GraphQL backend tests only
+pnpm test:express --run         # Express backend tests only
+pnpm test:integration --run      # Frontend integration tests
+```
+
+**Code Quality Checks:**
+```bash
+pnpm lint                       # ESLint validation across all packages
+pnpm format:check               # Prettier format validation (read-only)
+pnpm type-check                 # TypeScript strict mode validation
+```
+
+### When Agents Run Quality Checks
+
+**Phase 3A (Initial Implementation):**
+- Developer runs layer-specific tests AFTER implementing features
+- Developer runs full `pnpm test --run` BEFORE creating PR
+- Developer runs `pnpm lint`, `pnpm format:check`, `pnpm type-check`
+- If all PASS → Proceed to PR creation
+- If any FAIL → Fix issues locally, re-run before creating PR
+
+**Phase 3C (Feedback Fixes):**
+- Developer runs checks AFTER implementing feedback
+- If all PASS → Push to existing feature branch
+- If any FAIL → Fix and re-run before pushing
+
+**Phase 4 (Consolidation):**
+- Tester runs `pnpm test --run` on consolidation branch
+- Tester runs `pnpm lint` and `pnpm type-check` to verify no regressions
+- If all PASS → Consolidation ready for merge
+- If any FAIL → Document failures and escalate to orchestrator
+
+### Log Management Strategy
+
+**Purpose**: Track code quality results without accumulating log files
+
+**Log Naming Convention** (all in `docs/dev-note/`):
+```
+issue-#[N]-pnpm-[script-name].txt
+```
+
+Examples:
+- `issue-#[N]-pnpm-test.txt` - Latest test suite output
+- `issue-#[N]-pnpm-lint.txt` - Latest linting output
+- `issue-#[N]-pnpm-format-check.txt` - Latest format-check output
+- `issue-#[N]-pnpm-type-check.txt` - Latest type-check output
+
+**Key Policy: Single File Per Issue/Script Pair**
+- Each new run **overwrites** the previous log for the same issue/script pair
+- One current log is preserved per issue and script combination
+- No timestamped versions or duplicate filenames for the same issue/script pair
+- Natural cleanup—rerunning the same check updates the same file
+
+### Recommended Command Sequence
+
+When running quality checks, use this sequence for optimal feedback:
+
+```bash
+# 1. Run layer-specific tests first (faster feedback on changes)
+pnpm test:frontend --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm test:graphql --run >> docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm test:express --run >> docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+
+# 2. Run full test suite (catches integration issues)
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+
+# 3. Run code quality checks (can run in parallel)
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#[N]-pnpm-format-check.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+```
+
+### Agent Responsibilities
+
+**Developer Agent:**
+1. Runs quality checks after implementing features
+2. Captures output to `docs/dev-note/issue-#[N]-pnpm-*.txt`
+3. **If FAIL**: Reports error, fixes locally, re-runs
+4. **If PASS**: Proceeds to PR creation
+5. References logs in PR body
+
+**Orchestrator Agent:**
+1. Runs all quality checks as final validation
+2. Aggregates results across all layers
+3. References logs in merge recommendation
+4. **If all PASS**: Clears for merge
+5. **If any FAIL**: Escalates to developer
+
+**Code-Review Agent:**
+1. Validates all checks PASS during review
+2. References logs in PR comments
+3. Confirms check status before approval
+
+**Tester Agent:**
+1. Runs test-specific commands during consolidation
+2. Captures coverage metrics to logs
+3. **If any FAIL**: Documents specifics and escalates
+
+### How to Reference Logs in PRs
+
+**When all checks pass:**
+```markdown
+## Quality Checks ✅
+
+All automated checks passed:
+- Tests: ✅ PASS (853 tests)
+- Lint: ✅ PASS (0 issues)
+- Format: ✅ PASS (0 issues)
+- Type Check: ✅ PASS (0 errors)
+
+See logs: `docs/dev-note/issue-#[N]-pnpm-*.txt`
+```
+
+**When some checks fail:**
+```markdown
+## Quality Checks ⚠️
+
+Check status:
+- Tests: ✅ PASS (843 tests)
+- Lint: ❌ FAIL (2 issues) → See `docs/dev-note/issue-#[N]-pnpm-lint.txt`
+- Format: ✅ PASS (0 issues)
+- Type Check: ✅ PASS (0 errors)
+
+See logs: `docs/dev-note/issue-#[N]-pnpm-*.txt`
+```
+
+### Log Content Structure
+
+Every quality check log includes:
+
+```markdown
+# Code Quality Check - [CHECK_TYPE]
+
+## Summary
+- Status: ✅ PASS | ❌ FAIL | ⚠️ PARTIAL
+- Last Updated: [ISO 8601 timestamp]
+- Triggered by: [Agent name / Issue #XYZ]
+- Command: [pnpm test --run / pnpm lint / etc.]
+
+## Results
+- Total: X items (tests/errors/files)
+- Passed/Valid: X
+- Failed/Invalid: X
+- Duration: Xs
+- Coverage: X% (if applicable)
+
+## Details
+[Full command output or error summary]
+
+## Status
+✅ ALL CHECKS PASSED | ❌ SOME CHECKS FAILED
+
+## Recommendations
+[Any specific actions needed if failures detected]
+```
+
 ## Model Override Guidance
 
 **Default Model**: Claude Haiku 4.5 (efficient for QA enforcement)
@@ -529,3 +697,152 @@ echo "✅ All QA checks passed!"
 - `.copilot/agents/developer.md`: Development responsibilities
 - `.copilot/agents/reviewer.md`: Code review focus
 - `.copilot/agents/tester.md`: Test expectations
+
+---
+
+## ✅ Automated Quality Checks Enforcement (Issue #306)
+
+### You Are Authorized to Run and Validate All Quality Checks
+
+As Quality Assurance, **you enforce automated quality check compliance** across all development phases:
+
+### Quality Checks You Enforce
+
+**All agents automatically run** these commands without confirmation:
+
+```bash
+pnpm test --run              # All tests (all layers)
+pnpm test:frontend --run     # Frontend layer tests
+pnpm test:graphql --run      # GraphQL layer tests
+pnpm test:express --run      # Express layer tests
+pnpm lint                    # ESLint across all packages
+pnpm format:check            # Prettier format validation
+pnpm type-check              # TypeScript strict mode
+```
+
+### Phase 3A: Implementation Quality Validation
+
+**During implementation**, verify quality check logs exist:
+
+```bash
+# Expected logs for Issue #[N]
+ls -la docs/dev-note/issue-#[N]-pnpm-*.txt
+
+# Should find:
+# - issue-#[N]-pnpm-test.txt
+# - issue-#[N]-pnpm-lint.txt
+# - issue-#[N]-pnpm-format-check.txt
+# - issue-#[N]-pnpm-type-check.txt
+```
+
+**If logs are missing**:
+- QA escalates to developer: "Quality checks not captured for Issue #[N]"
+- Developer must run checks and capture logs before PR approval
+
+### Phase 3B-3F: Review Quality Evidence
+
+**Verify quality logs are referenced in PR**:
+- PR description should reference `docs/dev-note/issue-#[N]-pnpm-*.txt` logs
+- Reviewer should confirm logs show PASS status
+- QA confirms documentation matches actual log content
+
+**If quality logs don't exist or show failures**:
+- QA blocks PR approval
+- Developer must run checks, fix issues, re-run
+
+### Phase 4: Consolidation Quality Assurance
+
+**On consolidation branch**, validate quality:
+
+```bash
+# Run full quality suite
+pnpm test --run > docs/dev-note/issue-#CONSOLIDATION-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#CONSOLIDATION-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#CONSOLIDATION-pnpm-type-check.txt 2>&1
+
+# Check results
+cat docs/dev-note/issue-#CONSOLIDATION-pnpm-test.txt
+```
+
+**Decision**:
+- ✅ **All PASS**: Consolidation approved for merge
+- ❌ **Any FAIL**: Document failures, escalate to @orchestrator
+
+### Log File Compliance
+
+**Enforce Issue #306 log naming convention**:
+
+Format: `issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt`
+
+✅ **Correct**:
+- `issue-#245-pnpm-test.txt`
+- `issue-#245-pnpm-lint.txt`
+- `issue-#245-pnpm-test-frontend.txt`
+
+❌ **Incorrect**:
+- `test-output.txt` (no issue number)
+- `pnpm-test-results.txt` (no issue number)
+- `issue-245-test.log` (wrong extension)
+
+### Quality Check Compliance Checklist
+
+For each PR/issue, QA verifies:
+
+- [ ] Quality check logs captured to `docs/dev-note/`
+- [ ] Logs follow Issue #306 naming: `issue-#[N]-pnpm-[SCRIPT].txt`
+- [ ] All required logs present (test, lint, format, type-check)
+- [ ] All logs show PASS (not FAIL or partial)
+- [ ] PR description references logs
+- [ ] Developer signature: "Quality Checks: ✅" in PR body
+- [ ] No manual quality exceptions granted
+
+### Escalation for Quality Failures
+
+**If quality checks FAIL**, escalate with evidence:
+
+```markdown
+## Quality Check Failure - Issue #245
+
+Failed: `pnpm test --run`
+- Log: docs/dev-note/issue-#245-pnpm-test.txt
+- Error: "3 tests failing in TestRunDetailsPanel"
+- Severity: BLOCKING
+
+Action: Escalating to @developer for remediation
+```
+
+### Audit Trail
+
+Maintain audit trail for compliance:
+
+```bash
+# All quality logs by date
+ls -lhrt docs/dev-note/issue-*.txt
+
+# Quality compliance by issue
+for issue in 245 246 247 248; do
+  if grep -q "FAIL" docs/dev-note/issue-#$issue-pnpm-test.txt 2>/dev/null; then
+    echo "Issue #$issue: ❌ FAILED"
+  else
+    echo "Issue #$issue: ✅ PASSED"
+  fi
+done
+```
+
+### Standards You Enforce
+
+1. **All checks run automatically** (no manual approval)
+2. **Logs captured to Issue #306 format** (issue-#[N]-pnpm-[SCRIPT].txt)
+3. **One log per (issue, script)** (each run overwrites)
+4. **No quality exceptions** (all checks must pass for approval)
+5. **Logs referenced in PRs** (developer documents quality status)
+
+### Quality vs. Development Speed
+
+**Remember**: Automated quality checks enable FASTER development:
+- Developers get immediate feedback (no manual QA delay)
+- Tests catch regressions early
+- Linting prevents review cycles
+- Type checking prevents deployment failures
+
+Your role: **Ensure compliance, not slowdown**—verify checks ran, logs exist, and results are documented.
