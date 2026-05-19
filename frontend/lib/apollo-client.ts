@@ -16,6 +16,7 @@ import { extractErrorMessage } from './graphql-error-handler';
 import { createToast } from '@/components/toast-notification';
 import { TimeoutLink } from './timeout-link';
 import { RetryLink } from './retry-link';
+import { extractTraceparentHeader } from './tracing';
 
 /**
  * Error link handler that catches GraphQL and network errors.
@@ -67,6 +68,18 @@ export function makeClient(): ApolloClient {
     credentials: 'include',
   });
 
+  // Issue #300: Add W3C traceparent header for distributed tracing
+  const tracingLink = setContext((_, context) => {
+    const traceparent = extractTraceparentHeader();
+    const { headers } = context as { headers: Record<string, string> };
+    return {
+      headers: {
+        ...headers,
+        traceparent,
+      },
+    };
+  });
+
   const authLink = setContext((_, context) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '';
     const { headers } = context as { headers: Record<string, string> };
@@ -81,12 +94,13 @@ export function makeClient(): ApolloClient {
   return new ApolloClient({
     ssrMode: typeof window === 'undefined',
     cache: new InMemoryCache(),
-    // Link chain order (Issue #32):
+    // Link chain order (Issue #32 + Issue #300):
     // 1. timeoutLink: Enforce 10s hard boundary
     // 2. retryLink: Retry failed requests 3x with exponential backoff
     // 3. errorLink: Log errors and show toast after retries exhausted
-    // 4. authLink: Inject JWT token on each attempt
-    // 5. httpLink: Actual network request
-    link: timeoutLink.concat(retryLink).concat(errorLink).concat(authLink).concat(httpLink),
+    // 4. tracingLink: Inject W3C traceparent header for distributed tracing
+    // 5. authLink: Inject JWT token on each attempt
+    // 6. httpLink: Actual network request
+    link: timeoutLink.concat(retryLink).concat(errorLink).concat(tracingLink).concat(authLink).concat(httpLink),
   });
 }
