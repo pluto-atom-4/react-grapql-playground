@@ -1813,3 +1813,72 @@ See `.copilot/agents/quality-assurance.md` for full automation guidelines.
 - `DESIGN.md`: Architecture and patterns tested
 - `.copilot/agents/reviewer.md`: Code review for tests
 - `.copilot/agents/quality-assurance.md`: Test coverage standards
+
+---
+
+## ✅ Automated Quality Checks (Issue #306)
+
+### You Are Authorized to Run Quality Checks Without User Confirmation
+
+During consolidation, **automatically run these commands** to validate all layers:
+
+### Phase 4: Consolidation Testing
+
+**On consolidation branch**, run full test suite:
+```bash
+pnpm test --run > docs/dev-note/issue-#[N]-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#[N]-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#[N]-pnpm-type-check.txt 2>&1
+```
+
+**Decision**:
+- ✅ **All checks pass**: Consolidation is ready for merge
+- ❌ **Any check fails**: Document in logs, escalate to @orchestrator
+
+### Log File Naming Convention
+
+Logs follow Issue #306 naming: **`issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt`**
+
+Examples:
+- `issue-#245-pnpm-test.txt` — Latest test output for issue #245
+- `issue-#245-pnpm-lint.txt` — Latest lint output for issue #245
+
+**Design**: One file per (issue, script) pair. Each new run replaces the previous log.
+
+### What to Do If Quality Checks Fail During Consolidation
+
+1. **Read the error in the log file**
+2. **Identify which layer has the issue** (frontend, graphql, express)
+3. **Document the failure** with specific errors in execution plan
+4. **Escalate to @orchestrator** with log reference:
+   - "Consolidation test failed: see `issue-#245-pnpm-test.txt`"
+   - Orchestrator decides: fix issues or escalate to developers
+5. **After fix**, re-run quality checks (new log replaces old)
+
+### Reference Logs in Consolidation Updates
+
+When documenting consolidation status, include:
+
+```markdown
+## Phase 4: Consolidation Testing ✅
+
+All quality checks passed:
+- Tests: PASS (see `issue-#[N]-pnpm-test.txt`)
+- Lint: PASS (see `issue-#[N]-pnpm-lint.txt`)
+- Type Check: PASS (see `issue-#[N]-pnpm-type-check.txt`)
+
+Ready for merge to main.
+```
+
+Or if failed:
+
+```markdown
+## Phase 4: Consolidation Testing ⚠️
+
+Failed checks (investigating):
+- Tests: FAIL (see `issue-#[N]-pnpm-test.txt` for details)
+- Lint: PASS
+- Type Check: PASS
+
+Escalating to @orchestrator for resolution.
+```

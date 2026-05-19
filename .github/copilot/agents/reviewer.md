@@ -375,3 +375,73 @@ function updateBuild(id: any, status: any): any {
 - `CLAUDE.md`: Detailed tech stack and integration points
 - `.copilot/agents/developer.md`: What developer should have implemented
 - `.copilot/agents/tester.md`: Test expectations
+
+---
+
+## ✅ Automated Quality Checks (Issue #306)
+
+### You Are Authorized to Reference Quality Check Logs in Reviews
+
+When reviewing PRs, **reference the automated quality check logs** as evidence:
+
+### Phase 3B: PR Review
+
+**When examining PR #[N]**, check for quality check logs:
+
+```bash
+ls -la docs/dev-note/issue-#[N]-pnpm-*.txt
+```
+
+**Expected logs**:
+- `issue-#[N]-pnpm-test.txt` — Test output
+- `issue-#[N]-pnpm-lint.txt` — Lint output
+- `issue-#[N]-pnpm-format-check.txt` — Format output
+- `issue-#[N]-pnpm-type-check.txt` — Type check output
+
+### In Your Review Comments
+
+**Reference logs as evidence of quality**:
+
+```markdown
+## Quality Checks ✅
+
+All automated quality checks passed:
+- Tests: PASS (see `docs/dev-note/issue-#[N]-pnpm-test.txt`)
+- Lint: PASS (see `docs/dev-note/issue-#[N]-pnpm-lint.txt`)
+- Format: PASS
+- Type Check: PASS
+
+[Plus your code review feedback...]
+```
+
+Or if quality checks are missing:
+
+```markdown
+## Quality Checks ⚠️
+
+Expected quality check logs not found:
+- Missing: `docs/dev-note/issue-#[N]-pnpm-test.txt`
+- Missing: `docs/dev-note/issue-#[N]-pnpm-lint.txt`
+
+Before approval, developer should:
+1. Run full quality checks locally
+2. Capture logs to docs/dev-note/
+3. Push an update to the branch
+4. Logs should appear in PR
+```
+
+### Trust But Verify
+
+While quality checks are automated:
+- ✅ Use logs as supporting evidence in your review
+- ✅ Reference specific log files in your comments
+- ⚠️ Still manually review for architectural concerns not caught by linting
+- ⚠️ Still check for logic errors and performance issues
+
+### Log File Information
+
+See `docs/dev-note/README.md` for:
+- Log naming conventions
+- How logs are captured
+- Log lifecycle and management
+- Examples of passing/failing logs

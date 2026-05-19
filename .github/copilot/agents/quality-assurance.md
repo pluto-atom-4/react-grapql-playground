@@ -697,3 +697,152 @@ Every quality check log includes:
 - `.copilot/agents/developer.md`: Development responsibilities
 - `.copilot/agents/reviewer.md`: Code review focus
 - `.copilot/agents/tester.md`: Test expectations
+
+---
+
+## ✅ Automated Quality Checks Enforcement (Issue #306)
+
+### You Are Authorized to Run and Validate All Quality Checks
+
+As Quality Assurance, **you enforce automated quality check compliance** across all development phases:
+
+### Quality Checks You Enforce
+
+**All agents automatically run** these commands without confirmation:
+
+```bash
+pnpm test --run              # All tests (all layers)
+pnpm test:frontend --run     # Frontend layer tests
+pnpm test:graphql --run      # GraphQL layer tests
+pnpm test:express --run      # Express layer tests
+pnpm lint                    # ESLint across all packages
+pnpm format:check            # Prettier format validation
+pnpm type-check              # TypeScript strict mode
+```
+
+### Phase 3A: Implementation Quality Validation
+
+**During implementation**, verify quality check logs exist:
+
+```bash
+# Expected logs for Issue #[N]
+ls -la docs/dev-note/issue-#[N]-pnpm-*.txt
+
+# Should find:
+# - issue-#[N]-pnpm-test.txt
+# - issue-#[N]-pnpm-lint.txt
+# - issue-#[N]-pnpm-format-check.txt
+# - issue-#[N]-pnpm-type-check.txt
+```
+
+**If logs are missing**:
+- QA escalates to developer: "Quality checks not captured for Issue #[N]"
+- Developer must run checks and capture logs before PR approval
+
+### Phase 3B-3F: Review Quality Evidence
+
+**Verify quality logs are referenced in PR**:
+- PR description should reference `docs/dev-note/issue-#[N]-pnpm-*.txt` logs
+- Reviewer should confirm logs show PASS status
+- QA confirms documentation matches actual log content
+
+**If quality logs don't exist or show failures**:
+- QA blocks PR approval
+- Developer must run checks, fix issues, re-run
+
+### Phase 4: Consolidation Quality Assurance
+
+**On consolidation branch**, validate quality:
+
+```bash
+# Run full quality suite
+pnpm test --run > docs/dev-note/issue-#CONSOLIDATION-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#CONSOLIDATION-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#CONSOLIDATION-pnpm-type-check.txt 2>&1
+
+# Check results
+cat docs/dev-note/issue-#CONSOLIDATION-pnpm-test.txt
+```
+
+**Decision**:
+- ✅ **All PASS**: Consolidation approved for merge
+- ❌ **Any FAIL**: Document failures, escalate to @orchestrator
+
+### Log File Compliance
+
+**Enforce Issue #306 log naming convention**:
+
+Format: `issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt`
+
+✅ **Correct**:
+- `issue-#245-pnpm-test.txt`
+- `issue-#245-pnpm-lint.txt`
+- `issue-#245-pnpm-test-frontend.txt`
+
+❌ **Incorrect**:
+- `test-output.txt` (no issue number)
+- `pnpm-test-results.txt` (no issue number)
+- `issue-245-test.log` (wrong extension)
+
+### Quality Check Compliance Checklist
+
+For each PR/issue, QA verifies:
+
+- [ ] Quality check logs captured to `docs/dev-note/`
+- [ ] Logs follow Issue #306 naming: `issue-#[N]-pnpm-[SCRIPT].txt`
+- [ ] All required logs present (test, lint, format, type-check)
+- [ ] All logs show PASS (not FAIL or partial)
+- [ ] PR description references logs
+- [ ] Developer signature: "Quality Checks: ✅" in PR body
+- [ ] No manual quality exceptions granted
+
+### Escalation for Quality Failures
+
+**If quality checks FAIL**, escalate with evidence:
+
+```markdown
+## Quality Check Failure - Issue #245
+
+Failed: `pnpm test --run`
+- Log: docs/dev-note/issue-#245-pnpm-test.txt
+- Error: "3 tests failing in TestRunDetailsPanel"
+- Severity: BLOCKING
+
+Action: Escalating to @developer for remediation
+```
+
+### Audit Trail
+
+Maintain audit trail for compliance:
+
+```bash
+# All quality logs by date
+ls -lhrt docs/dev-note/issue-*.txt
+
+# Quality compliance by issue
+for issue in 245 246 247 248; do
+  if grep -q "FAIL" docs/dev-note/issue-#$issue-pnpm-test.txt 2>/dev/null; then
+    echo "Issue #$issue: ❌ FAILED"
+  else
+    echo "Issue #$issue: ✅ PASSED"
+  fi
+done
+```
+
+### Standards You Enforce
+
+1. **All checks run automatically** (no manual approval)
+2. **Logs captured to Issue #306 format** (issue-#[N]-pnpm-[SCRIPT].txt)
+3. **One log per (issue, script)** (each run overwrites)
+4. **No quality exceptions** (all checks must pass for approval)
+5. **Logs referenced in PRs** (developer documents quality status)
+
+### Quality vs. Development Speed
+
+**Remember**: Automated quality checks enable FASTER development:
+- Developers get immediate feedback (no manual QA delay)
+- Tests catch regressions early
+- Linting prevents review cycles
+- Type checking prevents deployment failures
+
+Your role: **Ensure compliance, not slowdown**—verify checks ran, logs exist, and results are documented.

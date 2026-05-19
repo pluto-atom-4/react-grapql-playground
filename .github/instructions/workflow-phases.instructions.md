@@ -212,14 +212,187 @@ When you receive feedback on PR #<N>:
 
 ---
 
+## ✅ Automated Code Quality Workflows (Issue #306)
+
+### Commands Run Without User Confirmation
+
+All agents are **explicitly authorized** to run these commands automatically during all phases:
+
+**Root-Level Commands (entire monorepo):**
+```bash
+pnpm test --run              # All tests (no watch mode, exit after completion)
+pnpm lint                    # ESLint check across all packages
+pnpm format:check            # Prettier format validation
+pnpm type-check              # TypeScript strict mode check
+```
+
+**Layer-Specific Commands (when optimizing for speed):**
+```bash
+pnpm test:frontend --run     # Frontend unit/integration tests
+pnpm test:graphql --run      # GraphQL resolver tests
+pnpm test:express --run      # Express route/handler tests
+pnpm test:integration        # Frontend + GraphQL integration tests
+pnpm test:e2e                # End-to-end tests (full stack)
+```
+
+### When Agents Run Quality Checks
+
+**Phase 3A (Initial Implementation)**:
+- ✅ Developer runs layer-specific tests AFTER implementing features
+- ✅ Developer runs full suite `pnpm test --run` BEFORE creating PR
+- ✅ If checks pass: Proceed to create PR
+- ✅ If checks fail: Fix issues and re-run (don't push)
+
+**Phase 3C (Feedback Fixes)**:
+- ✅ Developer runs checks AFTER implementing feedback
+- ✅ If checks pass: Push to existing feature branch
+- ✅ If checks fail: Fix and re-run (don't push)
+
+**Phase 4 (Consolidation)**:
+- ✅ Tester runs `pnpm test --run` on consolidation branch
+- ✅ Tester runs `pnpm lint` and `pnpm type-check` to verify no regressions
+- ✅ If all pass: Consolidation ready for merge
+- ✅ If any fail: Tester documents failures, orchestrator escalates
+
+### Output Capture & Log Storage
+
+**Log Naming Convention:**
+```
+docs/dev-note/issue-#[ISSUE-NUMBER]-pnpm-[SCRIPT-NAME].txt
+```
+
+**Examples:**
+```
+docs/dev-note/issue-#306-pnpm-test.txt           # Full test suite
+docs/dev-note/issue-#306-pnpm-test-frontend.txt  # Frontend layer tests
+docs/dev-note/issue-#306-pnpm-test-graphql.txt   # GraphQL layer tests
+docs/dev-note/issue-#306-pnpm-test-express.txt   # Express layer tests
+docs/dev-note/issue-#306-pnpm-lint.txt           # Linting output
+docs/dev-note/issue-#306-pnpm-format-check.txt   # Format validation
+docs/dev-note/issue-#306-pnpm-type-check.txt     # TypeScript check
+```
+
+**Key Benefit**: One log file per (issue, script) pair. Each new run replaces the previous log, maintaining a single current record per combination.
+
+### Error Handling & Failure Escalation
+
+**If Checks Fail:**
+
+1. **For Developer (Phase 3A/3C)**:
+   - ❌ Do NOT create/push PR if tests fail
+   - Fix issues locally and re-run layer-specific tests
+   - Run full suite `pnpm test --run` before final push
+   - Only push after all checks pass
+
+2. **For Tester (Phase 4)**:
+   - ❌ Do NOT merge consolidation if tests fail
+   - Document failures in log with specific errors
+   - Escalate to orchestrator with log reference
+   - Orchestrator decides: fix issues or open blocker issue
+
+3. **For Reviewer**:
+   - Reference quality check logs in PR comments
+   - Use log as evidence for code quality approval
+
+### Agent-Specific Quality Workflows
+
+**Developer Agent (Phase 3A)**:
+```bash
+# During implementation (layer-specific):
+pnpm test:frontend --run > docs/dev-note/issue-#306-pnpm-test-frontend.txt 2>&1
+pnpm test:graphql --run > docs/dev-note/issue-#306-pnpm-test-graphql.txt 2>&1
+pnpm test:express --run > docs/dev-note/issue-#306-pnpm-test-express.txt 2>&1
+
+# Before PR (full suite):
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#306-pnpm-lint.txt 2>&1
+pnpm format:check > docs/dev-note/issue-#306-pnpm-format-check.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#306-pnpm-type-check.txt 2>&1
+
+# If all pass: Create PR
+# If fail: Fix and re-run (new output replaces old log)
+```
+
+**Tester Agent (Phase 4)**:
+```bash
+# During consolidation:
+pnpm test --run > docs/dev-note/issue-#306-pnpm-test.txt 2>&1
+pnpm lint > docs/dev-note/issue-#306-pnpm-lint.txt 2>&1
+pnpm type-check > docs/dev-note/issue-#306-pnpm-type-check.txt 2>&1
+
+# Check logs, escalate if failed
+```
+
+**Reviewer Agent**:
+```bash
+# Reference logs in PR reviews:
+# "See quality check logs: docs/dev-note/issue-#306-pnpm-test.txt"
+# "All checks passed: ✅"
+```
+
+**Orchestrator Agent**:
+```bash
+# Reference logs in execution plans and PR comments
+# Use logs to track quality metrics across phases
+# Escalate failures to developer for resolution
+```
+
+### How to Reference Logs in PRs
+
+When creating/updating PRs, include:
+
+```markdown
+## Quality Checks ✅
+
+Quality checks executed automatically:
+- Tests: PASS
+- Lint: PASS
+- Format: PASS
+- Type Check: PASS
+
+See logs: `docs/dev-note/issue-#306-pnpm-*.txt`
+```
+
+If any check fails:
+
+```markdown
+## Quality Checks ⚠️
+
+Failed checks (see logs for details):
+- Tests: FAIL — [see `issue-#306-pnpm-test.txt`]
+- Lint: PASS
+- Format: PASS
+- Type Check: PASS
+
+Logs: `docs/dev-note/issue-#306-pnpm-*.txt`
+```
+
+### Log Management Policy
+
+**How Logs Are Stored:**
+- Each (issue, script) combination has one current log file
+- When a quality check runs for the same issue/script pair, the new output replaces the old file
+- This maintains a single, current record for each check type per issue
+- No manual cleanup required—the filename scheme naturally maintains one log per combination
+
+**Log Lifecycle:**
+- Created: First time a quality check runs for an issue/script
+- Updated: Every subsequent run for that issue/script overwrites the file
+- Referenced: In PR descriptions and code review comments
+- Maintained: Single current log per (issue, script) combination
+
+---
+
 ## 📚 Reference Files
 
 | File | Purpose |
 |------|---------|
-| `.copilot/rules.json` | Detailed implementation steps for all phases (steps 1-23+) |
-| `.copilot/PR_FEEDBACK_QUICK_REFERENCE.md` | 9-step quick guide for PR feedback handling |
-| `.copilot/agents/` | Agent definitions (orchestrator, developer, reviewer, tester, product-manager) |
+| `.github/copilot/agents/` | Agent definitions (orchestrator, developer, reviewer, tester, product-manager) |
 | `.github/copilot/settings.json` | GitHub Copilot CLI settings and configuration |
+| `.github/copilot/quick-references/PR_FEEDBACK_QUICK_REFERENCE.md` | 13-step quick guide for PR feedback handling |
+| `.github/instructions/shared.instructions.md` | Monorepo commands and Issue #306 log naming |
+| `docs/dev-note/README.md` | Code quality logs documentation and examples |
+| `docs/dev-note/issue-#306-pnpm-*.txt` | Example log files (test, lint, format, type-check) |
 | `docs/implementation-planning/` | Execution plans with PR registry and feedback tracking |
 
 ---

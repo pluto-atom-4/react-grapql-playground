@@ -312,3 +312,65 @@ Through feature development, ensure these talking points surface:
 - No N+1 queries detected
 - Documentation is clear for future code review
 - Talking points are reinforced in implementation
+
+---
+
+## ✅ Quality Checks Impact on Timeline (Issue #306)
+
+### Understand How Quality Checks Affect Sprint Planning
+
+**Automated quality checks run on all implementations**—this is built into development workflow:
+
+```
+Development
+  ↓
+Quality Checks (automated)
+  ├─ Tests must PASS
+  ├─ Linting must PASS
+  ├─ Type checks must PASS
+  └─ Format validation must PASS
+  ↓
+PR Review (if quality passes)
+  ↓
+Consolidation & Merge (if review approves)
+```
+
+### Impact on Timeline
+
+**Good news**: Quality checks actually **accelerate timelines**:
+- ✅ Immediate feedback (no manual QA delays)
+- ✅ Catch bugs early (prevent fix cycles in review)
+- ✅ Type safety (prevent runtime errors in production)
+- ✅ Code consistency (prevent review-only style fixes)
+
+### Monitor Quality Status in Sprint Planning
+
+When creating timelines, consider:
+
+1. **Phase 3A (Implementation)**: Includes quality check time (~5-10 min per issue)
+   - Estimate: Issue X = 2h implementation + 0.15h quality checks + 0.5h PR = 2.65h total
+
+2. **Phase 3B-F (Review)**: No quality re-checks (already passed)
+   - Quality status accelerates review (no "fix linting" feedback cycles)
+
+3. **Phase 4 (Consolidation)**: Full quality validation on merged code
+   - Estimate: 0.5h consolidation quality checks + 1h merge if all pass
+
+### Reference Quality Status in Communications
+
+When updating stakeholders, reference quality status:
+
+**Instead of**: "Issue #245 is waiting for review"
+
+**Better**: "Issue #245: Quality checks PASS ✅ (tests, lint, types all passing) → ready for review"
+
+**If blocked**: "Issue #245: Quality tests FAIL ❌ (3 tests failing in TestRunDetailsPanel) → developer fixing → ETA +30 min"
+
+### Questions to Ask When Planning
+
+- Are quality check logs being captured correctly?
+- Are developers aware of quality requirements before starting?
+- Is phase 4 consolidation time budgeted (quality validation on merged code)?
+- Are there any ongoing quality issues blocking multiple features?
+
+See `docs/dev-note/README.md` for quality check documentation and log locations.
