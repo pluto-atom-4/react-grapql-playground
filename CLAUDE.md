@@ -63,11 +63,13 @@ docker ps | grep -E "postgres|redis"
 pnpm lint && pnpm type-check && pnpm test --run
 ```
 
-**Hook** (automatic): `.claude/hooks/pre-commit.sh` runs before commit. See `.claude/settings.json` → `devHooks.preCommit`.
+**Hook** (automatic, advisory): `.claude/hooks/claude-pre-bash.sh` runs as a Claude Code `PreToolUse` hook on the Bash tool. When it detects a `git commit`, it type-checks *only the staged* `.ts`/`.tsx` files and prints any errors. It **never blocks the commit** — it exits 1 (warn) at worst, never 2 (deny), and fails open on any infrastructure problem. Every invocation is logged to `.claude/hooks/.gate.log` (gitignored) as `timestamp | command | decision | reason`.
+
+It only gates commits made *through Claude Code's Bash tool*; a commit from a terminal or IDE bypasses it entirely. Real enforcement belongs in CI (#9). Config: `.claude/settings.json` → `hooks.PreToolUse`. Tests: `bash .claude/hooks/__tests__/claude-pre-bash.test.sh`.
 
 ## Session Persistence Pattern
 
-**On session close**: Append non-obvious insights to this file via `.claude/hooks/post-session.sh` to preserve context for next session.
+**On session close**: Append non-obvious insights to this file to preserve context for the next session. This is a manual convention, not an automated script.
 
 Example: if debugging revealed a subtle TypeScript pattern, document it here so next Claude Code session inherits the discovery.
 

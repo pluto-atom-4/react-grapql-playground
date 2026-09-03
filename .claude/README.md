@@ -11,7 +11,8 @@ This directory contains Claude Code CLI configuration and patterns for the React
 ├── settings.json               # Workspace configuration (primary)
 ├── README.md                   # This file
 ├── hooks/
-│   └── pre-commit.sh          # Pre-commit verification hook
+│   ├── claude-pre-bash.sh      # PreToolUse hook (advisory staged-file type-check)
+│   └── __tests__/              # Offline table tests for the hook
 ├── patterns/                   # Reusable implementation patterns
 │   ├── dataloaders-pattern.md
 │   ├── auth-patterns.md
@@ -56,17 +57,24 @@ This directory contains Claude Code CLI configuration and patterns for the React
    ```
    Automatically selects model and reasoning based on file being edited.
 
-3. **Dev Hooks**:
+3. **Hooks** (real Claude Code schema — see issue #354):
    ```json
-   "devHooks": {
-     "preCommit": {
-       "script": ".claude/hooks/pre-commit.sh",
-       "checks": ["pnpm lint", "pnpm type-check", "pnpm test --run"],
-       "failBehavior": "block"
-     }
+   "hooks": {
+     "PreToolUse": [
+       {
+         "matcher": "Bash",
+         "hooks": [
+           { "type": "command",
+             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/claude-pre-bash.sh",
+             "timeout": 30 }
+         ]
+       }
+     ]
    }
    ```
-   Runs verification before commit (blocks if checks fail).
+   `matcher` is the only filter the schema supports; it matches the *tool*, not
+   the command. All command-level filtering happens inside the script. Advisory
+   only: it warns (exit 1), never denies (exit 2), and fails open.
 
 4. **Skills Configuration**:
    ```json
@@ -132,15 +140,18 @@ When you edit files:
 
 ### 4. Before Commit
 
-Pre-commit hook runs automatically (or manually):
+The advisory hook runs automatically inside Claude Code:
 
 ```bash
-# Automatic (if configured as pre-commit hook)
+# Claude Code's Bash tool only — not a git hook
 git commit -m "feat(#123): add feature"
-# .claude/hooks/pre-commit.sh runs → lint, type-check, tests
+# → claude-pre-bash.sh type-checks staged .ts/.tsx, warns, never blocks
 
-# Manual verification
-./.claude/hooks/pre-commit.sh
+# Run the checks yourself (any environment)
+pnpm lint --max-warnings=0 && pnpm type-check && pnpm test --run
+
+# Inspect what the hook decided, and why
+tail .claude/hooks/.gate.log
 ```
 
 ---
@@ -178,7 +189,7 @@ All reusable patterns are in `.claude/patterns/`:
 
 ## Verification First
 
-**Pre-commit checks** (automatic via `.claude/hooks/pre-commit.sh`):
+**Pre-commit checks** (run these yourself; the Claude Code hook only *warns* about staged-file type errors):
 
 ```bash
 # 1. Linting
@@ -210,10 +221,13 @@ pnpm test --run
 - Path must match exactly (e.g., `frontend/**` for files in `frontend/` dir)
 - Reload workspace configuration
 
-### Pre-commit hook failing
-- Run manually: `./.claude/hooks/pre-commit.sh`
-- Check output for which check failed (lint, type-check, or tests)
-- Fix errors and retry
+### Advisory hook warned, or seems not to fire
+- Read `.claude/hooks/.gate.log` — every invocation logs a decision and reason
+- Reason `not-a-commit` means the command was not a `git commit`
+- Any `fail-open:*` reason means the check could not run (missing `jq`, no
+  `tsc`, timeout); the hook allows the call rather than blocking it
+- Dry-run the matcher without running checks:
+  `CLAUDE_HOOK_DRYRUN=1`, or run `bash .claude/hooks/__tests__/claude-pre-bash.test.sh`
 
 ### Permissions denied
 - Check `.claude/settings.json` → `permissions.allow` list
@@ -228,7 +242,7 @@ pnpm test --run
 |------|---------|-----------------|
 | **settings.json** | Model, hooks, skills, permissions | When adding tools/models |
 | **.github/copilot/settings.json** | Copilot config (companion) | When agent roles change |
-| **hooks/pre-commit.sh** | Pre-commit verification | When quality gates change |
+| **hooks/claude-pre-bash.sh** | Advisory staged-file type-check on `git commit` | When quality gates change |
 | **patterns/*.md** | Reusable guides | When implementing new patterns |
 | **about-me.md** | Personal context (optional) | When joining project |
 
