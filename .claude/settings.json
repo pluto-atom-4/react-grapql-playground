@@ -3,7 +3,7 @@
     "tool": "Claude Code CLI",
     "version": "2.0",
     "description": "Claude Code workspace configuration (Aug 2026 optimizations)",
-    "lastUpdated": "2026-08-30",
+    "lastUpdated": "2026-09-03",
     "effortLevel": "medium"
   },
   "model": "claude-opus-5",
@@ -70,56 +70,6 @@
     "analytics": "minimal",
     "errorReporting": true
   },
-  "devHooks": {
-    "preCommit": {
-      "enabled": true,
-      "script": ".claude/hooks/pre-commit.sh",
-      "checks": [
-        "pnpm lint --max-warnings=0",
-        "pnpm type-check",
-        "pnpm test --run"
-      ],
-      "failBehavior": "block"
-    },
-    "postSession": {
-      "enabled": true,
-      "script": ".claude/hooks/post-session.sh",
-      "description": "Syncs non-obvious session insights back to CLAUDE.md for next session"
-    },
-    "prePush": {
-      "enabled": true,
-      "checks": [
-        "git fetch origin",
-        "pnpm test --run",
-        "pnpm build"
-      ],
-      "failBehavior": "warn"
-    },
-    "verification": {
-      "enabled": true,
-      "onWorkspaceLoad": [
-        "docker ps | grep postgres",
-        "curl -s localhost:3000/health",
-        "curl -s localhost:4000/graphql"
-      ],
-      "failBehavior": "warn"
-    }
-  },
-  "autoExecuteAllowlist": {
-    "description": "Commands that auto-execute without interactive prompt",
-    "allowed": [
-      "pnpm lint --max-warnings=0",
-      "pnpm type-check",
-      "pnpm test --run",
-      "pnpm test:frontend --run",
-      "pnpm test:graphql --run",
-      "pnpm test:express --run",
-      "git status",
-      "git log --oneline -n 5",
-      "docker ps",
-      "curl -s localhost:*"
-    ]
-  },
   "skills": {
     "autoLoad": [
       "caveman:cavecrew-builder",
@@ -166,13 +116,6 @@
       "Bash(passwd *)",
       "Bash(chmod 000 *)"
     ]
-  },
-  "rules": {
-    "alwaysRunTestsBeforeCommit": true,
-    "requireLintCheckBeforePush": true,
-    "autoFormatOnSave": false,
-    "enforceCommitMessageFormat": "feat(#issue): description",
-    "verificationFirst": "Always run verification checks before commit/push"
   },
   "agentRoles": {
     "description": "Project-level Claude Code subagents (Issue #343). Format is Markdown+YAML-frontmatter under .claude/agents/, not the .claude.yaml format originally proposed in the issue — Claude Code's Agent tool does not read *.claude.yaml.",
