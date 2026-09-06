@@ -6,19 +6,19 @@
     "lastUpdated": "2026-09-03",
     "effortLevel": "medium"
   },
-  "model": "claude-opus-5",
-  "modelOverride": "opus",
+  "model": "claude-sonnet-5",
+  "modelOverride": "haiku",
   "pathScopes": {
     "frontend": {
       "pattern": "frontend/**",
-      "model": "claude-opus-5",
+      "model": "claude-sonnet-5",
       "reasoning": "enabled",
       "description": "React components, UI logic, accessibility",
       "timeout": 180
     },
     "backend-graphql": {
       "pattern": "backend-graphql/**",
-      "model": "claude-opus-5",
+      "model": "claude-sonnet-5",
       "reasoning": "enabled",
       "description": "GraphQL resolvers, DataLoader, Prisma queries",
       "timeout": 180
@@ -32,7 +32,7 @@
     },
     "tests": {
       "pattern": "**/*.test.ts",
-      "model": "claude-opus-5",
+      "model": "claude-sonnet-5",
       "reasoning": "enabled",
       "description": "Test writing and validation",
       "timeout": 180
