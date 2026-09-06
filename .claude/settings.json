@@ -128,6 +128,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graph-review-advisory.sh",
+            "timeout": 10
+          }
+        ]
       }
     ]
   },

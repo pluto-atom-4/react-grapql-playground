@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# .husky/post-checkout
+#
+# Post-checkout hook that attempts to rebuild the code review graph index
+# when branches change. Non-fatal: if better-code-review-graph is not installed
+# or the build fails, the hook succeeds anyway.
+#
+# This allows the graph to stay in sync with branch changes for the
+# advisory PreToolUse hook (issue #357).
+
+# Guard: skip if tool is not installed
+if ! command -v better-code-review-graph >/dev/null 2>&1; then
+  exit 0
+fi
+
+# Run the graph build non-fatally, suppressing output to avoid console noise
+better-code-review-graph graph build --repo-root "$(pwd)" >/dev/null 2>&1 || \
+  echo "[post-checkout] better-code-review-graph build failed (non-fatal)" >&2
+
+exit 0

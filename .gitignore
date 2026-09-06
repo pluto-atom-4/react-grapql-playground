@@ -127,7 +127,8 @@ docs/implementation-planning
 issue-content*.json
 
 
-# Claude Code advisory hook decision log (issue #354).
+# Claude Code advisory hook decision logs (issues #354, #357).
 # Already matched by *.log above; listed explicitly so a future gitignore
-# reshuffle cannot accidentally start tracking it.
+# reshuffle cannot accidentally start tracking them.
 .claude/hooks/.gate.log
+.claude/hooks/.crg.log

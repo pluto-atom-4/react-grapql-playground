@@ -67,6 +67,23 @@ pnpm lint && pnpm type-check && pnpm test --run
 
 It only gates commits made *through Claude Code's Bash tool*; a commit from a terminal or IDE bypasses it entirely. Real enforcement belongs in CI (#9). Config: `.claude/settings.json` → `hooks.PreToolUse`. Tests: `bash .claude/hooks/__tests__/claude-pre-bash.test.sh`.
 
+## AI Tool Configuration
+
+| Tool | Type | Purpose | Config | Test |
+|------|------|---------|--------|------|
+| `better-code-review-graph` | Global MCP server | Code review graph indexing; queries for context-aware analysis (issue #357) | Registered in `~/.claude/settings.json` as global stdio server; database at `.code-review-graph/graph.db` | `.code-review-graph/.gitignore` handles self-exclusion |
+| `.husky/post-checkout` | Git hook | Auto-rebuild code review graph on branch changes (non-fatal) | Runs via Husky prepare script; guarded by tool availability check | Excluded from quality gates (infra/tooling) |
+| `.claude/hooks/graph-review-advisory.sh` | PreToolUse advisory | Suggests querying code review graph before wide Grep/Glob scans (issue #357) | Wired to `.claude/settings.json` → `hooks.PreToolUse` with matcher `Grep\|Glob` | `bash .claude/hooks/__tests__/graph-review-advisory.test.sh` |
+
+## Considered and Declined for Issue #357
+
+The following were evaluated but intentionally not added to keep scope tight:
+
+- **Graphify** (PyPI `graphify-cli`): Unrelated package; no real install/integration path.
+- **Base `code-review-graph` tool**: Superseded by `better-code-review-graph` (v3.24.0+) which is more actively maintained.
+- **`cc-start` alias**: No alias convention established in this repo; can be added per-user if desired.
+- **`CRG_DATABASE_PATH` env var**: Tool self-manages its database location (`.code-review-graph/graph.db`); explicit override not required for standard workflows.
+
 ## Session Persistence Pattern
 
 **On session close**: Append non-obvious insights to this file to preserve context for the next session. This is a manual convention, not an automated script.
@@ -75,4 +92,4 @@ Example: if debugging revealed a subtle TypeScript pattern, document it here so 
 
 ---
 
-**Last Updated**: 2026-08-30 (Phase 1: Execution modes + session hook pattern added)
+**Last Updated**: 2026-09-06 (Issue #357: better-code-review-graph MCP server + Husky + advisory PreToolUse hook)
