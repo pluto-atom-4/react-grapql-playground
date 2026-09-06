@@ -511,7 +511,7 @@ pnpm type-check > /dev/null && echo "✓ Type checking passes" || echo "✗ Type
 [[ -z $(git status -s) ]] && echo "✓ Working tree clean" || echo "✗ Uncommitted changes"
 ```
 
-**Pre-Commit Hook** (automated): `.claude/hooks/pre-commit.sh` runs these checks automatically.
+**Pre-Commit Hook** (Claude Code only, advisory): `.claude/hooks/claude-pre-bash.sh` type-checks the staged files on `git commit` and warns. It does not block, and it does not run for commits made outside Claude Code's Bash tool — run the checks above yourself.
 
 **Common Issues**:
 - Branch name doesn't match `feat/issue-#N-...` → Will fail PR checks

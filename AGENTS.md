@@ -798,7 +798,7 @@ See `.github/instructions/agent-roles.md` for quick reference table and agent co
 - [ ] Type checking passes (`pnpm type-check`)
 - [ ] Documentation updated (CLAUDE.md, README)
 - [ ] No N+1 queries in GraphQL resolvers
-- [ ] Pre-commit hook ran successfully (`.claude/hooks/pre-commit.sh`)
+- [ ] Reviewed any advisory output from `.claude/hooks/claude-pre-bash.sh` (warns on type errors in staged files; never blocks)
 
 **Check**: `git status` shows clean working tree before push
 
