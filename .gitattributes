@@ -7,4 +7,11 @@
 # directory". For .claude/hooks/*.sh that failure would be near-silent: the
 # hook simply never runs, which is exactly the invisible-no-fire mode issue
 # #354 warns about.
+#
+# Git hook scripts (.husky/*) hit the same failure mode but have no .sh
+# extension by convention, so the rule above misses them entirely -- that
+# gap let a CRLF .husky/post-checkout ship in #357/#358 (bash choked on a
+# stray \r mid-script instead of a clean interpreter-not-found failure,
+# but same root cause).
 *.sh text eol=lf
+.husky/* text eol=lf
