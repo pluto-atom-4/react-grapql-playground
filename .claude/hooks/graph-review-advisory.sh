@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 # .claude/hooks/graph-review-advisory.sh
 #
-# Claude Code PreToolUse hook for Grep/Glob tools (issue #357).
+# Claude Code PreToolUse hook for Grep/Glob tools (issue #357, retargeted
+# from better-code-review-graph to graphify in issue #360).
 #
 # Contract (mirrors issue #354 pattern with tool-specific behavior):
-#   - ADVISORY ONLY. This script exits 0 (allow) or 1 (allow, with advisory
-#     printed to stderr). It MUST NEVER exit 2 -- exit 2 is Claude Code's
-#     "deny the tool call" signal. This hook is advisory, never blocking.
+#   - ADVISORY ONLY. This script exits 0 (allow) or 1 (allow, with an
+#     advisory printed to stderr). It MUST NEVER exit 2 -- exit 2 is Claude
+#     Code's "deny the tool call" signal. This hook is advisory, never
+#     blocking.
 #   - FAIL-OPEN. Any infrastructure problem (unparseable stdin, no JSON tool,
-#     missing better-code-review-graph binary, not a git repo, etc) results in
-#     exit 0. A broken gate must never brick Grep/Glob calls.
+#     missing graphify binary, not a git repo, etc) results in exit 0. A
+#     broken gate must never brick Grep/Glob calls.
 #   - Every invocation appends one line to a gitignored decision log, so
 #     "did it fire, and why?" is answerable without re-running scans.
 #
 # Behavior:
-#   - If better-code-review-graph binary is not on PATH, exit 0 silently (no-op).
+#   - If the graphify binary is not on PATH, exit 0 silently (no-op).
 #   - If CRG_HOOK_DISABLED=1 env var is set, skip advisory and exit 0.
-#   - Otherwise, emit an advisory suggesting the user query better-code-review-graph
-#     before wide Grep/Glob scans (e.g., `better-code-review-graph graph stats`).
+#   - Otherwise, emit an advisory suggesting the user check graphify's macro
+#     architecture report (graphify-out/GRAPH_REPORT.md) or run a
+#     `graphify query`/`graphify explain` before wide Grep/Glob scans.
 #   - Exit 1 (advisory), never 2.
 #
 # Wiring lives in tracked .claude/settings.json under hooks.PreToolUse with
@@ -119,7 +122,7 @@ pattern="$(json_get "tool_input.pattern" 2>/dev/null)" || pattern=""
 # Pre-flight checks: tool availability and disable switch.
 # ---------------------------------------------------------------------------
 
-if ! command -v better-code-review-graph >/dev/null 2>&1; then
+if ! command -v graphify >/dev/null 2>&1; then
   allow "tool-not-installed" "$pattern"
 fi
 
@@ -133,19 +136,20 @@ fi
 
 if [[ "${CLAUDE_HOOK_DRYRUN:-}" == "1" ]]; then
   printf 'would-advise: %s pattern detected: %s\n' "$tool_name" "$pattern"
-  printf 'would-advise: suggest querying better-code-review-graph before wide scan\n'
+  printf 'would-advise: suggest checking graphify-out/GRAPH_REPORT.md before wide scan\n'
   log_decision "dry-run" "would-advise" "$pattern"
   exit 0
 fi
 
 # ---------------------------------------------------------------------------
-# Emit advisory: suggest using better-code-review-graph before the scan.
+# Emit advisory: suggest checking graphify's macro map before the scan.
 # ---------------------------------------------------------------------------
 
 {
   printf '\n[graph-review-advisory] Tip: Before running this %s scan, consider checking\n' "$tool_name"
-  printf '[graph-review-advisory] the code review graph for context:\n\n'
-  printf '[graph-review-advisory]   better-code-review-graph graph stats\n\n'
+  printf '[graph-review-advisory] the graphify macro architecture map for context:\n\n'
+  printf '[graph-review-advisory]   cat graphify-out/GRAPH_REPORT.md\n'
+  printf '[graph-review-advisory]   graphify query "%s"\n\n' "$pattern"
   printf '[graph-review-advisory] This can help guide your search and identify relevant code regions.\n'
   printf '[graph-review-advisory] To disable this advisory, set CRG_HOOK_DISABLED=1\n\n'
 } >&2

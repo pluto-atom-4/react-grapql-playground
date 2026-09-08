@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Offline table tests for .claude/hooks/graph-review-advisory.sh (issue #357).
+# Offline table tests for .claude/hooks/graph-review-advisory.sh
+# (issue #357, retargeted from better-code-review-graph to graphify in #360).
 #
 # Fully hermetic and non-interactive:
 #   - every row runs with CLAUDE_HOOK_DRYRUN=1 unless it explicitly
 #     exercises a fail-open path that returns before any advisory;
-#   - no real better-code-review-graph invocation ever occurs
+#   - no real graphify invocation ever occurs
 #     (a PATH canary asserts the tool is never invoked);
 #   - the decision log is redirected to a temp file via CLAUDE_HOOK_LOG.
 #
@@ -21,15 +22,15 @@ trap 'rm -rf "$TMPDIR_TEST"' EXIT
 PASS=0
 FAIL=0
 
-# PATH canary: a `better-code-review-graph` that records any invocation.
+# PATH canary: a `graphify` that records any invocation.
 # The hook must never run it.
 mkdir -p "$TMPDIR_TEST/bin"
-cat >"$TMPDIR_TEST/bin/better-code-review-graph" <<'CANARY'
+cat >"$TMPDIR_TEST/bin/graphify" <<'CANARY'
 #!/bin/sh
-echo "better-code-review-graph invoked: $*" >> "$CANARY_FILE"
+echo "graphify invoked: $*" >> "$CANARY_FILE"
 exit 0
 CANARY
-chmod +x "$TMPDIR_TEST/bin/better-code-review-graph"
+chmod +x "$TMPDIR_TEST/bin/graphify"
 export CANARY_FILE="$TMPDIR_TEST/crg-canary"
 : >"$CANARY_FILE"
 
@@ -181,9 +182,9 @@ else
 fi
 
 if [[ -s "$CANARY_FILE" ]]; then
-  report FAIL 'no real better-code-review-graph invocation during the suite' "$(cat "$CANARY_FILE")"
+  report FAIL 'no real graphify invocation during the suite' "$(cat "$CANARY_FILE")"
 else
-  report PASS 'no real better-code-review-graph invocation during the suite'
+  report PASS 'no real graphify invocation during the suite'
 fi
 
 echo

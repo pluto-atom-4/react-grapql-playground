@@ -127,8 +127,21 @@ docs/implementation-planning
 issue-content*.json
 
 
-# Claude Code advisory hook decision logs (issues #354, #357).
+# Claude Code advisory hook decision logs (issues #354, #357, #360).
 # Already matched by *.log above; listed explicitly so a future gitignore
 # reshuffle cannot accidentally start tracking them.
 .claude/hooks/.gate.log
 .claude/hooks/.crg.log
+.claude/hooks/.crg-update.log
+.claude/hooks/.crg-status.log
+
+# code-review-graph knowledge graph (issue #360). The tool self-manages a
+# nested .code-review-graph/.gitignore too; this root entry is belt-and-
+# braces so a reshuffle of that nested file can't start tracking graph.db.
+.code-review-graph/
+
+# graphify macro architecture map + cache (issue #360). Regenerate with
+# `graphify update .` -- never commit generated graph/report output.
+graphify-out/
+.graphify_cache/
+GRAPH_REPORT.md

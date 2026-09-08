@@ -1,20 +1,33 @@
 #!/usr/bin/env bash
 # .husky/post-checkout
 #
-# Post-checkout hook that attempts to rebuild the code review graph index
-# when branches change. Non-fatal: if better-code-review-graph is not installed
-# or the build fails, the hook succeeds anyway.
+# Post-checkout hook that rebuilds both graph indexes when branches change:
+#   - code-review-graph: low-level AST / blast-radius graph
+#   - graphify: high-level architecture / documentation map
 #
-# This allows the graph to stay in sync with branch changes for the
-# advisory PreToolUse hook (issue #357).
+# Non-fatal: if a tool is not installed or a build fails, the hook succeeds
+# anyway. This keeps both graphs in sync with branch changes for the
+# advisory PreToolUse hook and the architect agent's MCP tools (issue #357,
+# retargeted from better-code-review-graph to code-review-graph + graphify
+# in #360).
 
-# Guard: skip if tool is not installed
-if ! command -v better-code-review-graph >/dev/null 2>&1; then
+PREV_HEAD="${1:-}"
+NEW_HEAD="${2:-}"
+IS_BRANCH_CHECKOUT="${3:-0}"
+
+# Only trigger on a true branch switch (not a file-level checkout).
+if [[ "$IS_BRANCH_CHECKOUT" != "1" ]]; then
   exit 0
 fi
 
-# Run the graph build non-fatally, suppressing output to avoid console noise
-better-code-review-graph graph build --repo-root "$(pwd)" >/dev/null 2>&1 || \
-  echo "[post-checkout] better-code-review-graph build failed (non-fatal)" >&2
+if command -v code-review-graph >/dev/null 2>&1; then
+  code-review-graph update >/dev/null 2>&1 || \
+    echo "[post-checkout] code-review-graph update failed (non-fatal)" >&2
+fi
+
+if command -v graphify >/dev/null 2>&1; then
+  graphify update . >/dev/null 2>&1 || \
+    echo "[post-checkout] graphify update failed (non-fatal)" >&2
+fi
 
 exit 0

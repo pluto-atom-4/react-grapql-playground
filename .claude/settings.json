@@ -2,8 +2,8 @@
   "metadata": {
     "tool": "Claude Code CLI",
     "version": "2.0",
-    "description": "Claude Code workspace configuration. hooks.PreToolUse is advisory-only (issue #354): it reports, it never blocks a commit.",
-    "lastUpdated": "2026-09-03",
+    "description": "Claude Code workspace configuration. hooks.PreToolUse is advisory-only (issue #354): it reports, it never blocks a commit. Graph tooling (issue #360) is code-review-graph + graphify, replacing the better-code-review-graph fork from #357.",
+    "lastUpdated": "2026-09-07",
     "effortLevel": "medium"
   },
   "model": "claude-sonnet-5",
@@ -108,7 +108,16 @@
       "Edit(.github/copilot/**)",
       "Edit(DESIGN.md)",
       "Edit(CLAUDE.md)",
-      "Edit(AGENTS.md)"
+      "Edit(AGENTS.md)",
+      "Bash(graphify query *)",
+      "Bash(graphify path *)",
+      "Bash(graphify explain *)",
+      "Bash(graphify affected *)",
+      "Bash(graphify update *)",
+      "Bash(code-review-graph query *)",
+      "Bash(code-review-graph impact *)",
+      "Bash(code-review-graph detect-changes *)",
+      "Bash(code-review-graph update *)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -136,6 +145,29 @@
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graph-review-advisory.sh",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/code-review-graph-update.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/code-review-graph-status.sh",
+            "timeout": 15
           }
         ]
       }
