@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# .husky/pre-commit
+#
+# Refreshes the code-review-graph AST index and prints a risk-scored review
+# summary before a commit lands (issue #360). Non-fatal: never blocks the
+# commit -- if the tool is missing or a step fails, the hook still exits 0.
+# Real enforcement belongs in CI (#9), same policy as the advisory
+# PreToolUse hooks in .claude/hooks/.
+
+if ! command -v code-review-graph >/dev/null 2>&1; then
+  exit 0
+fi
+
+code-review-graph update >/dev/null 2>&1 || true
+code-review-graph detect-changes --brief || true
+
+exit 0

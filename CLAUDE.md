@@ -22,6 +22,8 @@ pnpm install && docker-compose up -d && pnpm migrate && pnpm dev
 
 **Services**: Frontend (3000) | GraphQL (4000) | Express (5000)
 
+**Graph tooling init** (issue #360, once per clone): `code-review-graph build && graphify update .` — populates `.code-review-graph/graph.db` (AST/blast-radius) and `graphify-out/graph.json` + `GRAPH_REPORT.md` (macro architecture map). Both are gitignored and rebuild automatically on branch switch (`.husky/post-checkout`) and after edits (`PostToolUse` hook), but run this once yourself before the first session on a fresh clone.
+
 ## Commands
 
 | Task | Command |
@@ -71,18 +73,31 @@ It only gates commits made *through Claude Code's Bash tool*; a commit from a te
 
 | Tool | Type | Purpose | Config | Test |
 |------|------|---------|--------|------|
-| `better-code-review-graph` | Global MCP server | Code review graph indexing; queries for context-aware analysis (issue #357) | Registered in `~/.claude/settings.json` as global stdio server; database at `.code-review-graph/graph.db` | `.code-review-graph/.gitignore` handles self-exclusion |
-| `.husky/post-checkout` | Git hook | Auto-rebuild code review graph on branch changes (non-fatal) | Runs via Husky prepare script; guarded by tool availability check | Excluded from quality gates (infra/tooling) |
-| `.claude/hooks/graph-review-advisory.sh` | PreToolUse advisory | Suggests querying code review graph before wide Grep/Glob scans (issue #357) | Wired to `.claude/settings.json` → `hooks.PreToolUse` with matcher `Grep\|Glob` | `bash .claude/hooks/__tests__/graph-review-advisory.test.sh` |
+| `code-review-graph` (PyPI `code-review-graph`, v2.3.8) | Global + project MCP server | Low-level AST / blast-radius graph; `query`/`impact`/`detect-changes` for structural dependency analysis (issue #360) | Registered in `~/.claude/settings.json` (global) and `.mcp.json` (project, `cwd`-pinned); database at `.code-review-graph/graph.db` | `.code-review-graph/.gitignore` handles self-exclusion; init with `code-review-graph build` |
+| `graphify` / `graphify-mcp` (PyPI `graphifyy`) | Global + project MCP server | High-level architecture map + multi-modal docs context; macro assessment before deep dives (issue #360) | Registered in `~/.claude/settings.json` (global) and `.mcp.json` (project); output at `graphify-out/graph.json` + `GRAPH_REPORT.md` | Gitignored (`graphify-out/`); init with `graphify update .` |
+| `.husky/post-checkout` | Git hook | Auto-rebuild both graphs on branch changes (non-fatal) | Runs via Husky (`core.hooksPath=.husky/_`); guarded by tool availability checks | Excluded from quality gates (infra/tooling) |
+| `.husky/pre-commit` | Git hook | `code-review-graph update` + `detect-changes --brief` before commit (non-fatal, never blocks) | Runs via Husky | Excluded from quality gates (infra/tooling) |
+| `.claude/hooks/graph-review-advisory.sh` | PreToolUse advisory | Suggests checking `graphify-out/GRAPH_REPORT.md` / `graphify query` before wide Grep/Glob scans (issue #357, retargeted to graphify in #360) | Wired to `.claude/settings.json` → `hooks.PreToolUse` with matcher `Grep\|Glob` | `bash .claude/hooks/__tests__/graph-review-advisory.test.sh` |
+| `.claude/hooks/code-review-graph-update.sh` | PostToolUse advisory | Incremental `code-review-graph update --skip-flows` after every Edit/Write, so structural queries stay fresh mid-session (issue #360) | Wired to `.claude/settings.json` → `hooks.PostToolUse` with matcher `Edit\|Write` | `bash .claude/hooks/__tests__/code-review-graph-update.test.sh` |
+| `.claude/hooks/code-review-graph-status.sh` | SessionStart advisory | Prints `code-review-graph status` (node/edge counts, last build, branch) when a session opens (issue #360) | Wired to `.claude/settings.json` → `hooks.SessionStart` | `bash .claude/hooks/__tests__/code-review-graph-status.test.sh` |
 
-## Considered and Declined for Issue #357
+### Graph Intelligence Routing
 
-The following were evaluated but intentionally not added to keep scope tight:
+Two-phase workflow for the architect agent, replacing expensive Grep/Glob fan-out with structured graph navigation:
 
-- **Graphify** (PyPI `graphify-cli`): Unrelated package; no real install/integration path.
-- **Base `code-review-graph` tool**: Superseded by `better-code-review-graph` (v3.24.0+) which is more actively maintained.
-- **`cc-start` alias**: No alias convention established in this repo; can be added per-user if desired.
-- **`CRG_DATABASE_PATH` env var**: Tool self-manages its database location (`.code-review-graph/graph.db`); explicit override not required for standard workflows.
+1. **Macro (graphify)** — "where is X?", "explain the design", architecture overview. Check `graphify-out/GRAPH_REPORT.md` first, or `graphify query`/`graphify explain`, or the `graphify-mcp` MCP tools (`query_graph`, `get_node`, `get_neighbors`, `get_community`, `shortest_path`, `god_nodes`, `graph_stats`).
+2. **Micro (code-review-graph)** — "what breaks if I change X?", "find all callers of Y", blast-radius before implementing. Use `code-review-graph query {callers_of|callees_of|imports_of|tests_for}`, `code-review-graph impact --files <paths>`, `code-review-graph detect-changes --brief`, or the MCP server (`code-review-graph serve`).
+
+Fallback if a graph tool errors or returns empty: narrow, targeted `Grep`/`Glob` on the specific file and its immediate imports — never both engines at once, and never a repo-wide scan without checking the graph first.
+
+## Considered and Declined for Issue #357 (superseded by #360)
+
+The following were evaluated for #357 but intentionally not added at the time to keep scope tight; issue #360 later added graphify and reversed the code-review-graph decision (see rows above):
+
+- **Graphify** (PyPI `graphify-cli`): declined for #357 as an unrelated package with no real install path; the real package is `graphifyy` (PyPI), added in #360.
+- **Base `code-review-graph` tool**: declined for #357 in favor of the `better-code-review-graph` fork; #360 reversed this — the original `code-review-graph` (tirth8205, v2.3.8) has a larger, actively-maintained CLI (29 subcommands) with its own `install`/git-hook flow, and `better-code-review-graph` is no longer used in this repo.
+- **`cc-start` alias**: still no alias convention established in this repo; can be added per-user if desired (`alias cc-start="code-review-graph update && graphify update . && claude"`).
+- **`CRG_DATABASE_PATH` env var**: does not exist in `code-review-graph`'s source; the real override is `--data-dir` / `CRG_DATA_DIR`, not needed for standard workflows.
 
 ## Session Persistence Pattern
 
@@ -92,4 +107,4 @@ Example: if debugging revealed a subtle TypeScript pattern, document it here so 
 
 ---
 
-**Last Updated**: 2026-09-06 (Issue #357: better-code-review-graph MCP server + Husky + advisory PreToolUse hook)
+**Last Updated**: 2026-09-07 (Issue #360: replaced better-code-review-graph with code-review-graph + graphify — MCP servers, PostToolUse/SessionStart/pre-commit hooks, retargeted PreToolUse advisory)
